@@ -2,13 +2,11 @@ import { Project } from '../types';
 import fileTree from '../data/fileTree.json';
 
 function getCommandSuggestions(input: string, commands: string[]): string[] {
-  // Simple fuzzy match: startsWith, includes, Levenshtein (optional)
   const inputLower = input.toLowerCase();
   const scored = commands.map(cmd => {
     if (cmd === inputLower) return { cmd, score: 1 };
     if (cmd.startsWith(inputLower)) return { cmd, score: 0.9 };
     if (cmd.includes(inputLower)) return { cmd, score: 0.7 };
-    // Levenshtein distance (optional, for now skip)
     return { cmd, score: 0 };
   });
   return scored.filter(s => s.score > 0.5).sort((a, b) => b.score - a.score).map(s => s.cmd);
@@ -24,7 +22,6 @@ export class TerminalCommands {
     this.fileTree = fileTree;
   }
 
-  // Helper to resolve a path in the file tree
   private resolvePath(path: string): any {
     if (!path || path === '/') return this.fileTree;
     const parts = path.replace(/^\//, '').split('/');
@@ -36,7 +33,6 @@ export class TerminalCommands {
     return node;
   }
 
-  // Helper to get node at current directory
   private getCurrentNode(): any {
     const parts = this.currentDirectory.replace(/^\//, '').split('/').filter(Boolean);
     let node = this.fileTree;
@@ -95,7 +91,6 @@ export class TerminalCommands {
       }
     }
 
-    // Fuzzy match for unknown commands
     const suggestions = getCommandSuggestions(command, Object.keys(commandMap));
     let message = `Command not found: ${command}`;
     if (suggestions.length > 0) {
@@ -187,7 +182,6 @@ LinkedIn: https://linkedin.com/in/username`;
       throw new Error('Please specify a file');
     }
 
-    // Try to resolve the file in the current directory, case-insensitive
     let node = this.getCurrentNode();
     console.log('Current directory node:', node);
     
@@ -196,7 +190,6 @@ LinkedIn: https://linkedin.com/in/username`;
       throw new Error('Directory not found');
     }
 
-    // Try exact match first
     if (node[file]) {
       console.log('Found exact match in current directory:', node[file]);
       const n = node[file];
@@ -208,7 +201,6 @@ LinkedIn: https://linkedin.com/in/username`;
       throw new Error('Not a file');
     }
 
-    // Try case-insensitive match
     const found = Object.values(node).find(
       (n: any) => n.type === 'file' && n.name.toLowerCase() === file.toLowerCase()
     );
@@ -217,7 +209,6 @@ LinkedIn: https://linkedin.com/in/username`;
       return (found as any).content;
     }
 
-    // If not found in current directory, try searching in the file tree
     const searchFile = (node: any, path: string[]): string | null => {
       console.log('Searching file tree:', { currentPath: path, currentNode: node });
       if (path.length === 0) return null;

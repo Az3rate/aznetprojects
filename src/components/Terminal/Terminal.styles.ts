@@ -138,7 +138,9 @@ export const ClickableText = styled.span`
 `;
 
 export const FileCodeBlock = styled.div`
-  max-height: 900px;
+  flex: 1 1 auto;
+  height: 100%;
+  min-height: 0;
   overflow-y: auto;
   background: #1e1e1e;
   border-radius: 4px;

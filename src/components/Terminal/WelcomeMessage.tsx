@@ -76,12 +76,14 @@ interface WelcomeMessageProps {
     name: string;
     description: string;
   }>;
+  onStartTour?: () => void;
 }
 
 export const WelcomeMessage: React.FC<WelcomeMessageProps> = ({ 
   onCommandClick, 
   isFirstTime,
-  projects 
+  projects,
+  onStartTour
 }) => {
   const handleClick = (command: string) => (e: React.MouseEvent) => {
     e.preventDefault();
@@ -93,15 +95,37 @@ export const WelcomeMessage: React.FC<WelcomeMessageProps> = ({
       <AsciiArt>
         {`
 .o.                  ooooo      ooo               .   
-.888.                 888b.     8'             .o8   
-.8"888.       oooooooo  8 88b.    8   .ooooo.  .o888oo 
-.8' 888.     d'""7d8P   8   88b.  8  d88' 88b   888   
-.88ooo8888.      .d8P'    8     88b.8  888ooo888   888   
-.8'     888.   .d8P'  .P  8       888  888    .o   888 . 
-o88o     o8888o d8888888P  o8o        8  Y8bod8P'   "888"       
+.888.                 ︻888b.     ︻8'             .o8   
+.8"888.       oooooooo  8 ︻88b.    8   .ooooo.  .o888oo 
+.8' ︻888.     d'""7d8P   8   ︻88b.  8  d88' ︻88b   888   
+.88ooo8888.      .d8P'    8     ︻88b.8  888ooo888   888   
+.8'     ︻888.   .d8P'  .P  8       ︻888  888    .o   888 . 
+o88o     o8888o d8888888P  o8o        ︻8  ︻Y8bod8P'   "888"       
         `}
       </AsciiArt>
       <Title>Welcome to the AzNet Terminal Portfolio</Title>
+      {onStartTour && (
+        <div style={{ display: 'flex', justifyContent: 'flex-start', margin: '12px 0 20px 0' }}>
+          <button
+            onClick={onStartTour}
+            style={{
+              background: '#00ff99',
+              color: '#181825',
+              border: '2px solid #00ff99',
+              borderRadius: 2,
+              padding: '8px 22px',
+              fontWeight: 700,
+              fontFamily: 'Fira Code, monospace',
+              fontSize: 16,
+              cursor: 'pointer',
+              boxShadow: '0 0 8px #00ff9955',
+              transition: 'background 0.2s, color 0.2s',
+            }}
+          >
+            Start Guided Tour
+          </button>
+        </div>
+      )}
       <Subtitle>
         Created by <b>Hugo Villeneuve</b>
       </Subtitle>
@@ -115,27 +139,39 @@ o88o     o8888o d8888888P  o8o        8  Y8bod8P'   "888"
       <WelcomeText>
         <b>What can you do here?</b>
         <ul style={{ margin: '0.5rem 0 0.5rem 1.5rem' }}>
-          <li>Click on any file or folder in the sidebar to instantly view its contents.</li>
+          <li><b>The panel on the left is a real file explorer.</b> What you see there is the actual working code and structure of this web application—just like a developer would see in their editor.</li>
+          <li>Click on any file or folder in the sidebar to instantly view its contents and code.</li>
           <li>Click on a project name below to see a detailed overview, key features, and tech stack.</li>
           <li>Type or click commands (like <ClickableItem onClick={handleClick('help')}>help</ClickableItem>, <ClickableItem onClick={handleClick('ls')}>ls</ClickableItem>, <ClickableItem onClick={handleClick('cat App.tsx')}>cat</ClickableItem>) to interact with the terminal—just like a real developer would.</li>
           <li>Use the <b>Quick Menu</b> for one-click access to project lists, contact info, and more.</li>
         </ul>
       </WelcomeText>
-      <WelcomeText>
+      <WelcomeText data-tour="project-list">
         <b>Featured Projects:</b>
       </WelcomeText>
       {projects.length > 0 && (
-        <>
+        <div data-tour="project-list">
           {projects.map((project) => (
             <div key={project.name} style={{ marginBottom: 4 }}>
-              <ClickableItem onClick={handleClick(`cat ${project.name.toLowerCase()}`)}>
+              <ClickableItem
+                onClick={handleClick(`cat ${project.name.toLowerCase()}`)}
+                {...(project.name === 'D4UT' ? { 'data-tour': 'project-d4ut' } : {})}
+                {...(project.name === 'LootManager' ? { 'data-tour': 'project-lootmanager' } : {})}
+                {...(project.name === 'RaidAlert' ? { 'data-tour': 'project-raidalert' } : {})}
+              >
                 {project.name}
               </ClickableItem>
               {' '}– {project.description}
             </div>
           ))}
-        </>
+        </div>
       )}
+      <QuickMenu data-tour="quick-menu">
+        <ClickableItem onClick={handleClick('help')}>Help</ClickableItem>
+        <ClickableItem onClick={handleClick('about')}>About</ClickableItem>
+        <ClickableItem onClick={handleClick('ls')}>List Files</ClickableItem>
+        <ClickableItem onClick={handleClick('clear')}>Clear</ClickableItem>
+      </QuickMenu>
       <WelcomeText>
         <b>Tip:</b> You can also type commands directly, just like a real terminal. Try <ClickableItem onClick={handleClick('help')}>help</ClickableItem> to see all available options.
       </WelcomeText>
