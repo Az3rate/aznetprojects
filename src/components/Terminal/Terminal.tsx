@@ -1,6 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useTerminal } from '../../hooks/useTerminal';
 import { testProjects } from '../../data/testProjects';
+import { WelcomeMessage } from './WelcomeMessage';
+import { ProjectDetails } from './ProjectDetails';
+import { Project } from '../../types';
 import {
   TerminalWrapper,
   Sidebar,
@@ -21,6 +24,10 @@ import {
   ClickableText
 } from './Terminal.styles';
 
+function isProjectListOutput(output: string | { type: 'project-list'; projects: Project[] }): output is { type: 'project-list'; projects: Project[] } {
+  return typeof output === 'object' && output !== null && (output as any).type === 'project-list';
+}
+
 export const Terminal: React.FC = () => {
   const {
     state,
@@ -34,6 +41,15 @@ export const Terminal: React.FC = () => {
   const [input, setInput] = useState('');
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [selectedSuggestion, setSelectedSuggestion] = useState(-1);
+  const [isFirstTime, setIsFirstTime] = useState(() => {
+    const visited = localStorage.getItem('aznet_terminal_visited');
+    if (!visited) {
+      localStorage.setItem('aznet_terminal_visited', 'true');
+      return true;
+    }
+    return false;
+  });
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -54,19 +70,29 @@ export const Terminal: React.FC = () => {
     }
   };
 
+  const handleCommandClick = (command: string) => {
+    if (command.startsWith('cat ')) {
+      const projectName = command.split(' ')[1];
+      const project = testProjects.find(p => p.name.toLowerCase() === projectName);
+      if (project) {
+        setSelectedProject(project);
+        openDetailsPanel(project);
+      }
+    } else {
+      executeCommand(command);
+      setInput('');
+      setSuggestions([]);
+    }
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     switch (e.key) {
       case 'Enter':
         if (selectedSuggestion >= 0 && selectedSuggestion < suggestions.length) {
           const selectedCommand = suggestions[selectedSuggestion];
-          executeCommand(selectedCommand);
-          setInput('');
-          setSuggestions([]);
-          setSelectedSuggestion(-1);
+          handleCommandClick(selectedCommand);
         } else {
-          executeCommand(input);
-          setInput('');
-          setSuggestions([]);
+          handleCommandClick(input);
         }
         break;
       case 'ArrowUp':
@@ -104,6 +130,11 @@ export const Terminal: React.FC = () => {
     }
   };
 
+  const handleCloseProject = () => {
+    setSelectedProject(null);
+    closeDetailsPanel();
+  };
+
   return (
     <TerminalWrapper>
       <Sidebar>
@@ -119,15 +150,39 @@ export const Terminal: React.FC = () => {
         </DirectoryTree>
       </Sidebar>
       <TerminalContent>
-        {state.history.map((item, index) => (
-          <React.Fragment key={index}>
-            <CommandLine>
-              <Prompt>user@aznet:~$</Prompt>
-              {item.command}
-            </CommandLine>
-            <Output type={item.type}>{item.output}</Output>
-          </React.Fragment>
-        ))}
+        {state.history.length === 0 ? (
+          <WelcomeMessage
+            onCommandClick={handleCommandClick}
+            isFirstTime={isFirstTime}
+            projects={testProjects}
+          />
+        ) : (
+          state.history.map((item, index) => (
+            <React.Fragment key={index}>
+              <CommandLine>
+                <Prompt>user@aznet:~$</Prompt>
+                {item.command}
+              </CommandLine>
+              {isProjectListOutput(item.output) ? (
+                <Output type="info">
+                  {item.output.projects.map((project: Project) => (
+                    <div key={project.name}>
+                      <ClickableText
+                        onClick={() => handleCommandClick(`cat ${project.name.toLowerCase()}`)}
+                        style={{ cursor: 'pointer', color: '#a78bfa', fontWeight: 600 }}
+                      >
+                        {project.name}
+                      </ClickableText>
+                      {': '}{project.description}
+                    </div>
+                  ))}
+                </Output>
+              ) : (
+                <Output type={item.type === 'project-list' ? 'info' : item.type}>{item.output}</Output>
+              )}
+            </React.Fragment>
+          ))
+        )}
         <CommandInput>
           <Prompt>user@aznet:~$</Prompt>
           <Input
@@ -157,7 +212,14 @@ export const Terminal: React.FC = () => {
           )}
         </CommandInput>
       </TerminalContent>
-      <DetailsPanel $isOpen={state.isDetailsPanelOpen} />
+      <DetailsPanel $isOpen={state.isDetailsPanelOpen}>
+        {selectedProject && (
+          <ProjectDetails
+            project={selectedProject}
+            onClose={handleCloseProject}
+          />
+        )}
+      </DetailsPanel>
     </TerminalWrapper>
   );
 }; 

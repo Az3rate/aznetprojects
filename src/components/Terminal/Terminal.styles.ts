@@ -1,33 +1,29 @@
 import styled from 'styled-components';
 
 export const TerminalWrapper = styled.div`
-  display: flex;
+  display: grid;
+  grid-template-columns: 250px 1fr 400px;
   height: 100vh;
-  width: 100vw;
   background-color: ${({ theme }) => theme.colors.background.primary};
   color: ${({ theme }) => theme.colors.text.primary};
   font-family: 'Fira Code', monospace;
 `;
 
-export const Sidebar = styled.aside`
-  width: 250px;
+export const Sidebar = styled.div`
+  background-color: ${({ theme }) => theme.colors.background.secondary};
   padding: 1rem;
   border-right: 1px solid ${({ theme }) => theme.colors.border};
-  overflow-y: auto;
 `;
 
-export const TerminalContent = styled.main`
-  flex: 1;
+export const TerminalContent = styled.div`
   padding: 1rem;
   overflow-y: auto;
-  display: flex;
-  flex-direction: column;
 `;
 
 export const CommandLine = styled.div`
   display: flex;
   align-items: center;
-  margin-top: auto;
+  margin-bottom: 0.5rem;
 `;
 
 export const Prompt = styled.span`
@@ -36,48 +32,49 @@ export const Prompt = styled.span`
 `;
 
 export const Input = styled.input`
-  background: none;
+  background: transparent;
   border: none;
   color: ${({ theme }) => theme.colors.text.primary};
-  font-family: inherit;
-  font-size: inherit;
-  flex: 1;
+  font-family: 'Fira Code', monospace;
+  font-size: 1rem;
+  width: 100%;
   outline: none;
-  padding: 0;
-  margin: 0;
+  &::placeholder {
+    color: ${({ theme }) => theme.colors.text.secondary};
+  }
 `;
 
 export const Output = styled.div<{ type: 'success' | 'error' | 'info' }>`
+  margin-bottom: 1rem;
   color: ${({ theme, type }) => {
     switch (type) {
+      case 'success':
+        return theme.colors.success;
       case 'error':
         return theme.colors.error;
       case 'info':
-        return theme.colors.info;
-      default:
         return theme.colors.text.primary;
     }
   }};
-  white-space: pre-wrap;
-  margin: 0.5rem 0;
 `;
 
 export const CommandInput = styled.div`
   display: flex;
   align-items: center;
-  margin-top: 0.5rem;
+  position: relative;
 `;
 
 export const CommandOutput = styled.div`
-  margin-top: 0.5rem;
+  margin-bottom: 1rem;
 `;
 
-export const DetailsPanel = styled.aside<{ $isOpen: boolean }>`
-  width: ${({ $isOpen }) => ($isOpen ? '400px' : '0')};
-  padding: ${({ $isOpen }) => ($isOpen ? '1rem' : '0')};
+export const DetailsPanel = styled.div<{ $isOpen: boolean }>`
+  background-color: ${({ theme }) => theme.colors.background.secondary};
+  padding: 1rem;
   border-left: 1px solid ${({ theme }) => theme.colors.border};
+  transform: translateX(${({ $isOpen }) => ($isOpen ? '0' : '100%')});
+  transition: transform 0.3s ease-in-out;
   overflow-y: auto;
-  transition: width 0.3s ease;
 `;
 
 export const DirectoryTree = styled.div`
@@ -87,7 +84,7 @@ export const DirectoryTree = styled.div`
 export const DirectoryItem = styled.div<{ $isActive: boolean }>`
   display: flex;
   align-items: center;
-  padding: 0.25rem;
+  padding: 0.5rem;
   cursor: pointer;
   background-color: ${({ theme, $isActive }) =>
     $isActive ? theme.colors.background.hover : 'transparent'};
@@ -101,18 +98,18 @@ export const DirectoryIcon = styled.span`
 `;
 
 export const DirectoryName = styled.span`
-  flex: 1;
+  color: ${({ theme }) => theme.colors.text.primary};
 `;
 
 export const SuggestionBox = styled.div`
   position: absolute;
-  bottom: 100%;
+  top: 100%;
   left: 0;
   right: 0;
   background-color: ${({ theme }) => theme.colors.background.secondary};
   border: 1px solid ${({ theme }) => theme.colors.border};
-  border-radius: 4px;
-  margin-bottom: 0.5rem;
+  border-top: none;
+  z-index: 1;
 `;
 
 export const SuggestionItem = styled.div<{ $isSelected: boolean }>`
@@ -129,7 +126,6 @@ export const ClickableText = styled.span`
   color: ${({ theme }) => theme.colors.link};
   cursor: pointer;
   &:hover {
-    color: ${({ theme }) => theme.colors.linkHover};
     text-decoration: underline;
   }
 `; 

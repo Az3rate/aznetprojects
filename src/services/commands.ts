@@ -8,8 +8,8 @@ export class TerminalCommands {
     this.projects = projects;
   }
 
-  execute(command: string, args: string[]): { output: string; type: 'success' | 'error' | 'info' } {
-    const commandMap: { [key: string]: (args: string[]) => string } = {
+  execute(command: string, args: string[]): { output: any; type: 'success' | 'error' | 'info' | 'project-list' } {
+    const commandMap: { [key: string]: (args: string[]) => any } = {
       help: this.help,
       clear: this.clear,
       about: this.about,
@@ -34,6 +34,10 @@ export class TerminalCommands {
     if (command in commandMap) {
       try {
         const output = commandMap[command].call(this, args);
+        // Special type for project-list
+        if (command === 'projects' && typeof output === 'object' && output.type === 'project-list') {
+          return output;
+        }
         return {
           output,
           type: command === 'exit' ? 'info' : 'success'
@@ -80,8 +84,8 @@ export class TerminalCommands {
     return 'Welcome to my terminal interface\nA modern terminal interface built with React and TypeScript.';
   };
 
-  private projectsList = (): string => {
-    return this.projects.map(project => `${project.name}: ${project.description}`).join('\n');
+  private projectsList = (): { type: 'project-list'; projects: Project[] } => {
+    return { type: 'project-list', projects: this.projects };
   };
 
   private contact = (): string => {
