@@ -389,7 +389,7 @@ export const Terminal: React.FC = () => {
             placeholder="Type a command..."
           />
           {suggestions.length > 0 && (
-            <SuggestionBox>
+            <SuggestionBox role="list" aria-label="command suggestions">
               {suggestions.map((suggestion, index) => (
                 <SuggestionItem
                   key={suggestion}
@@ -400,6 +400,8 @@ export const Terminal: React.FC = () => {
                     setSelectedSuggestion(-1);
                     inputRef.current?.focus();
                   }}
+                  role="listitem"
+                  aria-label={suggestion}
                 >
                   {suggestion}
                 </SuggestionItem>

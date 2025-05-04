@@ -4,6 +4,9 @@ import { Terminal } from '../components/Terminal/Terminal';
 import { projects } from '../data/projects';
 import { ThemeProvider } from '../styles/ThemeProvider';
 
+// Mock scrollIntoView
+Element.prototype.scrollIntoView = jest.fn();
+
 const renderWithTheme = (component: React.ReactElement) => {
   return render(
     <ThemeProvider>
@@ -47,7 +50,8 @@ describe('Terminal', () => {
     const input = screen.getByPlaceholderText('Type a command...');
     
     fireEvent.change(input, { target: { value: 'h' } });
-    expect(screen.getByText('help')).toBeInTheDocument();
+    const suggestions = screen.getByRole('list', { name: /suggestions/i });
+    expect(suggestions).toHaveTextContent('help');
   });
 
   it('opens and closes the details panel', () => {
@@ -57,7 +61,7 @@ describe('Terminal', () => {
     fireEvent.change(input, { target: { value: 'projects' } });
     fireEvent.keyDown(input, { key: 'Enter' });
     
-    expect(screen.getByText(/Terminal Interface: A modern terminal interface/)).toBeInTheDocument();
+    expect(screen.getAllByText(/A powerful web-based utility tool for Diablo 4 players/)[0]).toBeInTheDocument();
   });
 
   it('handles Tab key for command completion', () => {
@@ -75,10 +79,11 @@ describe('Terminal', () => {
     const input = screen.getByPlaceholderText('Type a command...');
     
     fireEvent.change(input, { target: { value: 'h' } });
-    expect(screen.getByText('help')).toBeInTheDocument();
+    const suggestions = screen.getByRole('list', { name: /suggestions/i });
+    expect(suggestions).toHaveTextContent('help');
     
     fireEvent.keyDown(input, { key: 'Escape' });
-    expect(screen.queryByText('help')).not.toBeInTheDocument();
+    expect(screen.queryByRole('list', { name: /suggestions/i })).not.toBeInTheDocument();
   });
 
   it('navigates suggestions with arrow keys', () => {
@@ -97,7 +102,8 @@ describe('Terminal', () => {
     const input = screen.getByPlaceholderText('Type a command...');
     
     fireEvent.change(input, { target: { value: 'h' } });
-    fireEvent.click(screen.getByText('help'));
+    const suggestion = screen.getByRole('listitem', { name: /help/i });
+    fireEvent.click(suggestion);
     
     expect(input).toHaveValue('help');
   });

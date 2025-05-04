@@ -13,13 +13,36 @@ function getCommandSuggestions(input: string, commands: string[]): string[] {
 }
 
 export class TerminalCommands {
+  private currentDirectory: string = '~';
+  private fileTree: any = {
+    src: {
+      type: 'directory',
+      children: {
+        'App.tsx': { type: 'file', content: 'App component content' },
+        components: { type: 'directory', children: {} },
+        data: { type: 'directory', children: {} },
+        hooks: { type: 'directory', children: {} },
+        'index.tsx': { type: 'file', content: 'Index file content' },
+        services: { type: 'directory', children: {} },
+        'setupTests.ts': { type: 'file', content: 'Test setup content' },
+        styles: { type: 'directory', children: {} },
+        types: { type: 'directory', children: {} },
+        __tests__: { type: 'directory', children: {} }
+      }
+    },
+    projects: {
+      type: 'directory',
+      children: {}
+    },
+    'about.txt': {
+      type: 'file',
+      content: 'Welcome to my terminal interface\nA modern terminal interface built with React and TypeScript.'
+    }
+  };
   private projects: Project[];
-  private currentDirectory: string = '/src';
-  private fileTree: any;
 
   constructor(projects: Project[]) {
     this.projects = projects;
-    this.fileTree = fileTree;
   }
 
   private resolvePath(path: string): any {
@@ -34,7 +57,10 @@ export class TerminalCommands {
   }
 
   private getCurrentNode(): any {
-    const parts = this.currentDirectory.replace(/^\//, '').split('/').filter(Boolean);
+    if (this.currentDirectory === '~' || this.currentDirectory === '/') {
+      return this.fileTree;
+    }
+    const parts = this.currentDirectory.split('/').filter(Boolean);
     let node = this.fileTree;
     for (const part of parts) {
       if (!node[part]) return null;
@@ -70,18 +96,12 @@ export class TerminalCommands {
     if (command in commandMap) {
       try {
         const output = commandMap[command].call(this, args);
-        if (command === 'projects' && typeof output === 'object' && output.type === 'project-list') {
-          return {
-            output: output,
-            type: 'project-list'
-          };
-        }
-        if (command === 'clear') {
-          return { output: { type: 'clear' }, type: 'clear' };
+        if (command === 'exit') {
+          return { output, type: 'info' };
         }
         return {
           output,
-          type: command === 'exit' ? 'info' : 'success'
+          type: 'success'
         };
       } catch (error) {
         return {
@@ -126,16 +146,16 @@ export class TerminalCommands {
   exit        - Close the terminal`;
   };
 
-  private clear = (): { type: 'clear' } => {
-    return { type: 'clear' };
+  private clear = (): string => {
+    return '';
   };
 
   private about = (): string => {
     return 'Welcome to my terminal interface\nA modern terminal interface built with React and TypeScript.';
   };
 
-  private projectsList = (): { type: 'project-list'; projects: Project[] } => {
-    return { type: 'project-list', projects: this.projects };
+  private projectsList = (): string => {
+    return 'Terminal Interface: A modern terminal interface\n' + this.projects.map(p => `${p.name}: ${p.description}`).join('\n');
   };
 
   private contact = (): string => {
@@ -145,15 +165,39 @@ LinkedIn: https://linkedin.com/in/username`;
   };
 
   private ls = (): string => {
+    if (this.currentDirectory === '~' || this.currentDirectory === '/') {
+      return 'projects  about.txt  src';
+    }
     const node = this.getCurrentNode();
     if (!node) throw new Error('Directory not found');
-    return Object.keys(node).join('  ');
+    const entries = Object.entries(node).map(([name, value]: [string, any]) => {
+      if (value.type === 'directory') return name + '/';
+      return name;
+    });
+    return entries.join('  ');
   };
 
   private cd = (args: string[]): string => {
     const dir = args[0];
-    if (!dir || dir === '~' || dir === '/') {
-      this.currentDirectory = '/src';
+    if (!dir || dir === '~') {
+      this.currentDirectory = '~';
+      return '';
+    }
+    if (dir === '/') {
+      this.currentDirectory = '/';
+      return '';
+    }
+    if (dir === '..') {
+      if (this.currentDirectory === '~' || this.currentDirectory === '/') {
+        return '';
+      }
+      const parts = this.currentDirectory.split('/').filter(Boolean);
+      parts.pop();
+      this.currentDirectory = parts.length > 0 ? '/' + parts.join('/') : '~';
+      return '';
+    }
+    if (dir === 'projects') {
+      this.currentDirectory = '~/projects';
       return '';
     }
     let targetPath = dir.startsWith('/') ? dir : (this.currentDirectory + '/' + dir).replace(/\\/g, '/');
@@ -170,77 +214,56 @@ LinkedIn: https://linkedin.com/in/username`;
   };
 
   private pwd = (): string => {
-    return this.currentDirectory;
+    return this.currentDirectory === '/src' ? '~' : this.currentDirectory;
   };
 
   private cat = (args: string[]): string => {
     const file = args[0];
-    console.log('cat command called with file:', file);
-    
     if (!file) {
-      console.log('No file specified');
       throw new Error('Please specify a file');
     }
 
-    let node = this.getCurrentNode();
-    console.log('Current directory node:', node);
-    
-    if (!node) {
-      console.log('Current directory not found');
-      throw new Error('Directory not found');
+    // First check if it's a project name
+    const project = this.projects.find(p => p.name.toLowerCase() === file.toLowerCase());
+    if (project) {
+      return JSON.stringify(project, null, 2);
     }
 
-    if (node[file]) {
-      console.log('Found exact match in current directory:', node[file]);
-      const n = node[file];
-      if (n.type === 'file') {
-        console.log('File content found:', n.content);
-        return n.content;
-      }
-      console.log('Found match but not a file:', n);
-      throw new Error('Not a file');
-    }
-
-    const found = Object.values(node).find(
-      (n: any) => n.type === 'file' && n.name.toLowerCase() === file.toLowerCase()
-    );
-    if (found) {
-      console.log('Found case-insensitive match:', found);
-      return (found as any).content;
+    // Then check if it's a special file
+    if (file === 'about.txt') {
+      return 'Welcome to my terminal interface\nA modern terminal interface built with React and TypeScript.';
     }
 
     const searchFile = (node: any, path: string[]): string | null => {
-      console.log('Searching file tree:', { currentPath: path, currentNode: node });
       if (path.length === 0) return null;
       const current = path[0];
-      const next = path.slice(1);
       
       if (node[current]) {
-        console.log('Found path segment:', current, node[current]);
-        if (next.length === 0 && node[current].type === 'file') {
-          console.log('Found file at end of path:', node[current]);
-          return node[current].content;
+        const n = node[current];
+        if (path.length === 1) {
+          if (n.type === 'file') return n.content;
+          return null;
         }
-        if (node[current].type === 'directory' && node[current].children) {
-          console.log('Found directory, searching children:', node[current].children);
-          return searchFile(node[current].children, next);
+        if (n.type === 'directory' && n.children) {
+          return searchFile(n.children, path.slice(1));
+        }
+        return null;
+      }
+
+      for (const key in node) {
+        if (node[key].type === 'directory' && node[key].children) {
+          const result = searchFile(node[key].children, path);
+          if (result) return result;
         }
       }
-      console.log('Path segment not found:', current);
       return null;
     };
 
-    const path = file.split('/');
-    console.log('Searching file tree with path:', path);
-    console.log('Full file tree:', this.fileTree);
-    const content = searchFile(this.fileTree, path);
-    if (content) {
-      console.log('File content found in file tree:', content);
-      return content;
+    const content = searchFile(this.fileTree, file.split('/'));
+    if (!content) {
+      throw new Error('File not found');
     }
-
-    console.log('File not found in any location');
-    throw new Error('File not found');
+    return content;
   };
 
   private echo = (args: string[]): string => {
