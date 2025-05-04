@@ -1,10 +1,10 @@
 import { renderHook, act } from '@testing-library/react';
 import { useTerminal } from '../hooks/useTerminal';
-import { testProjects } from '../data/testProjects';
+import { projects } from '../data/projects';
 
 describe('useTerminal', () => {
   it('initializes with default state', () => {
-    const { result } = renderHook(() => useTerminal(testProjects));
+    const { result } = renderHook(() => useTerminal(projects));
     expect(result.current.state).toEqual({
       history: [],
       currentDirectory: '~',
@@ -14,7 +14,7 @@ describe('useTerminal', () => {
   });
 
   it('executes command and updates history', () => {
-    const { result } = renderHook(() => useTerminal(testProjects));
+    const { result } = renderHook(() => useTerminal(projects));
     act(() => {
       result.current.executeCommand('help');
     });
@@ -24,7 +24,7 @@ describe('useTerminal', () => {
   });
 
   it('navigates command history', () => {
-    const { result } = renderHook(() => useTerminal(testProjects));
+    const { result } = renderHook(() => useTerminal(projects));
     act(() => {
       result.current.executeCommand('help');
       result.current.executeCommand('about');
@@ -48,18 +48,18 @@ describe('useTerminal', () => {
   });
 
   it('gets command suggestions', () => {
-    const { result } = renderHook(() => useTerminal(testProjects));
+    const { result } = renderHook(() => useTerminal(projects));
     const suggestions = result.current.getCommandSuggestions('h');
     expect(suggestions).toContainEqual(expect.objectContaining({ command: 'help' }));
   });
 
   it('opens and closes details panel', () => {
-    const { result } = renderHook(() => useTerminal(testProjects));
+    const { result } = renderHook(() => useTerminal(projects));
     act(() => {
-      result.current.openDetailsPanel(testProjects[0]);
+      result.current.openDetailsPanel(projects[0]);
     });
     expect(result.current.state.isDetailsPanelOpen).toBe(true);
-    expect(result.current.state.selectedProject).toBe(testProjects[0]);
+    expect(result.current.state.selectedProject).toBe(projects[0]);
 
     act(() => {
       result.current.closeDetailsPanel();
@@ -69,7 +69,7 @@ describe('useTerminal', () => {
   });
 
   it('handles empty command history navigation', () => {
-    const { result } = renderHook(() => useTerminal(testProjects));
+    const { result } = renderHook(() => useTerminal(projects));
     let command;
     act(() => {
       command = result.current.navigateHistory('up');
@@ -83,13 +83,13 @@ describe('useTerminal', () => {
   });
 
   it('handles empty command suggestions', () => {
-    const { result } = renderHook(() => useTerminal(testProjects));
+    const { result } = renderHook(() => useTerminal(projects));
     const suggestions = result.current.getCommandSuggestions('');
     expect(suggestions).toHaveLength(0);
   });
 
   it('handles invalid command', () => {
-    const { result } = renderHook(() => useTerminal(testProjects));
+    const { result } = renderHook(() => useTerminal(projects));
     act(() => {
       result.current.executeCommand('invalid');
     });
@@ -98,7 +98,7 @@ describe('useTerminal', () => {
   });
 
   it('handles directory navigation', () => {
-    const { result } = renderHook(() => useTerminal(testProjects));
+    const { result } = renderHook(() => useTerminal(projects));
     act(() => {
       result.current.executeCommand('cd projects');
     });
@@ -111,7 +111,7 @@ describe('useTerminal', () => {
   });
 
   it('handles file reading', () => {
-    const { result } = renderHook(() => useTerminal(testProjects));
+    const { result } = renderHook(() => useTerminal(projects));
     act(() => {
       result.current.executeCommand('cat about.txt');
     });

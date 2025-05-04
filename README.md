@@ -1,13 +1,28 @@
-# Terminal Interface
+# AZNET Terminal Interface
 
-A modern terminal interface built with React and TypeScript that provides an interactive way to browse and explore projects.
+A modern, recruiter-friendly terminal interface in React/TypeScript that allows users to browse and view the actual project directory and files, similar to a real shell.
 
 ## Features
+- **Terminal UI**: Supports `ls`, `cd`, `cat`, `clear`, fuzzy command suggestions, and a persistent welcome message.
+- **Sidebar File Explorer**: Live, expandable file tree (from `fileTree.json`), supports folder expansion and file clicking.
+- **Project Metadata**: Uses a real `projects` array for project details.
+- **File System Integration**: Node.js script generates a filtered file tree at build time.
+- **File Viewing**: When running `cat <file>`, the file content is shown in the right details panel (with syntax highlighting), not in the terminal output/history. The terminal history only shows the command, not the file content.
+- **Project Details**: When running `cat <project>`, the right panel shows project details.
+- **Command History**: Improved separation of terminal history and details panel content. The new `addCommandOnly` helper allows adding a command to history without output.
+- **User Experience**: Clean, recruiter-friendly interface for browsing code and project info.
 
-- Three-panel layout with directory tree, terminal, and details panel
-- Command history and auto-completion
-- Project details with architecture diagrams
-- Responsive design with dark theme
+## Usage
+- Use the terminal to navigate directories and view files/projects.
+- Click files in the sidebar or type `cat <file>` to view file content in the right panel.
+- Type `cat <project>` to view project details in the right panel.
+
+## Development
+- See `src/hooks/useTerminal.ts` for the `addCommandOnly` helper and state management.
+- See `src/components/Terminal/Terminal.tsx` for the main UI logic and details panel handling.
+
+---
+For more, see PLANNING.md and TASK.md for architecture and task tracking.
 
 ## Available Commands
 

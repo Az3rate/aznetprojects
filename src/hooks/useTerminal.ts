@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { TerminalState, Project, CommandSuggestion } from '../types';
 import { TerminalCommands } from '../services/commands';
+import { projects } from '../data/projects';
 
 export const useTerminal = (projects: Project[]) => {
   const [state, setState] = useState<TerminalState>({
@@ -81,12 +82,23 @@ export const useTerminal = (projects: Project[]) => {
     }));
   }, []);
 
+  const addCommandOnly = useCallback((command: string) => {
+    setState(prev => ({
+      ...prev,
+      history: [
+        ...prev.history,
+        { command, output: '', type: 'success' }
+      ]
+    }));
+  }, []);
+
   return {
     state,
     executeCommand,
     navigateHistory,
     getCommandSuggestions,
     openDetailsPanel,
-    closeDetailsPanel
+    closeDetailsPanel,
+    addCommandOnly
   };
 }; 

@@ -54,11 +54,11 @@ export interface FileSystemNode {
   children?: { [key: string]: FileSystemNode };
 }
 
-export type TerminalCommandType = 'success' | 'error' | 'info' | 'project-list';
+export type TerminalCommandType = 'success' | 'error' | 'info' | 'project-list' | 'welcome' | 'clear';
 
 export interface TerminalCommand {
   command: string;
-  output: string | { type: 'project-list'; projects: Project[] };
+  output: string | { type: 'project-list'; projects: Project[] } | { type: 'welcome' } | { type: 'clear' };
   type: TerminalCommandType;
 }
 

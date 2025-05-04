@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { Terminal } from '../components/Terminal/Terminal';
-import { testProjects } from '../data/testProjects';
+import { projects } from '../data/projects';
 import { ThemeProvider } from '../styles/ThemeProvider';
 
 const renderWithTheme = (component: React.ReactElement) => {

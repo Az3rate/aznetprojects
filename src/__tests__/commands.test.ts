@@ -1,11 +1,11 @@
 import { TerminalCommands } from '../services/commands';
-import { testProjects } from '../data/testProjects';
+import { projects } from '../data/projects';
 
 describe('TerminalCommands', () => {
   let commands: TerminalCommands;
 
   beforeEach(() => {
-    commands = new TerminalCommands(testProjects);
+    commands = new TerminalCommands(projects);
   });
 
   it('executes help command', () => {

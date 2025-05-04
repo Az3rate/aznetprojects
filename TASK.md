@@ -36,4 +36,10 @@ Date: 2024-03-21
 - [ ] Add loading states
 
 ## Discovered During Work
-*No tasks discovered yet* 
+- Consider supporting more file types and syntax highlighting themes.
+- Consider advanced file search or fuzzy finder in the sidebar.
+- Consider keyboard shortcuts for panel navigation.
+
+- [x] File/project panel separation: When running 'cat <file>', file content is shown only in the right details panel, not in the terminal output/history.
+- [x] Implemented addCommandOnly helper in useTerminal to add a command to history without output.
+- [x] Improved UX for file/project browsing and terminal history separation. 

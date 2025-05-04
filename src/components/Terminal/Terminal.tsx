@@ -1,9 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useTerminal } from '../../hooks/useTerminal';
-import { testProjects } from '../../data/testProjects';
+import { projects } from '../../data/projects';
 import { WelcomeMessage } from './WelcomeMessage';
 import { ProjectDetails } from './ProjectDetails';
+import { FileExplorer } from './FileExplorer';
 import { Project } from '../../types';
+import { TerminalCommands } from '../../services/commands';
 import {
   TerminalWrapper,
   Sidebar,
@@ -15,18 +17,12 @@ import {
   CommandInput,
   CommandOutput,
   DetailsPanel,
-  DirectoryTree,
-  DirectoryItem,
-  DirectoryIcon,
-  DirectoryName,
   SuggestionBox,
   SuggestionItem,
   ClickableText
 } from './Terminal.styles';
-
-function isProjectListOutput(output: string | { type: 'project-list'; projects: Project[] }): output is { type: 'project-list'; projects: Project[] } {
-  return typeof output === 'object' && output !== null && (output as any).type === 'project-list';
-}
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 export const Terminal: React.FC = () => {
   const {
@@ -35,8 +31,9 @@ export const Terminal: React.FC = () => {
     navigateHistory,
     getCommandSuggestions,
     openDetailsPanel,
-    closeDetailsPanel
-  } = useTerminal(testProjects);
+    closeDetailsPanel,
+    addCommandOnly
+  } = useTerminal(projects);
 
   const [input, setInput] = useState('');
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -50,7 +47,11 @@ export const Terminal: React.FC = () => {
     return false;
   });
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [selectedFileContent, setSelectedFileContent] = useState<string | null>(null);
+  const [selectedFileName, setSelectedFileName] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  // Create a local instance of TerminalCommands
+  const terminalCommands = useRef(new TerminalCommands(projects));
 
   useEffect(() => {
     if (inputRef.current) {
@@ -71,18 +72,49 @@ export const Terminal: React.FC = () => {
   };
 
   const handleCommandClick = (command: string) => {
-    if (command.startsWith('cat ')) {
-      const projectName = command.split(' ')[1];
-      const project = testProjects.find(p => p.name.toLowerCase() === projectName);
+    const trimmedCommand = command.trim();
+    
+    if (trimmedCommand.startsWith('cat ')) {
+      const fileName = trimmedCommand.split(' ')[1];
+      // Check if it's a project name first
+      const project = projects.find(p => p.name.toLowerCase() === fileName.toLowerCase());
       if (project) {
         setSelectedProject(project);
+        setSelectedFileContent(null);
+        setSelectedFileName(null);
         openDetailsPanel(project);
+        // Add only the command to history
+        addCommandOnly(trimmedCommand);
+        setInput('');
+        setSuggestions([]);
+        return;
       }
-    } else {
-      executeCommand(command);
+      // Execute the cat command locally to get the file content
+      try {
+        const result = terminalCommands.current.execute('cat', [fileName]);
+        if (result.type === 'success' && typeof result.output === 'string') {
+          setSelectedFileContent(result.output);
+          setSelectedFileName(fileName);
+          setSelectedProject(null);
+          openDetailsPanel({ name: fileName } as any);
+          // Add only the command to history
+          addCommandOnly(trimmedCommand);
+        } else {
+          // If error, use the normal executeCommand to show the error
+          executeCommand(trimmedCommand);
+        }
+      } catch (error) {
+        // Handle any errors
+        executeCommand(trimmedCommand);
+      }
       setInput('');
       setSuggestions([]);
+      return;
     }
+    // Execute the command normally for all other cases
+    executeCommand(trimmedCommand);
+    setInput('');
+    setSuggestions([]);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -132,57 +164,55 @@ export const Terminal: React.FC = () => {
 
   const handleCloseProject = () => {
     setSelectedProject(null);
+    setSelectedFileContent(null);
+    setSelectedFileName(null);
     closeDetailsPanel();
+  };
+
+  // Only show history after the last clear marker
+  const getVisibleHistory = () => {
+    const lastClearIndex = state.history.map(h => h.type).lastIndexOf('clear');
+    return lastClearIndex >= 0 ? state.history.slice(lastClearIndex + 1) : state.history;
   };
 
   return (
     <TerminalWrapper>
       <Sidebar>
-        <DirectoryTree>
-          <DirectoryItem $isActive={state.currentDirectory === '~'}>
-            <DirectoryIcon>📁</DirectoryIcon>
-            <DirectoryName>projects</DirectoryName>
-          </DirectoryItem>
-          <DirectoryItem $isActive={false}>
-            <DirectoryIcon>📁</DirectoryIcon>
-            <DirectoryName>about.txt</DirectoryName>
-          </DirectoryItem>
-        </DirectoryTree>
+        <FileExplorer onFileClick={(filePath) => handleCommandClick(`cat ${filePath.replace(/^\//, '')}`)} />
       </Sidebar>
       <TerminalContent>
-        {state.history.length === 0 ? (
-          <WelcomeMessage
-            onCommandClick={handleCommandClick}
-            isFirstTime={isFirstTime}
-            projects={testProjects}
-          />
-        ) : (
-          state.history.map((item, index) => (
-            <React.Fragment key={index}>
-              <CommandLine>
-                <Prompt>user@aznet:~$</Prompt>
-                {item.command}
-              </CommandLine>
-              {isProjectListOutput(item.output) ? (
-                <Output type="info">
-                  {item.output.projects.map((project: Project) => (
-                    <div key={project.name}>
-                      <ClickableText
-                        onClick={() => handleCommandClick(`cat ${project.name.toLowerCase()}`)}
-                        style={{ cursor: 'pointer', color: '#a78bfa', fontWeight: 600 }}
-                      >
-                        {project.name}
-                      </ClickableText>
-                      {': '}{project.description}
-                    </div>
-                  ))}
-                </Output>
-              ) : (
-                <Output type={item.type === 'project-list' ? 'info' : item.type}>{item.output}</Output>
-              )}
-            </React.Fragment>
-          ))
-        )}
+        <WelcomeMessage
+          onCommandClick={handleCommandClick}
+          isFirstTime={isFirstTime}
+          projects={projects}
+        />
+        {getVisibleHistory().map((item, index) => (
+          <React.Fragment key={index}>
+            <CommandLine>
+              <Prompt>user@aznet:~$</Prompt>
+              {item.command}
+            </CommandLine>
+            {typeof item.output === 'object' && item.output !== null && 'projects' in item.output ? (
+              <Output type="info">
+                {(item.output as { projects: Project[] }).projects.map((project: Project) => (
+                  <div key={project.name}>
+                    <ClickableText
+                      onClick={() => handleCommandClick(`cat ${project.name.toLowerCase()}`)}
+                      style={{ cursor: 'pointer', color: '#a78bfa', fontWeight: 600 }}
+                    >
+                      {project.name}
+                    </ClickableText>
+                    {': '}{project.description}
+                  </div>
+                ))}
+              </Output>
+            ) : typeof item.output === 'string' ? (
+              <Output type={item.type === 'project-list' || item.type === 'welcome' || item.type === 'clear' ? 'info' : item.type as 'success' | 'error' | 'info'}>
+                {item.output}
+              </Output>
+            ) : null}
+          </React.Fragment>
+        ))}
         <CommandInput>
           <Prompt>user@aznet:~$</Prompt>
           <Input
@@ -219,7 +249,41 @@ export const Terminal: React.FC = () => {
             onClose={handleCloseProject}
           />
         )}
+        {selectedFileContent && selectedFileName && !selectedProject && (
+          <FileDetails
+            fileName={selectedFileName}
+            content={selectedFileContent}
+            onClose={handleCloseProject}
+          />
+        )}
       </DetailsPanel>
     </TerminalWrapper>
+  );
+};
+
+// FileDetails component for file content display
+const FileDetails: React.FC<{ fileName: string; content: string; onClose: () => void }> = ({ fileName, content, onClose }) => {
+  // Simple extension check for syntax highlighting
+  const ext = fileName.split('.').pop()?.toLowerCase();
+  const language =
+    ext === 'js' ? 'javascript' :
+    ext === 'ts' ? 'typescript' :
+    ext === 'tsx' ? 'tsx' :
+    ext === 'json' ? 'json' :
+    ext === 'css' ? 'css' :
+    ext === 'md' ? 'markdown' :
+    'text';
+  return (
+    <div style={{ padding: '1rem', color: '#fff', fontFamily: 'Fira Mono, monospace' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+        <span style={{ fontWeight: 600 }}>{fileName}</span>
+        <button onClick={onClose} style={{ background: 'none', color: '#fff', border: '1px solid #444', borderRadius: 4, padding: '2px 8px', cursor: 'pointer' }}>Close</button>
+      </div>
+      <div style={{ maxHeight: 500, overflowY: 'auto', background: '#1e1e1e', borderRadius: 4, padding: 8 }}>
+        <SyntaxHighlighter language={language} style={vscDarkPlus} showLineNumbers wrapLongLines>
+          {content}
+        </SyntaxHighlighter>
+      </div>
+    </div>
   );
 }; 
