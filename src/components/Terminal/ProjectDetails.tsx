@@ -80,12 +80,17 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({ project, onClose
   return (
     <DetailsContainer>
       <Title>{project.name}</Title>
-      
+      {project.image && (
+        <img
+          src={project.image.startsWith('http') ? project.image : `/images/${project.image}`}
+          alt={`${project.name} screenshot`}
+          style={{ width: '100%', maxWidth: 600, margin: '2rem auto', display: 'block', border: '1px solid #4CAF50', boxShadow: '0 0 10px #4CAF50', background: 'rgba(0,0,0,0.8)' }}
+        />
+      )}
       <Section>
-        <SectionTitle>Overview</SectionTitle>
+        <SectionTitle>Project Overview</SectionTitle>
         <Description>{project.overview}</Description>
       </Section>
-
       <Section>
         <SectionTitle>Key Features</SectionTitle>
         <List>
@@ -94,31 +99,29 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({ project, onClose
           ))}
         </List>
       </Section>
-
+      {project.architectureImage && (
+        <Section>
+          <SectionTitle>Architecture Flowchart</SectionTitle>
+          <img
+            src={project.architectureImage.startsWith('http') ? project.architectureImage : `/images/${project.architectureImage}`}
+            alt={`${project.name} architecture diagram`}
+            style={{ width: '100%', maxWidth: 600, margin: '2rem auto', display: 'block', border: '1px solid #4CAF50', boxShadow: '0 0 10px #4CAF50', background: 'rgba(0,0,0,0.8)' }}
+          />
+        </Section>
+      )}
       <Section>
-        <SectionTitle>Architecture</SectionTitle>
-        <Description>
-          <strong>Frontend:</strong> {project.architecture.frontend.framework} ({project.architecture.frontend.language})
-          <br />
-          <strong>Backend:</strong> {project.architecture.backend.framework} ({project.architecture.backend.language})
-        </Description>
-      </Section>
-
-      <Section>
-        <SectionTitle>Tech Stack</SectionTitle>
+        <SectionTitle>Technical Stack</SectionTitle>
         <TechStack>
           {project.techStack.map((tech, index) => (
             <TechItem key={index}>
-              <strong>{tech.name}</strong> ({tech.version})
-              <br />
+              <strong>{tech.name}</strong> ({tech.version})<br />
               {tech.description}
             </TechItem>
           ))}
         </TechStack>
       </Section>
-
       <Section>
-        <SectionTitle>Directory Structure</SectionTitle>
+        <SectionTitle>Directory Structure (Key Parts)</SectionTitle>
         <List>
           {Object.entries(project.directoryStructure).map(([dir, contents]) => (
             <ListItem key={dir}>
@@ -133,20 +136,47 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({ project, onClose
           ))}
         </List>
       </Section>
-
-      <Section>
-        <SectionTitle>API Endpoints</SectionTitle>
-        <List>
-          {project.apiEndpoints.map((endpoint, index) => (
-            <ListItem key={index}>
-              <strong>{endpoint.method} {endpoint.path}</strong>
-              <br />
-              {endpoint.description}
-            </ListItem>
-          ))}
-        </List>
-      </Section>
-
+      {project.apiEndpoints && project.apiEndpoints.length > 0 && (
+        <Section>
+          <SectionTitle>API Endpoints</SectionTitle>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', background: 'rgba(0,0,0,0.8)', border: '1px solid #4CAF50', boxShadow: '0 0 10px #4CAF50', margin: '1.5rem 0' }}>
+              <thead>
+                <tr>
+                  <th style={{ padding: '0.7rem 1rem', borderBottom: '1px solid #4CAF50', color: '#4CAF50', textAlign: 'left' }}>Method</th>
+                  <th style={{ padding: '0.7rem 1rem', borderBottom: '1px solid #4CAF50', color: '#4CAF50', textAlign: 'left' }}>Endpoint</th>
+                  <th style={{ padding: '0.7rem 1rem', borderBottom: '1px solid #4CAF50', color: '#4CAF50', textAlign: 'left' }}>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                {project.apiEndpoints.map((endpoint, idx) => (
+                  <tr key={idx}>
+                    <td style={{ padding: '0.7rem 1rem', borderBottom: '1px solid #4CAF50', color: '#4CAF50' }}>{endpoint.method}</td>
+                    <td style={{ padding: '0.7rem 1rem', borderBottom: '1px solid #4CAF50', color: '#4CAF50' }}>{endpoint.path}</td>
+                    <td style={{ padding: '0.7rem 1rem', borderBottom: '1px solid #4CAF50', color: '#4CAF50' }}>{endpoint.description}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Section>
+      )}
+      {project.workflow && project.workflow.length > 0 && (
+        <Section>
+          <SectionTitle>Development Workflow</SectionTitle>
+          <List>
+            {project.workflow.map((step, idx) => (
+              <ListItem key={idx}>{step}</ListItem>
+            ))}
+          </List>
+        </Section>
+      )}
+      {project.summary && (
+        <Section>
+          <SectionTitle>Summary</SectionTitle>
+          <Description>{project.summary}</Description>
+        </Section>
+      )}
       <CloseButton onClick={onClose}>Close</CloseButton>
     </DetailsContainer>
   );

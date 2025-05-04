@@ -19,7 +19,8 @@ import {
   DetailsPanel,
   SuggestionBox,
   SuggestionItem,
-  ClickableText
+  ClickableText,
+  FileCodeBlock
 } from './Terminal.styles';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
@@ -279,11 +280,11 @@ const FileDetails: React.FC<{ fileName: string; content: string; onClose: () => 
         <span style={{ fontWeight: 600 }}>{fileName}</span>
         <button onClick={onClose} style={{ background: 'none', color: '#fff', border: '1px solid #444', borderRadius: 4, padding: '2px 8px', cursor: 'pointer' }}>Close</button>
       </div>
-      <div style={{ maxHeight: 500, overflowY: 'auto', background: '#1e1e1e', borderRadius: 4, padding: 8 }}>
+      <FileCodeBlock>
         <SyntaxHighlighter language={language} style={vscDarkPlus} showLineNumbers wrapLongLines>
           {content}
         </SyntaxHighlighter>
-      </div>
+      </FileCodeBlock>
     </div>
   );
 }; 
