@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import fileTree from '../../data/fileTree.json';
 import styled from 'styled-components';
 import {
@@ -12,24 +12,6 @@ const ExplorerContainer = styled.div`
   font-size: 0.95rem;
 `;
 
-const Folder = styled.div<{ $expanded: boolean }>`
-  cursor: pointer;
-  font-weight: 600;
-  color: ${({ theme }) => theme.colors.text.primary};
-  margin-left: 0.5rem;
-  user-select: none;
-`;
-
-const File = styled.div`
-  cursor: pointer;
-  color: ${({ theme }) => theme.colors.link};
-  margin-left: 1.5rem;
-  &:hover {
-    color: ${({ theme }) => theme.colors.linkHover};
-    text-decoration: underline;
-  }
-`;
-
 interface FileNode {
   name: string;
   type: string;
@@ -39,50 +21,99 @@ interface FileNode {
 
 interface FileExplorerProps {
   onFileClick: (filePath: string) => void;
-  rootPath?: string;
+  onDirectoryClick: (dirPath: string) => void;
+  currentDirectory: string;
 }
 
-const renderTree = (
-  node: FileNode,
-  onFileClick: (filePath: string) => void,
-  path: string,
-  expanded: { [key: string]: boolean },
-  setExpanded: React.Dispatch<React.SetStateAction<{ [key: string]: boolean }>>
-) => {
-  if (node.type === 'directory') {
+export const FileExplorer: React.FC<FileExplorerProps> = ({ 
+  onFileClick, 
+  onDirectoryClick,
+  currentDirectory 
+}) => {
+  const [expanded, setExpanded] = useState<{ [key: string]: boolean }>({});
+  
+  // Update expanded state based on current directory
+  useEffect(() => {
+    // Parse the current directory path to determine which folders should be expanded
+    if (currentDirectory) {
+      const pathParts = currentDirectory.replace(/^~\//, '').split('/').filter(Boolean);
+      
+      // Create a new expanded state by setting each path segment to true
+      const newExpanded = { ...expanded };
+      let currentPath = '';
+      
+      pathParts.forEach(part => {
+        currentPath = currentPath ? `${currentPath}/${part}` : `/${part}`;
+        newExpanded[currentPath] = true;
+      });
+      
+      setExpanded(newExpanded);
+    }
+  }, [currentDirectory]);
+
+  const renderTree = (
+    node: FileNode,
+    path: string,
+  ) => {
+    if (!node) return null;
+    
+    const isCurrentDirectory = currentDirectory.replace(/^~/, '') === path;
     const isExpanded = expanded[path] || false;
-    return (
-      <div key={path}>
-        <DirectoryItem $isActive={isExpanded} onClick={() => setExpanded(e => ({ ...e, [path]: !isExpanded }))}>
-          <DirectoryIcon>{isExpanded ? '📂' : '📁'}</DirectoryIcon>
+    
+    if (node.type === 'directory') {
+      // Check if the current directory matches this path
+      return (
+        <div key={path}>
+          <DirectoryItem 
+            $isActive={isCurrentDirectory} 
+            onClick={() => {
+              // When directory is clicked, perform cd operation
+              onDirectoryClick(path);
+              // Toggle expanded state
+              setExpanded(prev => ({ ...prev, [path]: !prev[path] }));
+            }}
+          >
+            <DirectoryIcon>{isExpanded ? '📂' : '📁'}</DirectoryIcon>
+            <DirectoryName>{node.name}</DirectoryName>
+          </DirectoryItem>
+          
+          {/* Show children if expanded */}
+          {(isExpanded || isCurrentDirectory) && node.children && (
+            <div style={{ marginLeft: '1rem' }}>
+              {Object.values(node.children).map(child => 
+                renderTree(
+                  child,
+                  `${path}/${child.name}`
+                )
+              )}
+            </div>
+          )}
+        </div>
+      );
+    } else {
+      // File node
+      return (
+        <DirectoryItem $isActive={false} key={path} onClick={() => onFileClick(path)}>
+          <DirectoryIcon>📄</DirectoryIcon>
           <DirectoryName>{node.name}</DirectoryName>
         </DirectoryItem>
-        {isExpanded && node.children && (
-          <div style={{ marginLeft: '1rem' }}>
-            {Object.values(node.children).map(child =>
-              renderTree(child, onFileClick, path + '/' + child.name, expanded, setExpanded)
-            )}
-          </div>
-        )}
-      </div>
-    );
-  } else {
-    return (
-      <DirectoryItem $isActive={false} key={path} onClick={() => onFileClick(path)}>
-        <DirectoryIcon>📄</DirectoryIcon>
-        <DirectoryName>{node.name}</DirectoryName>
-      </DirectoryItem>
-    );
-  }
-};
+      );
+    }
+  };
 
-export const FileExplorer: React.FC<FileExplorerProps> = ({ onFileClick, rootPath = '' }) => {
-  const [expanded, setExpanded] = useState<{ [key: string]: boolean }>({ '/src': true, '/public': false });
+  const normalizePath = (path: string) => {
+    return path.replace(/^\//, '');
+  };
+
+  const renderRootLevelItems = () => {
+    return Object.values(fileTree).map((node: FileNode) => 
+      renderTree(node, `/${node.name}`)
+    );
+  };
+
   return (
     <ExplorerContainer>
-      {Object.values(fileTree).map((node: FileNode) =>
-        renderTree(node, onFileClick, '/' + node.name, expanded, setExpanded)
-      )}
+      {renderRootLevelItems()}
     </ExplorerContainer>
   );
-}; 
+};

@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { TerminalState, Project, CommandSuggestion } from '../types';
+import { TerminalState, Project, CommandSuggestion, FileDetails } from '../types';
 import { TerminalCommands } from '../services/commands';
 import { projects } from '../data/projects';
 
@@ -8,7 +8,8 @@ export const useTerminal = (projects: Project[]) => {
     history: [],
     currentDirectory: '~',
     isDetailsPanelOpen: false,
-    selectedProject: null
+    selectedProject: null,
+    selectedFile: null
   });
 
   const [historyIndex, setHistoryIndex] = useState(-1);
@@ -17,6 +18,8 @@ export const useTerminal = (projects: Project[]) => {
   const executeCommand = useCallback((input: string) => {
     const [command, ...args] = input.trim().split(' ');
     const result = commands.execute(command, args);
+
+    // Get the new directory path after command execution
     const newDirectory = commands.getCurrentDirectory();
 
     setState(prev => ({
@@ -27,11 +30,27 @@ export const useTerminal = (projects: Project[]) => {
           command: input, 
           output: result.output, 
           type: result.type,
-          currentDirectory: prev.currentDirectory  // Store the directory at the time of command
+          currentDirectory: prev.currentDirectory
         }
       ],
-      currentDirectory: newDirectory  // Update the current directory
+      currentDirectory: newDirectory  // Update current directory
     }));
+
+    // Handle cat command for file viewing
+    if (command === 'cat' && args.length > 0 && result.type === 'success') {
+      // Find if we're trying to open a project
+      const project = projects.find(p => p.name.toLowerCase() === args[0].toLowerCase());
+      
+      if (project) {
+        openDetailsPanel(project);
+      } else {
+        // We're viewing a file
+        openFileDetails({
+          fileName: args[0],
+          content: result.output as string
+        });
+      }
+    }
 
     setHistoryIndex(-1);
   }, [commands]);
@@ -72,22 +91,6 @@ export const useTerminal = (projects: Project[]) => {
       .map(command => ({ command, score: 1 }));
   }, []);
 
-  const openDetailsPanel = useCallback((project: Project) => {
-    setState(prev => ({
-      ...prev,
-      isDetailsPanelOpen: true,
-      selectedProject: project
-    }));
-  }, []);
-
-  const closeDetailsPanel = useCallback(() => {
-    setState(prev => ({
-      ...prev,
-      isDetailsPanelOpen: false,
-      selectedProject: null
-    }));
-  }, []);
-
   const addCommandOnly = useCallback((command: string) => {
     setState(prev => ({
       ...prev,
@@ -97,9 +100,61 @@ export const useTerminal = (projects: Project[]) => {
           command, 
           output: '', 
           type: 'success',
-          currentDirectory: prev.currentDirectory  // Store current directory
+          currentDirectory: prev.currentDirectory
         }
       ]
+    }));
+  }, []);
+
+  const changeDirectory = useCallback((path: string) => {
+    // Convert path to a format the commands service can understand
+    let formattedPath = path;
+    
+    // If path is absolute (starts with /), convert it for the commands
+    if (path.startsWith('/')) {
+      formattedPath = path.substring(1); // Remove leading slash
+    }
+    
+    // Execute the cd command to change directory
+    commands.execute('cd', [formattedPath]);
+    
+    // Get the updated directory
+    const newDirectory = commands.getCurrentDirectory();
+    
+    // Update state with the new directory
+    setState(prev => ({
+      ...prev,
+      currentDirectory: newDirectory
+    }));
+    
+    // Add the command to history
+    addCommandOnly(`cd ${formattedPath}`);
+  }, [commands, addCommandOnly]);
+  
+  const openDetailsPanel = useCallback((project: Project) => {
+    setState(prev => ({
+      ...prev,
+      isDetailsPanelOpen: true,
+      selectedProject: project,
+      selectedFile: null // Clear any selected file
+    }));
+  }, []);
+  
+  const openFileDetails = useCallback((file: FileDetails) => {
+    setState(prev => ({
+      ...prev,
+      isDetailsPanelOpen: true,
+      selectedFile: file,
+      selectedProject: null // Clear any selected project
+    }));
+  }, []);
+
+  const closeDetailsPanel = useCallback(() => {
+    setState(prev => ({
+      ...prev,
+      isDetailsPanelOpen: false,
+      selectedProject: null,
+      selectedFile: null
     }));
   }, []);
 
@@ -109,7 +164,9 @@ export const useTerminal = (projects: Project[]) => {
     navigateHistory,
     getCommandSuggestions,
     openDetailsPanel,
+    openFileDetails,
     closeDetailsPanel,
-    addCommandOnly
+    addCommandOnly,
+    changeDirectory
   };
 };

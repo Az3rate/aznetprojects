@@ -14,6 +14,11 @@ export interface Project {
   summary: string;
 }
 
+export interface FileDetails {
+  fileName: string;
+  content: string;
+}
+
 export interface TechStackItem {
   name: string;
   version: string;
@@ -68,6 +73,7 @@ export interface TerminalState {
   currentDirectory: string;
   isDetailsPanelOpen: boolean;
   selectedProject: Project | null;
+  selectedFile: FileDetails | null;
 }
 
 export interface CommandSuggestion {
