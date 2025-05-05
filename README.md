@@ -4,6 +4,11 @@ A modern, recruiter-friendly terminal interface in React/TypeScript that allows 
 
 ## Features
 - **Terminal UI**: Supports `ls`, `cd`, `cat`, `clear`, fuzzy command suggestions, and a persistent welcome message.
+- **Dynamic Prompt**: The terminal prompt color changes based on the last command's result (success, error, or default), and always resets to default for new input.
+- **Live Syntax Highlighting**: As you type, commands, paths, and arguments are colorized in real time. Unknown commands are highlighted in red.
+- **Blinking Block Cursor**: A filled, blinking block cursor (█) always appears at the end of your input, just like a real terminal.
+- **Colored Directory Listing**: `ls` output shows directories in blue and files in the default color, mimicking real shell behavior.
+- **Click-to-Focus Input**: Clicking anywhere in the terminal area (except on links or interactive elements) will focus the input field, making it easy to start typing.
 - **Sidebar File Explorer**: Live, expandable file tree (from `fileTree.json`), supports folder expansion and file clicking.
 - **Project Metadata**: Uses a real `projects` array for project details.
 - **File System Integration**: Node.js script generates a filtered file tree at build time.
@@ -22,6 +27,7 @@ A modern, recruiter-friendly terminal interface in React/TypeScript that allows 
 - Type `cat <project>` to view project details in the right panel.
 - Use Tab for command completion and arrow keys for command history.
 - Press Escape to clear command suggestions.
+- Click anywhere in the terminal to focus the input and start typing.
 
 ## Development
 - See `src/hooks/useTerminal.ts` for the `addCommandOnly` helper and state management.
@@ -31,7 +37,7 @@ A modern, recruiter-friendly terminal interface in React/TypeScript that allows 
 ## Available Commands
 
 ### Navigation Commands
-- `ls` - List directory contents
+- `ls` - List directory contents (directories in blue, files in default color)
 - `cd` - Change directory (supports `..`, `~`, `/`, and project names)
 - `pwd` - Print working directory
 

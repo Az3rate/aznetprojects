@@ -21,7 +21,14 @@ import {
   DetailsPanel,
   SuggestionBox,
   SuggestionItem,
-  ClickableText
+  ClickableText,
+  CommandSpan,
+  PathSpan,
+  ArgSpan,
+  ErrorSpan,
+  DirSpan,
+  FileSpan,
+  BlinkingCursor
 } from './Terminal.styles';
 import Joyride, { Step } from 'react-joyride';
 
@@ -29,6 +36,26 @@ function formatPromptPath(path: string) {
   if (!path || path === '~' || path === '/' || path === '') return '/';
   if (path.startsWith('/')) return path;
   return '/' + path;
+}
+
+function highlightInput(input: string, knownCommands: string[], lastError: boolean) {
+  if (!input) return <><BlinkingCursor>&#9608;</BlinkingCursor></>;
+  const [cmd, ...args] = input.split(' ');
+  const isKnown = knownCommands.includes(cmd);
+  return (
+    <>
+      <CommandSpan>{cmd}</CommandSpan>
+      {args.map((arg, i) => {
+        if (arg.startsWith('/')) {
+          return <PathSpan key={i}> {arg}</PathSpan>;
+        }
+        return <ArgSpan key={i}> {arg}</ArgSpan>;
+      })}
+      <BlinkingCursor>&#9608;</BlinkingCursor>
+      {!isKnown && cmd && <ErrorSpan> ← unknown command</ErrorSpan>}
+      {lastError && <ErrorSpan> ← error</ErrorSpan>}
+    </>
+  );
 }
 
 export const Terminal: React.FC = () => {
@@ -160,6 +187,12 @@ export const Terminal: React.FC = () => {
       placement: 'bottom',
     },
   ];
+
+  const knownCommands = [
+    'help', 'clear', 'about', 'projects', 'contact', 'ls', 'cd', 'pwd', 'cat', 'echo', 'neofetch', 'exit'
+  ];
+  // Track last command status for prompt color
+  const lastStatus = state.history.length > 0 ? state.history[state.history.length - 1].type : 'default';
 
   useEffect(() => {
     if (inputRef.current) {
@@ -305,6 +338,15 @@ export const Terminal: React.FC = () => {
     return lastClearIndex >= 0 ? state.history.slice(lastClearIndex + 1) : state.history;
   };
 
+  const handleTerminalClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const tag = (e.target as HTMLElement).tagName.toLowerCase();
+    if ([
+      'a', 'button', 'input', 'textarea', 'select', 'svg', 'path', 'pre', 'code'
+    ].includes(tag)) return;
+    if ((e.target as HTMLElement).getAttribute('tabindex')) return;
+    inputRef.current?.focus();
+  };
+
   return (
     <TerminalWrapper>
       <Sidebar data-tour="sidebar">
@@ -314,7 +356,7 @@ export const Terminal: React.FC = () => {
           currentDirectory={state.currentDirectory}
         />
       </Sidebar>
-      <TerminalContent>
+      <TerminalContent onClick={handleTerminalClick}>
         <Joyride
           steps={tourSteps}
           run={tourOpen}
@@ -383,7 +425,9 @@ export const Terminal: React.FC = () => {
         {getVisibleHistory().map((item, index) => (
           <React.Fragment key={index}>
             <CommandLine>
-              <Prompt>user@aznet:{formatPromptPath(String(item.currentDirectory))}$</Prompt>
+              <Prompt $status={item.type === 'success' ? 'success' : item.type === 'error' ? 'error' : 'default'}>
+                user@aznet:{formatPromptPath(String(item.currentDirectory))}$
+              </Prompt>
               {item.command}
             </CommandLine>
             {typeof item.output === 'object' && item.output !== null && 'projects' in item.output ? (
@@ -402,20 +446,58 @@ export const Terminal: React.FC = () => {
               </Output>
             ) : typeof item.output === 'string' ? (
               <Output type={item.type === 'project-list' || item.type === 'welcome' || item.type === 'clear' ? 'info' : item.type as 'success' | 'error' | 'info'}>
-                <pre style={{ margin: 0, fontFamily: 'inherit', background: 'none', color: 'inherit', whiteSpace: 'pre-wrap' }}>{item.output}</pre>
+                {item.command === 'ls' ? (
+                  <pre style={{ margin: 0, fontFamily: 'inherit', background: 'none', color: 'inherit', whiteSpace: 'pre-wrap' }}>
+                    {item.output.split('\n').map((line, i) => {
+                      // d or - at start, then size, then name
+                      const match = line.match(/^([d-])\s+\d+\s+(.+)$/);
+                      if (match) {
+                        const [, type, name] = match;
+                        return (
+                          <div key={i} style={{ display: 'flex', alignItems: 'center' }}>
+                            <span style={{ minWidth: 20 }}>{type}</span>
+                            <span style={{ minWidth: 40, textAlign: 'right', marginRight: 8 }}>{line.split(/\s+/)[1]}</span>
+                            {type === 'd' ? <DirSpan>{name}</DirSpan> : <FileSpan>{name}</FileSpan>}
+                          </div>
+                        );
+                      }
+                      return <div key={i}>{line}</div>;
+                    })}
+                  </pre>
+                ) : (
+                  <pre style={{ margin: 0, fontFamily: 'inherit', background: 'none', color: 'inherit', whiteSpace: 'pre-wrap' }}>{item.output}</pre>
+                )}
               </Output>
             ) : null}
           </React.Fragment>
         ))}
         <CommandInput data-tour="terminal-input">
-          <Prompt>user@aznet:{formatPromptPath(state.currentDirectory)}$</Prompt>
-          <Input
-            ref={inputRef}
-            value={input}
-            onChange={handleInputChange}
-            onKeyDown={handleKeyDown}
-            placeholder="Type a command..."
-          />
+          <Prompt $status="default">
+            user@aznet:{formatPromptPath(state.currentDirectory)}$
+          </Prompt>
+          <div style={{ position: 'relative', flex: 1, minWidth: 0 }}>
+            <span style={{ pointerEvents: 'none', minWidth: '2px', minHeight: '1em', display: 'inline-block' }}>
+              {highlightInput(input, knownCommands, lastStatus === 'error')}
+            </span>
+            <Input
+              ref={inputRef}
+              value={input}
+              onChange={handleInputChange}
+              onKeyDown={handleKeyDown}
+              placeholder="Type a command..."
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                opacity: 0,
+                cursor: 'text'
+              }}
+              tabIndex={0}
+              autoFocus
+            />
+          </div>
           {suggestions.length > 0 && (
             <SuggestionBox role="list" aria-label="command suggestions">
               {suggestions.map((suggestion, index) => (

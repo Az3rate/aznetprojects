@@ -1,21 +1,27 @@
 export const theme = {
   colors: {
     background: {
-      primary: '#1e1e1e',
-      secondary: '#2d2d2d',
-      hover: '#3d3d3d'
+      primary: '#181825',
+      secondary: '#232634',
+      hover: '#313244'
     },
     text: {
-      primary: '#ffffff',
-      secondary: '#cccccc'
+      primary: '#cdd6f4',
+      secondary: '#a6adc8'
     },
-    prompt: '#4CAF50',
-    success: '#4CAF50',
-    error: '#f44336',
-    info: '#2196F3',
-    link: '#64B5F6',
-    linkHover: '#90CAF9',
-    border: '#3d3d3d'
+    prompt: '#a78bfa',
+    success: '#50fa7b',
+    error: '#ff5555',
+    info: '#8be9fd',
+    link: '#8be9fd',
+    linkHover: '#b4befe',
+    border: '#45475a',
+    command: '#00ff99',
+    path: '#a78bfa',
+    argument: '#ffb86c',
+    promptDefault: '#8be9fd',
+    dir: '#00bfff',
+    file: '#cdd6f4',
   },
   spacing: {
     xs: '0.25rem',

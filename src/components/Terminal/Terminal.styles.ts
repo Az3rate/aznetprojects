@@ -27,9 +27,15 @@ export const CommandLine = styled.div`
   margin-bottom: 0.5rem;
 `;
 
-export const Prompt = styled.span`
-  color: ${({ theme }) => theme.colors.prompt};
+export const Prompt = styled.span<{ $status?: 'success' | 'error' | 'default' }>`
+  color: ${({ theme, $status }) =>
+    $status === 'success'
+      ? theme.colors.success || '#50fa7b'
+      : $status === 'error'
+      ? theme.colors.error || '#ff5555'
+      : theme.colors.promptDefault || theme.colors.prompt || '#8be9fd'};
   margin-right: 0.5rem;
+  font-weight: bold;
 `;
 
 export const Input = styled.input`
@@ -234,5 +240,48 @@ export const CloseButton = styled.button`
   font-family: 'Fira Code', monospace;
   &:hover {
     background-color: ${({ theme }) => theme.colors.background.hover};
+  }
+`;
+
+export const CommandSpan = styled.span`
+  color: ${({ theme }) => theme.colors.command || '#00ff99'};
+  font-weight: bold;
+`;
+
+export const PathSpan = styled.span`
+  color: ${({ theme }) => theme.colors.path || '#a78bfa'};
+`;
+
+export const ArgSpan = styled.span`
+  color: ${({ theme }) => theme.colors.argument || '#ffb86c'};
+`;
+
+export const ErrorSpan = styled.span`
+  color: ${({ theme }) => theme.colors.error || '#ff5555'};
+  font-weight: bold;
+`;
+
+export const DirSpan = styled.span`
+  color: ${({ theme }) => theme.colors.dir || '#00bfff'};
+  font-weight: bold;
+`;
+
+export const FileSpan = styled.span`
+  color: ${({ theme }) => theme.colors.file || '#cdd6f4'};
+`;
+
+export const BlinkingCursor = styled.span`
+  display: inline-block;
+  width: 1ch;
+  color: ${({ theme }) => theme.colors.text.primary};
+  background: none;
+  margin-left: 0;
+  animation: blink 1s steps(1) infinite;
+  font-weight: bold;
+  font-size: 1em;
+  vertical-align: middle;
+  @keyframes blink {
+    0%, 50% { opacity: 1; }
+    50.01%, 100% { opacity: 0; }
   }
 `; 
