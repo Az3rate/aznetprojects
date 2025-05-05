@@ -14,490 +14,203 @@ function getCommandSuggestions(input: string, commands: string[]): string[] {
 
 export class TerminalCommands {
   private currentDirectory: string = '~';
-  private fileTree: any;
+  private static fileTree: any = null;
   private projects: Project[];
 
   constructor(projects: Project[]) {
     this.projects = projects;
-    this.initializeFileTree();
+    if (!TerminalCommands.fileTree) {
+      TerminalCommands.initializeFileTree();
+    }
   }
 
-  private initializeFileTree() {
+  private static initializeFileTree(): void {
     debug.log('Initializing file tree');
-    this.fileTree = {
+    TerminalCommands.fileTree = {
       'package.json': {
         type: 'file',
         content: `{
-  "name": "terminal-interface",
-  "version": "1.0.0",
-  "private": true,
-  "dependencies": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "react-joyride": "^2.6.1",
-    "styled-components": "^6.1.1",
-    "typescript": "^5.0.0"
-  },
-  "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
-  }
-}`
+          "name": "terminal-interface",
+          "version": "1.0.0",
+          "private": true,
+          "dependencies": {
+            "react": "^18.2.0",
+            "react-dom": "^18.2.0",
+            "react-joyride": "^2.6.1",
+            "styled-components": "^6.1.1",
+            "typescript": "^5.0.0"
+          },
+          "scripts": {
+            "start": "react-scripts start",
+            "build": "react-scripts build",
+            "test": "react-scripts test",
+            "eject": "react-scripts eject"
+          }
+        }`
       },
       'tsconfig.json': {
         type: 'file',
         content: `{
-  "compilerOptions": {
-    "target": "es5",
-    "lib": ["dom", "dom.iterable", "esnext"],
-    "allowJs": true,
-    "skipLibCheck": true,
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-    "strict": true,
-    "forceConsistentCasingInFileNames": true,
-    "noFallthroughCasesInSwitch": true,
-    "module": "esnext",
-    "moduleResolution": "node",
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "noEmit": true,
-    "jsx": "react-jsx"
-  },
-  "include": ["src"]
-}`
+          "compilerOptions": {
+            "target": "es5",
+            "lib": ["dom", "dom.iterable", "esnext"],
+            "allowJs": true,
+            "skipLibCheck": true,
+            "esModuleInterop": true,
+            "allowSyntheticDefaultImports": true,
+            "strict": true,
+            "forceConsistentCasingInFileNames": true,
+            "noFallthroughCasesInSwitch": true,
+            "module": "esnext",
+            "moduleResolution": "node",
+            "resolveJsonModule": true,
+            "isolatedModules": true,
+            "noEmit": true,
+            "jsx": "react-jsx"
+          },
+          "include": ["src"]
+        }`
       },
       'README.md': {
         type: 'file',
         content: `# Terminal Interface
-
-A modern terminal interface built with React and TypeScript.
-
-## Features
-
-- Interactive terminal commands
-- File system navigation
-- Project exploration
-- Syntax highlighting
-- Command history
-- Auto-completion
-
-## Getting Started
-
-1. Clone the repository
-2. Install dependencies: \`npm install\`
-3. Start the development server: \`npm start\`
-
-## Available Commands
-
-- \`help\`: Show available commands
-- \`ls\`: List directory contents
-- \`cd\`: Change directory
-- \`cat\`: View file contents
-- \`clear\`: Clear the terminal
-- \`about\`: Show information about the terminal
-- \`projects\`: List available projects
-- \`debug\`: Toggle debug mode`
+        A modern terminal interface built with React and TypeScript.
+        ## Features
+        - Interactive terminal commands
+        - File system navigation
+        - Project exploration
+        - Syntax highlighting
+        - Command history
+        - Auto-completion
+        ## Getting Started
+        1. Clone the repository
+        2. Install dependencies: \`npm install\`
+        3. Start the development server: \`npm start\`
+        ## Available Commands
+        - \`help\`: Show available commands
+        - \`ls\`: List directory contents
+        - \`cd\`: Change directory
+        - \`cat\`: View file contents
+        - \`clear\`: Clear the terminal
+        - \`about\`: Show information about the terminal
+        - \`projects\`: List available projects
+        - \`debug\`: Toggle debug mode`
       },
-      public: {
+      'src': {
         type: 'directory',
         children: {
-          'index.html': {
-            type: 'file',
-            content: `<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#000000" />
-    <meta name="description" content="Terminal Interface - A modern terminal interface built with React" />
-    <title>Terminal Interface</title>
-  </head>
-  <body>
-    <noscript>You need to enable JavaScript to run this app.</noscript>
-    <div id="root"></div>
-  </body>
-</html>`
-          }
-        }
-      },
-      src: {
-        type: 'directory',
-        children: {
-          'App.tsx': { type: 'file', content: 'App component content' },
-          components: { 
-            type: 'directory', 
+          'components': {
+            type: 'directory',
             children: {
-              Terminal: {
+              'Terminal': {
                 type: 'directory',
                 children: {
-                  'Terminal.tsx': { type: 'file', content: 'Terminal component content' },
-                  'FileViewer.tsx': { type: 'file', content: 'FileViewer component content' },
-                  'FileExplorer.tsx': { type: 'file', content: 'FileExplorer component content' },
-                  'Terminal.styles.ts': { type: 'file', content: 'Terminal styles content' },
-                  'WelcomeMessage.tsx': { type: 'file', content: 'WelcomeMessage component content' },
-                  'ProjectDetails.tsx': { type: 'file', content: 'ProjectDetails component content' }
+                  'Terminal.tsx': {
+                    type: 'file',
+                    content: '// Terminal component implementation'
+                  },
+                  'Terminal.styles.ts': {
+                    type: 'file',
+                    content: '// Terminal styles'
+                  }
+                }
+              },
+              'ProjectDetails': {
+                type: 'directory',
+                children: {
+                  'ProjectDetails.tsx': {
+                    type: 'file',
+                    content: '// Project details component'
+                  }
                 }
               }
             }
           },
-          data: { 
-            type: 'directory', 
+          'services': {
+            type: 'directory',
             children: {
-              'projects.ts': {
+              'commands.ts': {
                 type: 'file',
-                content: `import { Project } from '../types';
-
-export const projects: Project[] = [
-  {
-    name: 'D4UT',
-    description: 'A powerful web-based utility tool for Diablo 4 players',
-    features: ['Build optimization', 'Damage calculations', 'Item comparison'],
-    technologies: ['React', 'TypeScript', 'Node.js'],
-    github: 'https://github.com/username/d4ut'
-  },
-  {
-    name: 'LootManager',
-    description: 'A comprehensive guild management system for Throne and Liberty',
-    features: ['DKP tracking', 'Raid scheduling', 'Loot distribution'],
-    technologies: ['React', 'TypeScript', 'Express'],
-    github: 'https://github.com/username/lootmanager'
-  },
-  {
-    name: 'RaidAlert',
-    description: 'A Discord bot and web dashboard for ARK Survival Evolved',
-    features: ['Real-time raid notifications', 'Tribe management', 'Discord integration'],
-    technologies: ['Node.js', 'Discord.js', 'React'],
-    github: 'https://github.com/username/raidalert'
-  }
-];`
+                content: '// Terminal commands implementation'
+              },
+              'fileSystem.ts': {
+                type: 'file',
+                content: '// File system implementation'
               }
             }
           },
-          hooks: { 
-            type: 'directory', 
+          'hooks': {
+            type: 'directory',
             children: {
               'useTerminal.ts': {
                 type: 'file',
-                content: `import { useState, useCallback } from 'react';
-import { Project } from '../types';
-import { TerminalCommands } from '../services/commands';
-
-export const useTerminal = (projects: Project[]) => {
-  const [history, setHistory] = useState<Array<{
-    command: string;
-    output: any;
-    type: 'success' | 'error' | 'info' | 'project-list' | 'welcome' | 'clear';
-    currentDirectory: string;
-  }>>([]);
-  const [currentDirectory, setCurrentDirectory] = useState('~');
-  const [isDetailsPanelOpen, setIsDetailsPanelOpen] = useState(false);
-  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
-  const [selectedFile, setSelectedFile] = useState<{ fileName: string; content: string } | null>(null);
-
-  const terminalCommands = new TerminalCommands(projects);
-
-  const executeCommand = useCallback((command: string) => {
-    const [cmd, ...args] = command.split(' ');
-    const result = terminalCommands.execute(cmd, args);
-    setHistory(prev => [...prev, { command, output: result.output, type: result.type, currentDirectory }]);
-    setCurrentDirectory(terminalCommands.getCurrentDirectory());
-  }, [currentDirectory]);
-
-  const navigateHistory = useCallback((direction: 'up' | 'down') => {
-    // Implementation for command history navigation
-    return '';
-  }, []);
-
-  const getCommandSuggestions = useCallback((input: string) => {
-    // Implementation for command suggestions
-    return [];
-  }, []);
-
-  const openDetailsPanel = useCallback((project: Project) => {
-    setSelectedProject(project);
-    setSelectedFile(null);
-    setIsDetailsPanelOpen(true);
-  }, []);
-
-  const openFileDetails = useCallback((file: { fileName: string; content: string }) => {
-    setSelectedFile(file);
-    setSelectedProject(null);
-    setIsDetailsPanelOpen(true);
-  }, []);
-
-  const closeDetailsPanel = useCallback(() => {
-    setIsDetailsPanelOpen(false);
-    setSelectedProject(null);
-    setSelectedFile(null);
-  }, []);
-
-  const addCommandOnly = useCallback((command: string) => {
-    setHistory(prev => [...prev, { command, output: '', type: 'info', currentDirectory }]);
-  }, [currentDirectory]);
-
-  const changeDirectory = useCallback((dir: string) => {
-    executeCommand(\`cd \${dir}\`);
-  }, [executeCommand]);
-
-  return {
-    state: {
-      history,
-      currentDirectory,
-      isDetailsPanelOpen,
-      selectedProject,
-      selectedFile
-    },
-    executeCommand,
-    navigateHistory,
-    getCommandSuggestions,
-    openDetailsPanel,
-    openFileDetails,
-    closeDetailsPanel,
-    addCommandOnly,
-    changeDirectory
-  };
-};`
+                content: '// Terminal hook implementation'
               }
             }
           },
-          'index.tsx': { type: 'file', content: 'Index file content' },
-          services: { 
-            type: 'directory', 
-            children: {
-              'commands.ts': { type: 'file', content: 'TerminalCommands class implementation' },
-              'fileSystem.ts': {
-                type: 'file',
-                content: `import { Project } from '../types';
-
-export interface FileSystemNode {
-  type: 'file' | 'directory';
-  content?: string;
-  children?: { [key: string]: FileSystemNode };
-}
-
-export class FileSystem {
-  private fileTree: FileSystemNode;
-  private currentDirectory: string = '~';
-
-  constructor(projects: Project[]) {
-    this.initializeFileTree(projects);
-  }
-
-  private initializeFileTree(projects: Project[]) {
-    // Implementation of file tree initialization
-  }
-
-  public getCurrentDirectory(): string {
-    return this.currentDirectory;
-  }
-
-  public listDirectory(path: string): string[] {
-    // Implementation of directory listing
-    return [];
-  }
-
-  public readFile(path: string): string {
-    // Implementation of file reading
-    return '';
-  }
-
-  public changeDirectory(path: string): void {
-    // Implementation of directory change
-  }
-}`
-              }
-            }
-          },
-          'setupTests.ts': { type: 'file', content: 'Test setup content' },
-          styles: { 
-            type: 'directory', 
+          'styles': {
+            type: 'directory',
             children: {
               'globalStyles.ts': {
                 type: 'file',
-                content: `import { createGlobalStyle } from 'styled-components';
-
-export const GlobalStyles = createGlobalStyle\`
-  * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-  }
-
-  body {
-    font-family: 'Fira Code', monospace;
-    background-color: #181825;
-    color: #fff;
-  }
-
-  #root {
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-  }
-\`;`
-              },
-              'styled.d.ts': {
-                type: 'file',
-                content: `import 'styled-components';
-
-declare module 'styled-components' {
-  export interface DefaultTheme {
-    colors: {
-      background: string;
-      text: string;
-      primary: string;
-      secondary: string;
-      accent: string;
-    };
-    fonts: {
-      monospace: string;
-    };
-  }
-}`
+                content: '// Global styles'
               },
               'theme.ts': {
                 type: 'file',
-                content: `import { DefaultTheme } from 'styled-components';
-
-export const theme: DefaultTheme = {
-  colors: {
-    background: '#181825',
-    text: '#fff',
-    primary: '#00ff99',
-    secondary: '#a78bfa',
-    accent: '#ff79c6'
-  },
-  fonts: {
-    monospace: "'Fira Code', monospace"
-  }
-};`
-              },
-              'ThemeProvider.tsx': {
-                type: 'file',
-                content: `import React from 'react';
-import { ThemeProvider as StyledThemeProvider } from 'styled-components';
-import { theme } from './theme';
-
-export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  return (
-    <StyledThemeProvider theme={theme}>
-      {children}
-    </StyledThemeProvider>
-  );
-};`
+                content: '// Theme configuration'
               }
             }
           },
-          types: { 
-            type: 'directory', 
+          'types': {
+            type: 'directory',
             children: {
               'index.ts': {
                 type: 'file',
-                content: `export interface Project {
-  name: string;
-  description: string;
-  features: string[];
-  technologies: string[];
-  github: string;
-}
-
-export interface FileDetails {
-  fileName: string;
-  content: string;
-}`
+                content: '// Type definitions'
               }
             }
           },
-          __tests__: { 
-            type: 'directory', 
-            children: {
-              'commands.test.ts': {
-                type: 'file',
-                content: `import { TerminalCommands } from '../services/commands';
-import { projects } from '../data/projects';
-
-describe('TerminalCommands', () => {
-  let commands: TerminalCommands;
-
-  beforeEach(() => {
-    commands = new TerminalCommands(projects);
-  });
-
-  test('should initialize with correct directory', () => {
-    expect(commands.getCurrentDirectory()).toBe('~');
-  });
-
-  test('should execute ls command', () => {
-    const result = commands.execute('ls', []);
-    expect(result.type).toBe('success');
-  });
-
-  test('should execute cd command', () => {
-    commands.execute('cd', ['src']);
-    expect(commands.getCurrentDirectory()).toBe('/src');
-  });
-});`
-              },
-              'Terminal.test.tsx': {
-                type: 'file',
-                content: `import React from 'react';
-import { render, screen } from '@testing-library/react';
-import { Terminal } from '../components/Terminal/Terminal';
-import { projects } from '../data/projects';
-
-describe('Terminal', () => {
-  test('renders terminal interface', () => {
-    render(<Terminal />);
-    expect(screen.getByPlaceholderText('Type a command...')).toBeInTheDocument();
-  });
-});`
-              },
-              'useTerminal.test.ts': {
-                type: 'file',
-                content: `import { renderHook, act } from '@testing-library/react-hooks';
-import { useTerminal } from '../hooks/useTerminal';
-import { projects } from '../data/projects';
-
-describe('useTerminal', () => {
-  test('should initialize with correct state', () => {
-    const { result } = renderHook(() => useTerminal(projects));
-    expect(result.current.state.currentDirectory).toBe('~');
-    expect(result.current.state.history).toHaveLength(0);
-  });
-
-  test('should execute command', () => {
-    const { result } = renderHook(() => useTerminal(projects));
-    act(() => {
-      result.current.executeCommand('ls');
-    });
-    expect(result.current.state.history).toHaveLength(1);
-  });
-});`
-              }
-            }
+          'App.tsx': {
+            type: 'file',
+            content: '// Main App component'
+          },
+          'index.tsx': {
+            type: 'file',
+            content: '// Application entry point'
           }
         }
       },
-      projects: {
+      'public': {
         type: 'directory',
-        children: {}
+        children: {
+          'index.html': {
+            type: 'file',
+            content: '<!DOCTYPE html><html><head><title>Terminal Interface</title></head><body><div id="root"></div></body></html>'
+          }
+        }
+      },
+      'projects': {
+        type: 'directory',
+        children: {
+          'README.md': {
+            type: 'file',
+            content: '# Projects\nA collection of my personal projects.'
+          }
+        }
       },
       'about.txt': {
         type: 'file',
-        content: 'Welcome to my terminal interface\nA modern terminal interface built with React and TypeScript.'
+        content: 'Terminal Interface v1.0.0\nA modern terminal interface built with React and TypeScript.'
       }
     };
-    debug.log('File tree initialized', this.fileTree);
+    debug.log('File tree initialized', TerminalCommands.fileTree);
   }
 
   private resolvePath(path: string): any {
     debug.log('Resolving path', { path });
-    if (!path || path === '/') return this.fileTree;
+    if (!path || path === '/') return TerminalCommands.fileTree;
     const parts = path.replace(/^\//, '').split('/');
-    let node = this.fileTree;
+    let node = TerminalCommands.fileTree;
     for (const part of parts) {
       debug.log('Checking path part', { part, node });
       if (!node[part]) {
@@ -513,10 +226,10 @@ describe('useTerminal', () => {
   private getCurrentNode(): any {
     debug.log('Getting current node', { currentDirectory: this.currentDirectory });
     if (this.currentDirectory === '~' || this.currentDirectory === '/') {
-      return this.fileTree;
+      return TerminalCommands.fileTree;
     }
     const parts = this.currentDirectory.split('/').filter(Boolean);
-    let node = this.fileTree;
+    let node = TerminalCommands.fileTree;
     for (const part of parts) {
       debug.log('Checking current node part', { part, node });
       if (!node[part]) {
@@ -524,7 +237,9 @@ describe('useTerminal', () => {
         return null;
       }
       node = node[part];
-      if (node.type === 'directory') node = node.children;
+      if (node.type === 'directory' && node.children) {
+        node = node.children;
+      }
     }
     debug.log('Current node found', { currentDirectory: this.currentDirectory, node });
     return node;
@@ -633,9 +348,6 @@ LinkedIn: https://linkedin.com/in/username`;
 
   private ls = (): string => {
     debug.log('Executing ls command', { currentDirectory: this.currentDirectory });
-    if (this.currentDirectory === '~' || this.currentDirectory === '/') {
-      return 'projects  about.txt  src';
-    }
     const node = this.getCurrentNode();
     if (!node) {
       debug.error('Directory not found for ls', { currentDirectory: this.currentDirectory });
@@ -687,7 +399,7 @@ LinkedIn: https://linkedin.com/in/username`;
 
     // Remove leading slash for root directory
     const parts = targetPath.replace(/^\//, '').split('/').filter(Boolean);
-    let node = this.fileTree;
+    let node = TerminalCommands.fileTree;
     
     for (const part of parts) {
       debug.log('Checking directory part', { part, node });
@@ -696,15 +408,16 @@ LinkedIn: https://linkedin.com/in/username`;
         throw new Error('Directory not found');
       }
       node = node[part];
-      if (node.type === 'directory') {
+      if (node.type === 'directory' && node.children) {
         node = node.children;
-      } else {
+      } else if (node.type !== 'directory') {
         debug.error('Not a directory', { part, targetPath });
         throw new Error('Not a directory');
       }
     }
     
-    this.currentDirectory = '/' + parts.join('/');
+    // Update current directory with the full path
+    this.currentDirectory = targetPath;
     debug.log('Changed directory', { newDirectory: this.currentDirectory });
     return '';
   };
@@ -770,7 +483,7 @@ LinkedIn: https://linkedin.com/in/username`;
       return null;
     };
 
-    const content = searchFile(this.fileTree, file.split('/'));
+    const content = searchFile(TerminalCommands.fileTree, file.split('/'));
     if (!content) {
       debug.error('File not found', { file });
       throw new Error('File not found');

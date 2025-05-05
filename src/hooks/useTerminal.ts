@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { TerminalState, Project, CommandSuggestion, FileDetails } from '../types';
 import { TerminalCommands } from '../services/commands';
 import { projects } from '../data/projects';
@@ -13,14 +13,14 @@ export const useTerminal = (projects: Project[]) => {
   });
 
   const [historyIndex, setHistoryIndex] = useState(-1);
-  const commands = new TerminalCommands(projects);
+  const commandsRef = useRef<TerminalCommands>(new TerminalCommands(projects));
 
   const executeCommand = useCallback((input: string) => {
     const [command, ...args] = input.trim().split(' ');
-    const result = commands.execute(command, args);
+    const result = commandsRef.current.execute(command, args);
 
     // Get the new directory path after command execution
-    const newDirectory = commands.getCurrentDirectory();
+    const newDirectory = commandsRef.current.getCurrentDirectory();
 
     setState(prev => ({
       ...prev,
@@ -53,7 +53,7 @@ export const useTerminal = (projects: Project[]) => {
     }
 
     setHistoryIndex(-1);
-  }, [commands]);
+  }, [projects]);
 
   const navigateHistory = useCallback((direction: 'up' | 'down'): string => {
     if (state.history.length === 0) return '';
@@ -116,10 +116,10 @@ export const useTerminal = (projects: Project[]) => {
     }
     
     // Execute the cd command to change directory
-    commands.execute('cd', [formattedPath]);
+    commandsRef.current.execute('cd', [formattedPath]);
     
     // Get the updated directory
-    const newDirectory = commands.getCurrentDirectory();
+    const newDirectory = commandsRef.current.getCurrentDirectory();
     
     // Update state with the new directory
     setState(prev => ({
@@ -129,7 +129,7 @@ export const useTerminal = (projects: Project[]) => {
     
     // Add the command to history
     addCommandOnly(`cd ${formattedPath}`);
-  }, [commands, addCommandOnly]);
+  }, [addCommandOnly]);
   
   const openDetailsPanel = useCallback((project: Project) => {
     setState(prev => ({
