@@ -6,7 +6,7 @@
       "App.tsx": {
         "name": "App.tsx",
         "type": "file",
-        "content": "import React from 'react';\r\nimport { ThemeProvider } from './styles/ThemeProvider';\r\nimport { Terminal } from './components/Terminal/Terminal';\r\nimport { GlobalStyles } from './styles/globalStyles';\r\n\r\nexport const App: React.FC = () => {\r\n  return (\r\n    <ThemeProvider>\r\n      <GlobalStyles />\r\n      <Terminal />\r\n    </ThemeProvider>\r\n  );\r\n}; "
+        "content": "import React from 'react';\r\nimportttttt { ThemeProvider } from './styles/ThemeProvider';\r\nimport { Terminal } from './components/Terminal/Terminal';\r\nimport { GlobalStyles } from './styles/globalStyles';\r\n\r\nexport const App: React.FC = () => {\r\n  return (\r\n    <ThemeProvider>\r\n      <GlobalStyles />\r\n      <Terminal />\r\n    </ThemeProvider>\r\n  );\r\n}; "
       },
       "components": {
         "name": "components",

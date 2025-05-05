@@ -1,0 +1,414 @@
+{
+  "name": "aznet-new",
+  "type": "directory",
+  "children": {
+    ".babelrc": {
+      "name": ".babelrc",
+      "type": "file",
+      "size": 112,
+      "path": ".babelrc"
+    },
+    "jest.config.js": {
+      "name": "jest.config.js",
+      "type": "file",
+      "size": 730,
+      "path": "jest.config.js"
+    },
+    "package-lock.json": {
+      "name": "package-lock.json",
+      "type": "file",
+      "size": 520494,
+      "path": "package-lock.json"
+    },
+    "package.json": {
+      "name": "package.json",
+      "type": "file",
+      "size": 1929,
+      "path": "package.json"
+    },
+    "PLANNING.md": {
+      "name": "PLANNING.md",
+      "type": "file",
+      "size": 1420,
+      "path": "PLANNING.md"
+    },
+    "public": {
+      "name": "public",
+      "type": "directory",
+      "children": {
+        "images": {
+          "name": "images",
+          "type": "directory",
+          "children": {
+            "d4ut-mermaid.png": {
+              "name": "d4ut-mermaid.png",
+              "type": "file",
+              "size": 29731,
+              "path": "public\\images\\d4ut-mermaid.png"
+            },
+            "d4ut.png": {
+              "name": "d4ut.png",
+              "type": "file",
+              "size": 520027,
+              "path": "public\\images\\d4ut.png"
+            },
+            "loot-manager-mermaid.png": {
+              "name": "loot-manager-mermaid.png",
+              "type": "file",
+              "size": 53773,
+              "path": "public\\images\\loot-manager-mermaid.png"
+            },
+            "lootmanager.png": {
+              "name": "lootmanager.png",
+              "type": "file",
+              "size": 539359,
+              "path": "public\\images\\lootmanager.png"
+            },
+            "raid-alert-mermaid.png": {
+              "name": "raid-alert-mermaid.png",
+              "type": "file",
+              "size": 54536,
+              "path": "public\\images\\raid-alert-mermaid.png"
+            },
+            "raidalert.png": {
+              "name": "raidalert.png",
+              "type": "file",
+              "size": 30203,
+              "path": "public\\images\\raidalert.png"
+            }
+          }
+        },
+        "index.html": {
+          "name": "index.html",
+          "type": "file",
+          "size": 247,
+          "path": "public\\index.html"
+        }
+      }
+    },
+    "README.md": {
+      "name": "README.md",
+      "type": "file",
+      "size": 5261,
+      "path": "README.md"
+    },
+    "scripts": {
+      "name": "scripts",
+      "type": "directory",
+      "children": {
+        "generateFileTree.js": {
+          "name": "generateFileTree.js",
+          "type": "file",
+          "size": 3195,
+          "path": "scripts\\generateFileTree.js"
+        },
+        "treeview.js": {
+          "name": "treeview.js",
+          "type": "file",
+          "size": 3700,
+          "path": "scripts\\treeview.js"
+        }
+      }
+    },
+    "server": {
+      "name": "server",
+      "type": "directory",
+      "children": {
+        "app.js": {
+          "name": "app.js",
+          "type": "file",
+          "size": 626,
+          "path": "server\\app.js"
+        }
+      }
+    },
+    "src": {
+      "name": "src",
+      "type": "directory",
+      "children": {
+        "App.tsx": {
+          "name": "App.tsx",
+          "type": "file",
+          "size": 348,
+          "path": "src\\App.tsx"
+        },
+        "components": {
+          "name": "components",
+          "type": "directory",
+          "children": {
+            "Terminal": {
+              "name": "Terminal",
+              "type": "directory",
+              "children": {
+                "FileExplorer.tsx": {
+                  "name": "FileExplorer.tsx",
+                  "type": "file",
+                  "size": 3366,
+                  "path": "src\\components\\Terminal\\FileExplorer.tsx"
+                },
+                "FileViewer.tsx": {
+                  "name": "FileViewer.tsx",
+                  "type": "file",
+                  "size": 1445,
+                  "path": "src\\components\\Terminal\\FileViewer.tsx"
+                },
+                "ProjectDetails.tsx": {
+                  "name": "ProjectDetails.tsx",
+                  "type": "file",
+                  "size": 6247,
+                  "path": "src\\components\\Terminal\\ProjectDetails.tsx"
+                },
+                "Terminal.styles.ts": {
+                  "name": "Terminal.styles.ts",
+                  "type": "file",
+                  "size": 5944,
+                  "path": "src\\components\\Terminal\\Terminal.styles.ts"
+                },
+                "Terminal.tsx": {
+                  "name": "Terminal.tsx",
+                  "type": "file",
+                  "size": 15757,
+                  "path": "src\\components\\Terminal\\Terminal.tsx"
+                },
+                "WelcomeMessage.tsx": {
+                  "name": "WelcomeMessage.tsx",
+                  "type": "file",
+                  "size": 6587,
+                  "path": "src\\components\\Terminal\\WelcomeMessage.tsx"
+                }
+              }
+            }
+          }
+        },
+        "data": {
+          "name": "data",
+          "type": "directory",
+          "children": {
+            "fileTree.json": {
+              "name": "fileTree.json",
+              "type": "file",
+              "size": 69010,
+              "path": "src\\data\\fileTree.json"
+            },
+            "projects.ts": {
+              "name": "projects.ts",
+              "type": "file",
+              "size": 12265,
+              "path": "src\\data\\projects.ts"
+            }
+          }
+        },
+        "hooks": {
+          "name": "hooks",
+          "type": "directory",
+          "children": {
+            "useTerminal.ts": {
+              "name": "useTerminal.ts",
+              "type": "file",
+              "size": 4761,
+              "path": "src\\hooks\\useTerminal.ts"
+            }
+          }
+        },
+        "index.css": {
+          "name": "index.css",
+          "type": "file",
+          "size": 306,
+          "path": "src\\index.css"
+        },
+        "index.tsx": {
+          "name": "index.tsx",
+          "type": "file",
+          "size": 268,
+          "path": "src\\index.tsx"
+        },
+        "services": {
+          "name": "services",
+          "type": "directory",
+          "children": {
+            "commands.ts": {
+              "name": "commands.ts",
+              "type": "file",
+              "size": 7204,
+              "path": "src\\services\\commands.ts"
+            },
+            "fileSystem.ts": {
+              "name": "fileSystem.ts",
+              "type": "file",
+              "size": 19525,
+              "path": "src\\services\\fileSystem.ts"
+            }
+          }
+        },
+        "setupTests.ts": {
+          "name": "setupTests.ts",
+          "type": "file",
+          "size": 36,
+          "path": "src\\setupTests.ts"
+        },
+        "styles": {
+          "name": "styles",
+          "type": "directory",
+          "children": {
+            "globalStyles.ts": {
+              "name": "globalStyles.ts",
+              "type": "file",
+              "size": 1047,
+              "path": "src\\styles\\globalStyles.ts"
+            },
+            "styled.d.ts": {
+              "name": "styled.d.ts",
+              "type": "file",
+              "size": 151,
+              "path": "src\\styles\\styled.d.ts"
+            },
+            "theme.ts": {
+              "name": "theme.ts",
+              "type": "file",
+              "size": 803,
+              "path": "src\\styles\\theme.ts"
+            },
+            "ThemeProvider.tsx": {
+              "name": "ThemeProvider.tsx",
+              "type": "file",
+              "size": 338,
+              "path": "src\\styles\\ThemeProvider.tsx"
+            }
+          }
+        },
+        "types": {
+          "name": "types",
+          "type": "directory",
+          "children": {
+            "index.ts": {
+              "name": "index.ts",
+              "type": "file",
+              "size": 1785,
+              "path": "src\\types\\index.ts"
+            }
+          }
+        },
+        "utils": {
+          "name": "utils",
+          "type": "directory",
+          "children": {
+            "debug.ts": {
+              "name": "debug.ts",
+              "type": "file",
+              "size": 607,
+              "path": "src\\utils\\debug.ts"
+            }
+          }
+        },
+        "__tests__": {
+          "name": "__tests__",
+          "type": "directory",
+          "children": {
+            "commands.test.ts": {
+              "name": "commands.test.ts",
+              "type": "file",
+              "size": 3648,
+              "path": "src\\__tests__\\commands.test.ts"
+            },
+            "Terminal.test.tsx": {
+              "name": "Terminal.test.tsx",
+              "type": "file",
+              "size": 4255,
+              "path": "src\\__tests__\\Terminal.test.tsx"
+            },
+            "useTerminal.test.ts": {
+              "name": "useTerminal.test.ts",
+              "type": "file",
+              "size": 4010,
+              "path": "src\\__tests__\\useTerminal.test.ts"
+            }
+          }
+        }
+      }
+    },
+    "TASK.md": {
+      "name": "TASK.md",
+      "type": "file",
+      "size": 1515,
+      "path": "TASK.md"
+    },
+    "tsconfig.json": {
+      "name": "tsconfig.json",
+      "type": "file",
+      "size": 622,
+      "path": "tsconfig.json"
+    },
+    "vanilla": {
+      "name": "vanilla",
+      "type": "directory",
+      "children": {
+        "js": {
+          "name": "js",
+          "type": "directory",
+          "children": {
+            "debug.js": {
+              "name": "debug.js",
+              "type": "file",
+              "size": 368,
+              "path": "vanilla\\js\\debug.js"
+            },
+            "directory-panel.js": {
+              "name": "directory-panel.js",
+              "type": "file",
+              "size": 1693,
+              "path": "vanilla\\js\\directory-panel.js"
+            },
+            "terminal-commands.js": {
+              "name": "terminal-commands.js",
+              "type": "file",
+              "size": 7987,
+              "path": "vanilla\\js\\terminal-commands.js"
+            },
+            "terminal-core.js": {
+              "name": "terminal-core.js",
+              "type": "file",
+              "size": 6010,
+              "path": "vanilla\\js\\terminal-core.js"
+            },
+            "terminal-details.js": {
+              "name": "terminal-details.js",
+              "type": "file",
+              "size": 5969,
+              "path": "vanilla\\js\\terminal-details.js"
+            },
+            "terminal-filesystem.js": {
+              "name": "terminal-filesystem.js",
+              "type": "file",
+              "size": 3583,
+              "path": "vanilla\\js\\terminal-filesystem.js"
+            },
+            "terminal-ui.js": {
+              "name": "terminal-ui.js",
+              "type": "file",
+              "size": 6297,
+              "path": "vanilla\\js\\terminal-ui.js"
+            }
+          }
+        }
+      }
+    },
+    "webpack.config.js": {
+      "name": "webpack.config.js",
+      "type": "file",
+      "size": 794,
+      "path": "webpack.config.js"
+    },
+    "__mocks__": {
+      "name": "__mocks__",
+      "type": "directory",
+      "children": {
+        "fileMock.js": {
+          "name": "fileMock.js",
+          "type": "file",
+          "size": 35,
+          "path": "__mocks__\\fileMock.js"
+        }
+      }
+    }
+  }
+}

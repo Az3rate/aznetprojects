@@ -15,9 +15,9 @@ export const useTerminal = (projects: Project[]) => {
   const [historyIndex, setHistoryIndex] = useState(-1);
   const commandsRef = useRef<TerminalCommands>(new TerminalCommands(projects));
 
-  const executeCommand = useCallback((input: string) => {
+  const executeCommand = useCallback(async (input: string) => {
     const [command, ...args] = input.trim().split(' ');
-    const result = commandsRef.current.execute(command, args);
+    const result = await commandsRef.current.execute(command, args);
 
     // Get the new directory path after command execution
     const newDirectory = commandsRef.current.getCurrentDirectory();
@@ -106,7 +106,7 @@ export const useTerminal = (projects: Project[]) => {
     }));
   }, []);
 
-  const changeDirectory = useCallback((path: string) => {
+  const changeDirectory = useCallback(async (path: string) => {
     // Convert path to a format the commands service can understand
     let formattedPath = path;
     
@@ -116,7 +116,7 @@ export const useTerminal = (projects: Project[]) => {
     }
     
     // Execute the cd command to change directory
-    commandsRef.current.execute('cd', [formattedPath]);
+    await commandsRef.current.execute('cd', [formattedPath]);
     
     // Get the updated directory
     const newDirectory = commandsRef.current.getCurrentDirectory();

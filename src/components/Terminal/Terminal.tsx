@@ -25,6 +25,12 @@ import {
 } from './Terminal.styles';
 import Joyride, { Step } from 'react-joyride';
 
+function formatPromptPath(path: string) {
+  if (!path || path === '~' || path === '/' || path === '') return '/';
+  if (path.startsWith('/')) return path;
+  return '/' + path;
+}
+
 export const Terminal: React.FC = () => {
   const {
     state,
@@ -176,7 +182,7 @@ export const Terminal: React.FC = () => {
     }
   };
 
-  const handleCommandClick = (command: string) => {
+  const handleCommandClick = async (command: string) => {
     const trimmedCommand = command.trim();
     
     if (trimmedCommand.startsWith('cat ')) {
@@ -194,7 +200,7 @@ export const Terminal: React.FC = () => {
       }
       // Execute the cat command locally to get the file content
       try {
-        const result = terminalCommands.current.execute('cat', [fileName]);
+        const result = await terminalCommands.current.execute('cat', [fileName]);
         if (result.type === 'success' && typeof result.output === 'string') {
           // Use the openFileDetails from the hook
           openFileDetails({
@@ -205,11 +211,11 @@ export const Terminal: React.FC = () => {
           addCommandOnly(trimmedCommand);
         } else {
           // If error, use the normal executeCommand to show the error
-          executeCommand(trimmedCommand);
+          await executeCommand(trimmedCommand);
         }
       } catch (error) {
         // Handle any errors
-        executeCommand(trimmedCommand);
+        await executeCommand(trimmedCommand);
       }
       setInput('');
       setSuggestions([]);
@@ -218,19 +224,19 @@ export const Terminal: React.FC = () => {
       // Handle directory changes directly
       const dirPath = trimmedCommand.split(' ')[1];
       try {
-        changeDirectory(dirPath);
+        await changeDirectory(dirPath);
         setInput('');
         setSuggestions([]);
       } catch (error) {
         // Fall back to normal command execution if there's an error
-        executeCommand(trimmedCommand);
+        await executeCommand(trimmedCommand);
         setInput('');
         setSuggestions([]);
       }
       return;
     }
     // Execute the command normally for all other cases
-    executeCommand(trimmedCommand);
+    await executeCommand(trimmedCommand);
     setInput('');
     setSuggestions([]);
   };
@@ -377,7 +383,7 @@ export const Terminal: React.FC = () => {
         {getVisibleHistory().map((item, index) => (
           <React.Fragment key={index}>
             <CommandLine>
-              <Prompt>user@aznet:{item.currentDirectory || '~'}$</Prompt>
+              <Prompt>user@aznet:{formatPromptPath(String(item.currentDirectory))}$</Prompt>
               {item.command}
             </CommandLine>
             {typeof item.output === 'object' && item.output !== null && 'projects' in item.output ? (
@@ -402,7 +408,7 @@ export const Terminal: React.FC = () => {
           </React.Fragment>
         ))}
         <CommandInput data-tour="terminal-input">
-          <Prompt>user@aznet:{state.currentDirectory}$</Prompt>
+          <Prompt>user@aznet:{formatPromptPath(state.currentDirectory)}$</Prompt>
           <Input
             ref={inputRef}
             value={input}
