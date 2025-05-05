@@ -17,14 +17,20 @@ export const useTerminal = (projects: Project[]) => {
   const executeCommand = useCallback((input: string) => {
     const [command, ...args] = input.trim().split(' ');
     const result = commands.execute(command, args);
+    const newDirectory = commands.getCurrentDirectory();
 
     setState(prev => ({
       ...prev,
       history: [
         ...prev.history,
-        { command: input, output: result.output, type: result.type }
+        { 
+          command: input, 
+          output: result.output, 
+          type: result.type,
+          currentDirectory: prev.currentDirectory  // Store the directory at the time of command
+        }
       ],
-      currentDirectory: commands.getCurrentDirectory()
+      currentDirectory: newDirectory  // Update the current directory
     }));
 
     setHistoryIndex(-1);
@@ -87,7 +93,12 @@ export const useTerminal = (projects: Project[]) => {
       ...prev,
       history: [
         ...prev.history,
-        { command, output: '', type: 'success' }
+        { 
+          command, 
+          output: '', 
+          type: 'success',
+          currentDirectory: prev.currentDirectory  // Store current directory
+        }
       ]
     }));
   }, []);
@@ -101,4 +112,4 @@ export const useTerminal = (projects: Project[]) => {
     closeDetailsPanel,
     addCommandOnly
   };
-}; 
+};

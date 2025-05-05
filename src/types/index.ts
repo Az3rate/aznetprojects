@@ -60,6 +60,7 @@ export interface TerminalCommand {
   command: string;
   output: string | { type: 'project-list'; projects: Project[] } | { type: 'welcome' } | { type: 'clear' };
   type: TerminalCommandType;
+  currentDirectory?: string; 
 }
 
 export interface TerminalState {
@@ -72,4 +73,4 @@ export interface TerminalState {
 export interface CommandSuggestion {
   command: string;
   score: number;
-} 
+}
