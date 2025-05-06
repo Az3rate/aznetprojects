@@ -6,7 +6,7 @@ export const projects: Project[] = [
   {
     name: 'D4UT',
     featured: true,
-    description: 'A powerful web-based utility tool for Diablo 4 players, offering advanced build optimization, damage calculations, and item comparison.',
+    description: 'Built with React, Zustand, and TailwindCSS, D4UT leverages a modern frontend stack for real-time build calculations and interactive UI. State management is handled by Zustand, while TailwindCSS and Styled Components provide a flexible, themeable design system. Data analysis and visualization are powered by Leaflet and React-Leaflet.',
     url: 'https://github.com/username/d4ut',
     image: 'd4ut.png',
     architectureImage: 'd4ut-mermaid.png',
@@ -81,7 +81,7 @@ export const projects: Project[] = [
   {
     name: 'LootManager',
     featured: true,
-    description: 'A comprehensive guild management system for Throne and Liberty, focusing on DKP tracking, raid scheduling, and loot distribution.',
+    description: 'LootManager combines React, Redux Toolkit, Zustand, and Material-UI for a robust, scalable frontend. Firebase Functions and Firestore provide a serverless backend, enabling real-time data sync and authentication. The stack is designed for modularity, rapid feature development, and seamless user experience.',
     url: 'https://github.com/username/lootmanager',
     image: 'lootmanager.png',
     architectureImage: 'loot-manager-mermaid.png',
@@ -155,8 +155,8 @@ export const projects: Project[] = [
   },
   {
     name: 'RaidAlert',
-    featured: false,
-    description: 'A Discord bot and web dashboard for ARK Survival Evolved, providing real-time raid notifications and tribe management.',
+    featured: true,
+    description: 'RaidAlert integrates Node.js, Express.js, and Firestore for backend services, with a Discord bot built on discord.js. The web dashboard uses static HTML/JS and custom CSS for lightweight status monitoring. The stack enables real-time notifications, persistent storage, and multi-platform integration.',
     url: 'https://github.com/username/raidalert',
     image: 'raidalert.png',
     architectureImage: 'raid-alert-mermaid.png',

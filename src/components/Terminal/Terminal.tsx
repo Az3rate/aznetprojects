@@ -28,7 +28,8 @@ import {
   ErrorSpan,
   DirSpan,
   FileSpan,
-  BlinkingCursor
+  BlinkingCursor,
+  FeaturedSidebar
 } from './Terminal.styles';
 import Joyride, { Step } from 'react-joyride';
 import { useBackgroundAudio } from '../../hooks/useBackgroundAudio';
@@ -381,8 +382,63 @@ export const Terminal: React.FC<TerminalProps> = ({ onOpenWelcome }) => {
     toggleMute();
   };
 
+  // Featured projects logic
+  const featuredProjects = projects.filter(p => p.featured);
+
+  const [featuredCollapsed, setFeaturedCollapsed] = useState(false);
+
   return (
-    <TerminalWrapper>
+    <TerminalWrapper $featuredCollapsed={featuredCollapsed}>
+      <FeaturedSidebar $collapsed={featuredCollapsed} style={{ position: 'relative' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: featuredCollapsed ? 0 : '1.5rem', height: featuredCollapsed ? '100%' : undefined }}>
+          {!featuredCollapsed && (
+            <span style={{ fontWeight: 700, fontSize: '1.1rem', color: '#fff', letterSpacing: '-0.01em' }}>Featured Projects</span>
+          )}
+          <button
+            aria-label={featuredCollapsed ? 'Expand featured projects' : 'Collapse featured projects'}
+            onClick={() => setFeaturedCollapsed(c => !c)}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#fff',
+              cursor: 'pointer',
+              fontSize: 18,
+              transition: 'transform 0.2s',
+              marginLeft: 8,
+              padding: 0,
+              lineHeight: 1,
+              alignSelf: featuredCollapsed ? 'center' : undefined,
+            }}
+          >
+            {featuredCollapsed ? '▶' : '◀'}
+          </button>
+        </div>
+        {!featuredCollapsed && featuredProjects.map(project => (
+          <div
+            key={project.name}
+            style={{
+              background: 'var(--background-primary, #181825)',
+              color: 'var(--text-primary, #cdd6f4)',
+              border: '1px solid var(--border, #45475a)',
+              marginBottom: 18,
+              padding: '1rem 0.75rem',
+              cursor: 'pointer',
+              fontWeight: 600,
+              flex: 1,
+              minHeight: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'flex-start',
+              boxSizing: 'border-box',
+              overflow: 'hidden',
+            }}
+            onClick={() => openDetailsPanel(project)}
+          >
+            <div style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: 6, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{project.name}</div>
+            <div style={{ fontSize: '0.95rem', fontWeight: 400, flex: 1, overflowY: 'auto', minHeight: 0 }}>{project.description}</div>
+          </div>
+        ))}
+      </FeaturedSidebar>
       <Sidebar data-tour="sidebar">
         <FileExplorer 
           onFileClick={handleFileClick} 
@@ -393,7 +449,6 @@ export const Terminal: React.FC<TerminalProps> = ({ onOpenWelcome }) => {
           onToggleBackground={handleToggleBackground}
           isBackgroundMuted={isBackgroundMuted}
           onOpenWelcome={onOpenWelcome}
-          onProjectClick={openDetailsPanel}
         />
       </Sidebar>
       <TerminalContent onClick={handleTerminalClick}>

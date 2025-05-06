@@ -1,12 +1,26 @@
-import styled from 'styled-components';
+import styled, { css } from 'styled-components';
 
-export const TerminalWrapper = styled.div`
+export const TerminalWrapper = styled.div<{ $featuredCollapsed?: boolean }>`
   display: grid;
-  grid-template-columns: 250px 1fr 700px;
+  grid-template-columns: ${({ $featuredCollapsed }) => $featuredCollapsed ? '40px' : '400px'} 250px 1fr 700px;
   height: 100vh;
   background-color: ${({ theme }) => theme.colors.background.primary};
   color: ${({ theme }) => theme.colors.text.primary};
   font-family: 'Fira Code', monospace;
+`;
+
+export const FeaturedSidebar = styled.div<{ $collapsed?: boolean }>`
+  background-color: ${({ theme }) => theme.colors.background.secondary};
+  padding: 1rem;
+  border-right: 1px solid ${({ theme }) => theme.colors.border};
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  min-width: ${({ $collapsed }) => $collapsed ? '40px' : '400px'};
+  max-width: ${({ $collapsed }) => $collapsed ? '40px' : '400px'};
+  width: ${({ $collapsed }) => $collapsed ? '40px' : '400px'};
+  overflow-y: auto;
+  transition: all 0.2s cubic-bezier(0.4,0,0.2,1);
 `;
 
 export const Sidebar = styled.div`

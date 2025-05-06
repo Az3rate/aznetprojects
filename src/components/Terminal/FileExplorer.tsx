@@ -184,30 +184,11 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
     );
   };
 
-  // Featured projects logic
-  const featuredProjects = projects.filter(p => p.featured);
-
-  const handleProjectClick = (projectName: string) => {
-    const project = projects.find(p => p.name === projectName);
-    if (project && onProjectClick) {
-      onProjectClick(project);
-    }
-  };
-
   return (
     <ExplorerContainer>
       <FileTree>
         {renderRootLevelItems()}
       </FileTree>
-      <FeaturedProjectsContainer>
-        <FeaturedTitle>Featured Projects</FeaturedTitle>
-        {featuredProjects.map(project => (
-          <FeaturedProject key={project.name} onClick={() => handleProjectClick(project.name)}>
-            <FeaturedProjectName>{project.name}</FeaturedProjectName>
-            <FeaturedProjectDesc>{project.description}</FeaturedProjectDesc>
-          </FeaturedProject>
-        ))}
-      </FeaturedProjectsContainer>
       <OptionsPanel 
         volume={volume}
         onVolumeChange={onVolumeChange}
