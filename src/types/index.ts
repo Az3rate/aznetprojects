@@ -12,6 +12,7 @@ export interface Project {
   apiEndpoints: ApiEndpoint[];
   workflow: string[];
   summary: string;
+  featured?: boolean;
 }
 
 export interface FileDetails {

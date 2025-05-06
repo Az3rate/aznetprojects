@@ -67,13 +67,15 @@ interface OptionsPanelProps {
   onVolumeChange: (volume: number) => void;
   onToggleBackground: () => void;
   isBackgroundMuted: boolean;
+  onOpenWelcome: () => void;
 }
 
 export const OptionsPanel: React.FC<OptionsPanelProps> = ({ 
   volume, 
   onVolumeChange,
   onToggleBackground,
-  isBackgroundMuted
+  isBackgroundMuted,
+  onOpenWelcome
 }) => {
   const getVolumeIcon = (vol: number) => {
     if (vol === 0) return '🔇';
@@ -106,6 +108,29 @@ export const OptionsPanel: React.FC<OptionsPanelProps> = ({
             onChange={(e) => onVolumeChange(parseFloat(e.target.value))}
           />
         </VolumeControl>
+      </OptionGroup>
+      <OptionGroup>
+        <OptionLabel>Controls</OptionLabel>
+        <button
+          style={{
+            background: '#00ff99',
+            color: '#181825',
+            border: '2px solid #00ff99',
+            borderRadius: 2,
+            padding: '8px 18px',
+            fontWeight: 700,
+            fontFamily: 'Fira Code, monospace',
+            fontSize: 15,
+            cursor: 'pointer',
+            boxShadow: '0 0 8px #00ff9955',
+            marginTop: 6,
+            marginBottom: 2,
+            width: '100%'
+          }}
+          onClick={onOpenWelcome}
+        >
+          Open Welcome Modal
+        </button>
       </OptionGroup>
     </OptionsContainer>
   );

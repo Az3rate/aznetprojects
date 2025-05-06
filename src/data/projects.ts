@@ -5,6 +5,7 @@ export const projects: Project[] = [
     
   {
     name: 'D4UT',
+    featured: true,
     description: 'A powerful web-based utility tool for Diablo 4 players, offering advanced build optimization, damage calculations, and item comparison.',
     url: 'https://github.com/username/d4ut',
     image: 'd4ut.png',
@@ -79,6 +80,7 @@ export const projects: Project[] = [
   },
   {
     name: 'LootManager',
+    featured: true,
     description: 'A comprehensive guild management system for Throne and Liberty, focusing on DKP tracking, raid scheduling, and loot distribution.',
     url: 'https://github.com/username/lootmanager',
     image: 'lootmanager.png',
@@ -153,6 +155,7 @@ export const projects: Project[] = [
   },
   {
     name: 'RaidAlert',
+    featured: false,
     description: 'A Discord bot and web dashboard for ARK Survival Evolved, providing real-time raid notifications and tribe management.',
     url: 'https://github.com/username/raidalert',
     image: 'raidalert.png',

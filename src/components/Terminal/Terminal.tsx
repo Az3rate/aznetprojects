@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useTerminal } from '../../hooks/useTerminal';
 import { useTypingSound } from '../../hooks/useTypingSound';
 import { projects } from '../../data/projects';
-import { WelcomeMessage } from './WelcomeMessage';
 import { ProjectDetails } from './ProjectDetails';
 import { FileExplorer } from './FileExplorer';
 import { FileViewer } from './FileViewer';
@@ -60,7 +59,11 @@ function highlightInput(input: string, knownCommands: string[], lastError: boole
   );
 }
 
-export const Terminal: React.FC = () => {
+interface TerminalProps {
+  onOpenWelcome: () => void;
+}
+
+export const Terminal: React.FC<TerminalProps> = ({ onOpenWelcome }) => {
   const {
     state,
     executeCommand,
@@ -389,6 +392,8 @@ export const Terminal: React.FC = () => {
           onVolumeChange={setVolume}
           onToggleBackground={handleToggleBackground}
           isBackgroundMuted={isBackgroundMuted}
+          onOpenWelcome={onOpenWelcome}
+          onProjectClick={openDetailsPanel}
         />
       </Sidebar>
       <TerminalContent onClick={handleTerminalClick}>
@@ -449,13 +454,6 @@ export const Terminal: React.FC = () => {
           callback={data => {
             if (data.status === 'finished' || data.status === 'skipped') setTourOpen(false);
           }}
-        />
-        <WelcomeMessage
-          onCommandClick={handleCommandClick}
-          isFirstTime={isFirstTime}
-          projects={projects}
-          data-tour-project-list
-          onStartTour={() => setTourOpen(true)}
         />
         {getVisibleHistory().map((item, index) => (
           <React.Fragment key={index}>

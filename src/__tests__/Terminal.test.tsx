@@ -17,12 +17,12 @@ const renderWithTheme = (component: React.ReactElement) => {
 
 describe('Terminal', () => {
   it('renders the terminal interface', () => {
-    renderWithTheme(<Terminal />);
+    renderWithTheme(<Terminal onOpenWelcome={() => {}} />);
     expect(screen.getByText('user@aznet:~$')).toBeInTheDocument();
   });
 
   it('executes commands and displays output', () => {
-    renderWithTheme(<Terminal />);
+    renderWithTheme(<Terminal onOpenWelcome={() => {}} />);
     const input = screen.getByPlaceholderText('Type a command...');
     
     fireEvent.change(input, { target: { value: 'help' } });
@@ -32,7 +32,7 @@ describe('Terminal', () => {
   });
 
   it('navigates command history with arrow keys', () => {
-    renderWithTheme(<Terminal />);
+    renderWithTheme(<Terminal onOpenWelcome={() => {}} />);
     const input = screen.getByPlaceholderText('Type a command...');
     
     fireEvent.change(input, { target: { value: 'help' } });
@@ -46,7 +46,7 @@ describe('Terminal', () => {
   });
 
   it('shows command suggestions', () => {
-    renderWithTheme(<Terminal />);
+    renderWithTheme(<Terminal onOpenWelcome={() => {}} />);
     const input = screen.getByPlaceholderText('Type a command...');
     
     fireEvent.change(input, { target: { value: 'h' } });
@@ -55,7 +55,7 @@ describe('Terminal', () => {
   });
 
   it('opens and closes the details panel', () => {
-    renderWithTheme(<Terminal />);
+    renderWithTheme(<Terminal onOpenWelcome={() => {}} />);
     const input = screen.getByPlaceholderText('Type a command...');
     
     fireEvent.change(input, { target: { value: 'projects' } });
@@ -65,7 +65,7 @@ describe('Terminal', () => {
   });
 
   it('handles Tab key for command completion', () => {
-    renderWithTheme(<Terminal />);
+    renderWithTheme(<Terminal onOpenWelcome={() => {}} />);
     const input = screen.getByPlaceholderText('Type a command...');
     
     fireEvent.change(input, { target: { value: 'h' } });
@@ -75,7 +75,7 @@ describe('Terminal', () => {
   });
 
   it('handles Escape key to clear suggestions', () => {
-    renderWithTheme(<Terminal />);
+    renderWithTheme(<Terminal onOpenWelcome={() => {}} />);
     const input = screen.getByPlaceholderText('Type a command...');
     
     fireEvent.change(input, { target: { value: 'h' } });
@@ -87,7 +87,7 @@ describe('Terminal', () => {
   });
 
   it('navigates suggestions with arrow keys', () => {
-    renderWithTheme(<Terminal />);
+    renderWithTheme(<Terminal onOpenWelcome={() => {}} />);
     const input = screen.getByPlaceholderText('Type a command...');
     
     fireEvent.change(input, { target: { value: 'h' } });
@@ -98,7 +98,7 @@ describe('Terminal', () => {
   });
 
   it('handles clicking on suggestions', () => {
-    renderWithTheme(<Terminal />);
+    renderWithTheme(<Terminal onOpenWelcome={() => {}} />);
     const input = screen.getByPlaceholderText('Type a command...');
     
     fireEvent.change(input, { target: { value: 'h' } });
@@ -109,7 +109,7 @@ describe('Terminal', () => {
   });
 
   it('handles empty input', () => {
-    renderWithTheme(<Terminal />);
+    renderWithTheme(<Terminal onOpenWelcome={() => {}} />);
     const input = screen.getByPlaceholderText('Type a command...');
     
     fireEvent.change(input, { target: { value: '' } });

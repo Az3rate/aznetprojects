@@ -36,11 +36,11 @@ export const GlobalStyles = createGlobalStyle`
   }
 
   ::-webkit-scrollbar-thumb {
-    background: ${({ theme }) => theme.colors.background.secondary};
+    background: ${({ theme }) => theme.colors.command || '#00FFB2'};
     border-radius: 4px;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: ${({ theme }) => theme.colors.background.hover};
+    background: #00FFD0;
   }
 `; 
