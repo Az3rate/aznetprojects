@@ -33,6 +33,7 @@ import {
 } from './Terminal.styles';
 import Joyride, { Step } from 'react-joyride';
 import { useBackgroundAudio } from '../../hooks/useBackgroundAudio';
+import { useDirectory } from '../../context/DirectoryContext';
 
 function formatPromptPath(path: string) {
   if (!path || path === '~' || path === '/' || path === '') return '/';
@@ -74,8 +75,17 @@ export const Terminal: React.FC<TerminalProps> = ({ onOpenWelcome }) => {
     openFileDetails,
     closeDetailsPanel,
     addCommandOnly,
-    changeDirectory
+    changeDirectory,
+    commandsRef
   } = useTerminal(projects);
+
+  const {
+    vfs,
+    currentDirectory,
+    setDirectory,
+    fileTree,
+    refreshTree
+  } = useDirectory();
 
   const [volume, setVolume] = useState(() => {
     const savedVolume = localStorage.getItem('terminal_volume');
@@ -351,15 +361,13 @@ export const Terminal: React.FC<TerminalProps> = ({ onOpenWelcome }) => {
 
   // Handle file click from FileExplorer
   const handleFileClick = (filePath: string) => {
-    // Extract the file name from the path
-    const fileName = filePath.split('/').pop() || '';
-    handleCommandClick(`cat ${fileName}`);
+    // Pass the full file path to the cat command
+    handleCommandClick(`cat ${filePath.startsWith('/') ? filePath.slice(1) : filePath}`);
   };
 
   // Handle directory click from FileExplorer
   const handleDirectoryClick = (dirPath: string) => {
-    // Use the changeDirectory function from the hook
-    changeDirectory(dirPath);
+    setDirectory(dirPath);
   };
 
   // Only show history after the last clear marker
@@ -443,12 +451,13 @@ export const Terminal: React.FC<TerminalProps> = ({ onOpenWelcome }) => {
         <FileExplorer 
           onFileClick={handleFileClick} 
           onDirectoryClick={handleDirectoryClick}
-          currentDirectory={state.currentDirectory}
+          currentDirectory={currentDirectory}
           volume={volume}
           onVolumeChange={setVolume}
           onToggleBackground={handleToggleBackground}
           isBackgroundMuted={isBackgroundMuted}
           onOpenWelcome={onOpenWelcome}
+          fileTree={fileTree}
         />
       </Sidebar>
       <TerminalContent onClick={handleTerminalClick}>
@@ -561,7 +570,7 @@ export const Terminal: React.FC<TerminalProps> = ({ onOpenWelcome }) => {
         ))}
         <CommandInput data-tour="terminal-input">
           <Prompt $status="default">
-            user@aznet:{formatPromptPath(state.currentDirectory)}$
+            user@aznet:{formatPromptPath(currentDirectory)}$
           </Prompt>
           <div style={{ position: 'relative', flex: 1, minWidth: 0 }}>
             <span style={{ pointerEvents: 'none', minWidth: '2px', minHeight: '1em', display: 'inline-block' }}>

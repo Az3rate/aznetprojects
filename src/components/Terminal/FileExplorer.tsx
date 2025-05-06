@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import fileTree from '../../data/fileTree.json';
+import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import {
   DirectoryItem,
@@ -18,7 +17,6 @@ const ExplorerContainer = styled.div`
   font-family: 'Fira Code', monospace;
 `;
 
-
 const FileTree = styled.div`
   flex: 1 1 0;
   overflow-y: auto;
@@ -26,51 +24,14 @@ const FileTree = styled.div`
   padding: 1rem;
 `;
 
-
-const FeaturedProjectsContainer = styled.div`
-  height: 240px;
-  overflow-y: auto;
-  padding: 0 1rem 1rem 1rem;
-  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
-  flex-shrink: 0;
-`;
-
-
-const FeaturedTitle = styled.div`
-  color: ${({ theme }) => theme.colors.text.secondary};
-  font-size: 1rem;
-  font-weight: 700;
-  margin-bottom: 0.5rem;
-`;
-
-const FeaturedProject = styled.div`
-  margin-bottom: 0.75rem;
-  cursor: pointer;
+const DebugPanel = styled.div`
   padding: 0.5rem;
-  border-radius: 6px;
-  background: ${({ theme }) => theme.colors.background.primary};
-  transition: background 0.2s;
-  &:hover {
-    background: ${({ theme }) => theme.colors.background.hover};
-  }
-`;
-
-const FeaturedProjectName = styled.div`
-  color: ${({ theme }) => theme.colors.link};
-  font-weight: 600;
-  font-size: 1rem;
-`;
-
-const FeaturedProjectDesc = styled.div`
-  color: ${({ theme }) => theme.colors.text.secondary};
-  font-size: 0.92rem;
-`;
-
-const ScrollableArea = styled.div`
-  flex: 1;
-  overflow-y: auto;
+  font-size: 0.8rem;
+  color: #888;
+  border-bottom: 1px solid #333;
   display: flex;
   flex-direction: column;
+  gap: 0.25rem;
 `;
 
 interface FileNode {
@@ -90,6 +51,7 @@ interface FileExplorerProps {
   isBackgroundMuted: boolean;
   onOpenWelcome: () => void;
   onProjectClick?: (project: Project) => void;
+  fileTree?: any;
 }
 
 export const FileExplorer: React.FC<FileExplorerProps> = ({ 
@@ -101,91 +63,131 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
   onToggleBackground,
   isBackgroundMuted,
   onOpenWelcome,
-  onProjectClick
+  onProjectClick,
+  fileTree
 }) => {
+  console.log('[FileExplorer] fileTree prop:', fileTree);
   const [expanded, setExpanded] = useState<{ [key: string]: boolean }>({});
-  
-  // Update expanded state based on current directory
+  const lastProcessedDir = useRef<string>('');
+
+  // Path normalization utility
+  const normalizePath = (path: string): string => {
+    if (!path || path === '' || path === '~') return '/';
+    let cleaned = path;
+    while (cleaned.includes('//')) cleaned = cleaned.replace('//', '/');
+    if (!cleaned.startsWith('/')) cleaned = '/' + cleaned;
+    if (cleaned.length > 1 && cleaned.endsWith('/')) cleaned = cleaned.slice(0, -1);
+    return cleaned;
+  };
+
+  // Handle directory expansion based on current path
   useEffect(() => {
-    // Parse the current directory path to determine which folders should be expanded
-    if (currentDirectory) {
-      const pathParts = currentDirectory.replace(/^~\//, '').split('/').filter(Boolean);
-      
-      // Create a new expanded state by setting each path segment to true
-      const newExpanded = { ...expanded };
-      let currentPath = '';
-      
-      pathParts.forEach(part => {
-        currentPath = currentPath ? `${currentPath}/${part}` : `/${part}`;
-        newExpanded[currentPath] = true;
-      });
-      
-      setExpanded(newExpanded);
+    if (currentDirectory === lastProcessedDir.current) return;
+    lastProcessedDir.current = currentDirectory;
+    const cleanCurrentDir = normalizePath(currentDirectory);
+    if (cleanCurrentDir === '/') {
+      setExpanded({});
+      return;
     }
+    const parts = cleanCurrentDir.split('/').filter(Boolean);
+    const newExpanded: { [key: string]: boolean } = {};
+    let path = '';
+    for (const part of parts) {
+      path = path ? `${path}/${part}` : `/${part}`;
+      newExpanded[path] = true;
+    }
+    setExpanded(prev => ({...prev, ...newExpanded}));
   }, [currentDirectory]);
 
-  const renderTree = (
-    node: FileNode,
-    path: string,
-  ) => {
+  // Handle manual toggle of directory expansion
+  const toggleExpansion = (path: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const cleanPath = normalizePath(path);
+    setExpanded(prev => {
+      const newState = {...prev};
+      newState[cleanPath] = !prev[cleanPath];
+      return newState;
+    });
+  };
+
+  // Handle directory click from FileExplorer
+  const handleDirectoryClick = (dirPath: string) => {
+    let cleanPath = dirPath;
+    if (!cleanPath.startsWith('/')) cleanPath = '/' + cleanPath;
+    while (cleanPath.includes('//')) cleanPath = cleanPath.replace('//', '/');
+    if (cleanPath.length > 1 && cleanPath.endsWith('/')) cleanPath = cleanPath.slice(0, -1);
+    onDirectoryClick(cleanPath);
+  };
+
+  // Render a directory node and its children
+  const renderTree = (node: FileNode, path: string) => {
     if (!node) return null;
-    
-    const isCurrentDirectory = currentDirectory.replace(/^~/, '') === path;
-    const isExpanded = expanded[path] || false;
-    
-    if (node.type === 'directory') {
-      // Check if the current directory matches this path
+    const isDir = node.type === 'directory';
+    const cleanNodePath = normalizePath(path);
+    const cleanCurrentDir = normalizePath(currentDirectory);
+    const isCurrentDir = cleanNodePath === cleanCurrentDir;
+    const isExpanded = expanded[cleanNodePath] || false;
+    if (isDir) {
       return (
-        <div key={path}>
+        <div key={cleanNodePath}>
           <DirectoryItem 
-            $isActive={isCurrentDirectory} 
-            onClick={() => {
-              // When directory is clicked, perform cd operation
-              onDirectoryClick(path);
-              // Toggle expanded state
-              setExpanded(prev => ({ ...prev, [path]: !prev[path] }));
+            $isActive={isCurrentDir} 
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDirectoryClick(cleanNodePath);
             }}
           >
-            <DirectoryIcon>{isExpanded ? '📂' : '📁'}</DirectoryIcon>
-            <DirectoryName>{node.name}</DirectoryName>
+            <DirectoryIcon onClick={(e) => toggleExpansion(cleanNodePath, e)}>
+              {isExpanded ? '📂' : '📁'}
+            </DirectoryIcon>
+            <DirectoryName>{node.name || path.split('/').pop()}</DirectoryName>
           </DirectoryItem>
-          
-          {/* Show children if expanded */}
-          {(isExpanded || isCurrentDirectory) && node.children && (
+          {isExpanded && node.children && (
             <div style={{ marginLeft: '1rem' }}>
-              {Object.values(node.children).map(child => 
-                renderTree(
-                  child,
-                  `${path}/${child.name}`
-                )
+              {Object.entries(node.children).map(([childName, childNode]) =>
+                renderTree(childNode as FileNode, `${cleanNodePath}/${childName}`)
               )}
             </div>
           )}
         </div>
       );
     } else {
-      // File node
       return (
-        <DirectoryItem $isActive={false} key={path} onClick={() => onFileClick(path)}>
+        <DirectoryItem 
+          $isActive={isCurrentDir} 
+          key={cleanNodePath} 
+          onClick={(e) => {
+            e.stopPropagation();
+            onFileClick(cleanNodePath);
+          }}
+        >
           <DirectoryIcon>📄</DirectoryIcon>
-          <DirectoryName>{node.name}</DirectoryName>
+          <DirectoryName>{node.name || path.split('/').pop()}</DirectoryName>
         </DirectoryItem>
       );
     }
   };
 
-  const normalizePath = (path: string) => {
-    return path.replace(/^\//, '');
+  // Render the root level items
+  const renderRootLevelItems = () => {
+    if (!fileTree) return null;
+    console.log('[FileExplorer] renderRootLevelItems children:', fileTree.children);
+    return Object.entries(fileTree.children).map(([name, node]) => 
+      renderTree(node as FileNode, `/${name}`)
+    );
   };
 
-  const renderRootLevelItems = () => {
-    return Object.values(fileTree).map((node: FileNode) => 
-      renderTree(node, `/${node.name}`)
-    );
+  const getDisplayDirectory = (): string => {
+    if (!currentDirectory || currentDirectory === '~') return '/';
+    return normalizePath(currentDirectory);
   };
 
   return (
     <ExplorerContainer>
+      <DebugPanel>
+        <div>Current: {getDisplayDirectory()}</div>
+        <div>Expanded: {Object.keys(expanded).join(', ')}</div>
+      </DebugPanel>
       <FileTree>
         {renderRootLevelItems()}
       </FileTree>

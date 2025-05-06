@@ -129,7 +129,7 @@ export const OptionsPanel: React.FC<OptionsPanelProps> = ({
           }}
           onClick={onOpenWelcome}
         >
-          Open Welcome Modal
+          About This Portfolio
         </button>
       </OptionGroup>
     </OptionsContainer>

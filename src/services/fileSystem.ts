@@ -14,6 +14,7 @@ export class VirtualFileSystem {
   }
 
   private initializeFileSystem(): FileSystemNode {
+    console.log('[VFS] initializeFileSystem – pre‑fetch scaffold');  // lets us see when the fallback tree is used
     return {
       name: '/',
       type: 'directory',
@@ -252,12 +253,17 @@ export class VirtualFileSystem {
             'generateFileTree.js': {
               name: 'generateFileTree.js',
               type: 'file',
-              content: 'Loading...'
+              content: 'Loading…'
+            },
+            'generateTypingSounds.js': { // ← NEW placeholder so lookup never fails
+              name: 'generateTypingSounds.js',
+              type: 'file',
+              content: 'Loading…'
             },
             'treeview.js': {
               name: 'treeview.js',
               type: 'file',
-              content: 'Loading...'
+              content: 'Loading…'
             }
           }
         },
@@ -379,88 +385,44 @@ export class VirtualFileSystem {
     };
   }
 
+  // Helper to get a node by full path from the root
+  private getNodeByPath(path: string): FileSystemNode | null {
+    const parts = path.split('/').filter(Boolean);
+    let current = this.root;
+    for (const part of parts) {
+      if (!current.children) {
+        console.log('[getNodeByPath] No children at', current.name, 'for part', part);
+        return null;
+      }
+      console.log('[getNodeByPath] Looking for', part, 'in', Object.keys(current.children));
+      if (!current.children[part]) return null;
+      current = current.children[part];
+    }
+    return current;
+  }
+
   private async fetchFileContent(filePath: string): Promise<string> {
+    console.log('[fetchFileContent] Requested file path:', filePath);
     // Check cache first
     if (this.fileCache.has(filePath)) {
       return this.fileCache.get(filePath)!;
     }
 
     try {
-      // Remove leading slash if present for path mapping
-      const cleanPath = filePath.startsWith('/') ? filePath.substring(1) : filePath;
-      
-      // Get the current directory path
-      const currentDirPath = this.currentPath.slice(1).join('/');
-      
-      // Construct the full path based on current directory
-      let fullPath: string;
-      
-      // If path already starts with src/, use it as is
-      if (cleanPath.startsWith('src/')) {
-        fullPath = cleanPath;
-      } 
-      // If we're in src directory or its subdirectories
-      else if (currentDirPath.startsWith('src/')) {
-        fullPath = `${currentDirPath}/${cleanPath}`;
+      // Always resolve from root
+      const fileNode = this.getNodeByPath(filePath);
+      if (!fileNode || fileNode.type !== 'file') {
+        throw new Error(`File not found: ${filePath}`);
       }
-      // If we're in root and trying to access a file in src
-      else if (currentDirPath === '') {
-        // Check all possible src locations
-        if (this.root.children?.['src']?.children?.[cleanPath]) {
-          fullPath = `src/${cleanPath}`;
-        }
-        // Check src/components/Terminal
-        else if (this.root.children?.['src']?.children?.['components']?.children?.['Terminal']?.children?.[cleanPath]) {
-          fullPath = `src/components/Terminal/${cleanPath}`;
-        }
-        // Check src/data
-        else if (this.root.children?.['src']?.children?.['data']?.children?.[cleanPath]) {
-          fullPath = `src/data/${cleanPath}`;
-        }
-        // Check src/hooks
-        else if (this.root.children?.['src']?.children?.['hooks']?.children?.[cleanPath]) {
-          fullPath = `src/hooks/${cleanPath}`;
-        }
-        // Check src/services
-        else if (this.root.children?.['src']?.children?.['services']?.children?.[cleanPath]) {
-          fullPath = `src/services/${cleanPath}`;
-        }
-        // Check src/styles
-        else if (this.root.children?.['src']?.children?.['styles']?.children?.[cleanPath]) {
-          fullPath = `src/styles/${cleanPath}`;
-        }
-        // Check src/types
-        else if (this.root.children?.['src']?.children?.['types']?.children?.[cleanPath]) {
-          fullPath = `src/types/${cleanPath}`;
-        }
-        // Check src/utils
-        else if (this.root.children?.['src']?.children?.['utils']?.children?.[cleanPath]) {
-          fullPath = `src/utils/${cleanPath}`;
-        }
-        // Check src/__tests__
-        else if (this.root.children?.['src']?.children?.['__tests__']?.children?.[cleanPath]) {
-          fullPath = `src/__tests__/${cleanPath}`;
-        }
-        // Check public
-        else if (this.root.children?.['public']?.children?.[cleanPath]) {
-          fullPath = `public/${cleanPath}`;
-        }
-        // For root level files
-        else {
-          fullPath = cleanPath;
-        }
-      }
-      // For other directories
-      else {
-        fullPath = `${currentDirPath}/${cleanPath}`;
-      }
-      
-      const url = `${GITHUB_RAW_BASE}/${fullPath}`;
+
+      // Use the GitHub path if available, otherwise construct it
+      const githubPath = (fileNode as any).path || filePath;
+      const url = `${GITHUB_RAW_BASE}/${githubPath}`;
       console.debug(`Fetching from: ${url}`);
 
       const response = await fetch(url);
       if (!response.ok) {
-        throw new Error(`File not found: ${fullPath}`);
+        throw new Error(`File not found: ${githubPath}`);
       }
 
       const content = await response.text();
@@ -564,8 +526,9 @@ export class VirtualFileSystem {
   }
 
   public changeDirectory(path: string): boolean {
-    console.debug(`Changing directory to: ${path} from ${this.currentPath.join('/')}`);
-
+    console.debug(`Changing directory to: ${path} from ${this.getPathString()}`);
+  
+    // Handle special cases
     if (path === '..') {
       if (this.currentPath.length > 1) {
         this.currentPath.pop();
@@ -574,37 +537,42 @@ export class VirtualFileSystem {
       return false;
     }
 
-    if (path === '/') {
+    if (path === '/' || path === '' || path === '~') {
       this.currentPath = ['/'];
       return true;
     }
 
-    // Handle paths starting with src/
-    if (path.startsWith('src/')) {
-      const parts = path.split('/').filter(p => p !== '');
-      this.currentPath = ['/', ...parts];
-      return true;
-    }
+    // Clean and normalize the path
+    let cleanPath = path.trim();
+    while (cleanPath.includes('//')) cleanPath = cleanPath.replace('//', '/');
+    if (!cleanPath.startsWith('/')) cleanPath = '/' + cleanPath;
+    if (cleanPath.length > 1 && cleanPath.endsWith('/')) cleanPath = cleanPath.slice(0, -1);
 
-    // Get the current directory
-    const current = this.getCurrentDirectory();
+    // Split into parts and remove empty strings
+    const parts = cleanPath.split('/').filter(Boolean);
     
-    // Check if the path exists in current directory
-    if (current.children && current.children[path] && current.children[path].type === 'directory') {
-      this.currentPath.push(path);
-      return true;
+    // Start from root for absolute paths
+    let current = this.root;
+    let newPath = ['/'];
+
+    // Traverse the path
+    for (const part of parts) {
+      if (current.children?.[part]?.type === 'directory') {
+        current = current.children[part];
+        newPath.push(part);
+      } else {
+        console.debug(`Directory not found: ${part} in ${newPath.join('/')}`);
+        return false;
+      }
     }
 
-    // If we're in root and trying to access src or its subdirectories
-    if (this.currentPath.length === 1 && path.startsWith('src/')) {
-      const parts = path.split('/').filter(p => p !== '');
-      this.currentPath = ['/', ...parts];
-      return true;
-    }
-
-    console.debug(`Directory not found: ${path}`);
-    return false;
+    // Update the current path
+    this.currentPath = newPath;
+    console.debug(`Successfully changed directory to: ${this.getPathString()}`);
+    return true;
   }
+  
+  
 
   public async getFileContent(path: string): Promise<string> {
     // Handle special case for project files
@@ -639,5 +607,14 @@ export class VirtualFileSystem {
       console.error(`Error loading file ${path}:`, error);
       return `File not found: ${path}`;
     }
+  }
+
+  public setRootFromGitHubTree(tree: FileSystemNode) {
+    console.log('[VFS] setRootFromGitHubTree: replacing root');
+    if (tree.children?.scripts && tree.children.scripts.children) {
+      console.log('[VFS] scripts children in incoming tree:', Object.keys(tree.children.scripts.children));
+    }
+    this.root = tree;
+    this.currentPath = ['/'];
   }
 }

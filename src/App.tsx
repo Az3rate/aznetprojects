@@ -3,17 +3,10 @@ import { ThemeProvider } from './styles/ThemeProvider';
 import { Terminal } from './components/Terminal/Terminal';
 import { GlobalStyles } from './styles/globalStyles';
 import { WelcomeModal } from './components/WelcomeModal';
+import { DirectoryProvider } from './context/DirectoryContext';
 
 export const App: React.FC = () => {
-  const [showWelcome, setShowWelcome] = React.useState(false);
-
-  React.useEffect(() => {
-    const hasSeenWelcome = localStorage.getItem('aznet_seen_welcome');
-    if (!hasSeenWelcome) {
-      setShowWelcome(true);
-      localStorage.setItem('aznet_seen_welcome', '1');
-    }
-  }, []);
+  const [showWelcome, setShowWelcome] = React.useState(true);
 
   const handleStartTour = () => {
     setShowWelcome(false);
@@ -22,12 +15,14 @@ export const App: React.FC = () => {
   return (
     <ThemeProvider>
       <GlobalStyles />
-      <WelcomeModal
-        isOpen={showWelcome}
-        onRequestClose={() => setShowWelcome(false)}
-        onStartTour={handleStartTour}
-      />
-      <Terminal onOpenWelcome={() => setShowWelcome(true)} />
+      <DirectoryProvider>
+        <WelcomeModal
+          isOpen={showWelcome}
+          onRequestClose={() => setShowWelcome(false)}
+          onStartTour={handleStartTour}
+        />
+        <Terminal onOpenWelcome={() => setShowWelcome(true)} />
+      </DirectoryProvider>
     </ThemeProvider>
   );
 }; 
