@@ -83,7 +83,7 @@ export const OptionsPanel: React.FC<OptionsPanelProps> = ({
   };
 
   const getBackgroundIcon = () => {
-    return isBackgroundMuted ? '🎵' : '🎵';
+    return isBackgroundMuted ? '' : '';
   };
 
   return (

@@ -69,6 +69,51 @@ const FirstTimeHint = styled.div`
   }
 `;
 
+const ProjectsSection = styled.div`
+  background-color: ${({ theme }) => theme.colors.background.secondary};
+  padding: 1.5rem;
+  border-radius: 4px;
+  margin: 1.5rem 0;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+`;
+
+const ProjectsTitle = styled.div`
+  color: ${({ theme }) => theme.colors.text.primary};
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+`;
+
+const ProjectItem = styled.div`
+  margin: 1rem 0;
+  padding: 1rem;
+  background-color: ${({ theme }) => theme.colors.background.primary};
+  border-radius: 4px;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  transition: transform 0.2s, box-shadow 0.2s;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+`;
+
+const ProjectName = styled(ClickableItem)`
+  font-size: 1.1rem;
+  font-weight: 600;
+  display: inline-block;
+  margin-bottom: 0.5rem;
+`;
+
+const ProjectDescription = styled.div`
+  color: ${({ theme }) => theme.colors.text.secondary};
+  font-size: 0.95rem;
+  line-height: 1.5;
+`;
+
 interface WelcomeMessageProps {
   onCommandClick: (command: string) => void;
   isFirstTime: boolean;
@@ -130,42 +175,49 @@ o88o     o8888o d8888888P  o8o        ︻8  ︻Y8bod8P'   "888"
         Created by <b>Hugo Villeneuve</b>
       </Subtitle>
       <WelcomeText>
-        <b>This interactive page is designed for recruiters and technical reviewers to easily explore my work and coding skills.</b>
+        <b>My Journey</b><br/>
+        After years in corporate development, I made a deliberate choice to step back and invest in my growth as a developer. Using my savings, I dedicated myself to mastering new technologies and building practical solutions that solve real problems. This journey led me to create several successful web applications and bots that generate subscription revenue while allowing me to explore cutting-edge technologies.
       </WelcomeText>
       <WelcomeText>
-        <b>What is this?</b><br/>
-        This is a modern, web-based terminal interface that lets you browse real project files, view code, and read about my featured projects—all in one place. No coding experience is required!
+        <b>The Challenge</b><br/>
+        Despite building and maintaining profitable applications, I noticed a disconnect between my entrepreneurial achievements and how they were perceived in traditional recruitment processes. While I had created real, working products that users paid for, these accomplishments often didn't translate effectively in interviews. This realization sparked the creation of this portfolio.
       </WelcomeText>
       <WelcomeText>
-        <b>What can you do here?</b>
+        <b>Why This Portfolio?</b><br/>
+        This isn't just another static portfolio. It's a living demonstration of my technical capabilities, built as a modern terminal interface that lets you explore my actual codebase, architecture decisions, and project implementations. Every file you see is real, every command works, and every project shown is a testament to my commitment to quality and innovation.
+      </WelcomeText>
+      <WelcomeText>
+        <b>What You'll Find Here</b><br/>
         <ul style={{ margin: '0.5rem 0 0.5rem 1.5rem' }}>
-          <li><b>The panel on the left is a real file explorer.</b> What you see there is the actual working code and structure of this web application—just like a developer would see in their editor.</li>
-          <li>Click on any file or folder in the sidebar to instantly view its contents and code.</li>
-          <li>Click on a project name below to see a detailed overview, key features, and tech stack.</li>
-          <li>Type or click commands (like <ClickableItem onClick={handleClick('help')}>help</ClickableItem>, <ClickableItem onClick={handleClick('ls')}>ls</ClickableItem>, <ClickableItem onClick={handleClick('cat App.tsx')}>cat</ClickableItem>) to interact with the terminal—just like a real developer would.</li>
-          <li>Use the <b>Quick Menu</b> for one-click access to project lists, contact info, and more.</li>
+          <li><b>Real Code:</b> Browse through actual project files and see how I structure and implement features.</li>
+          <li><b>Architecture:</b> Explore the technical decisions behind each project, from frontend frameworks to backend services.</li>
+          <li><b>Problem Solving:</b> Understand how I approach challenges and implement solutions that scale.</li>
+          <li><b>Technical Depth:</b> See my expertise in action through working examples and detailed documentation.</li>
         </ul>
       </WelcomeText>
-      <WelcomeText data-tour="project-list">
-        <b>Featured Projects:</b>
-      </WelcomeText>
-      {projects.length > 0 && (
-        <div data-tour="project-list">
-          {projects.map((project) => (
-            <div key={project.name} style={{ marginBottom: 4 }}>
-              <ClickableItem
-                onClick={handleClick(`cat ${project.name.toLowerCase()}`)}
-                {...(project.name === 'D4UT' ? { 'data-tour': 'project-d4ut' } : {})}
-                {...(project.name === 'LootManager' ? { 'data-tour': 'project-lootmanager' } : {})}
-                {...(project.name === 'RaidAlert' ? { 'data-tour': 'project-raidalert' } : {})}
-              >
-                {project.name}
-              </ClickableItem>
-              {' '}– {project.description}
-            </div>
-          ))}
-        </div>
-      )}
+
+      <ProjectsSection data-tour="project-list">
+        <ProjectsTitle>Featured Projects</ProjectsTitle>
+        {projects.length > 0 && (
+          <>
+            {projects.map((project) => (
+              <ProjectItem key={project.name}>
+                <ProjectName
+                  onClick={handleClick(`cat ${project.name.toLowerCase()}`)}
+                  {...(project.name === 'D4UT' ? { 'data-tour': 'project-d4ut' } : {})}
+                  {...(project.name === 'LootManager' ? { 'data-tour': 'project-lootmanager' } : {})}
+                  {...(project.name === 'RaidAlert' ? { 'data-tour': 'project-raidalert' } : {})}
+                  {...(project.name === 'AzNet Terminal' ? { 'data-tour': 'project-terminal' } : {})}
+                >
+                  {project.name}
+                </ProjectName>
+                <ProjectDescription>{project.description}</ProjectDescription>
+              </ProjectItem>
+            ))}
+          </>
+        )}
+      </ProjectsSection>
+
       <QuickMenu data-tour="quick-menu">
         <ClickableItem onClick={handleClick('help')}>Help</ClickableItem>
         <ClickableItem onClick={handleClick('about')}>About</ClickableItem>

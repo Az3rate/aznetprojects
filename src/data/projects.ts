@@ -206,5 +206,59 @@ export const projects: Project[] = [
       'Deployment via custom scripts and monitoring'
     ],
     summary: 'RaidAlert came from a real need - we kept getting raided in ARK when no one was online. I built this bot to give us a fighting chance, and it\'s been a game-changer for our tribe. It\'s not perfect, but it helps us sleep better knowing we\'ll get a heads-up if someone\'s messing with our base. The Discord integration makes it easy for everyone to stay in the loop.'
+  },
+  {
+    name: 'AzNet Terminal',
+    description: 'A modern, interactive terminal interface built with React and TypeScript, designed to showcase my projects and technical capabilities in a unique and engaging way.',
+    url: 'https://github.com/username/aznet-terminal',
+    image: 'terminal.png',
+    architectureImage: 'terminal-mermaid.png',
+    overview: 'A sophisticated terminal interface that serves as both a portfolio and a demonstration of technical expertise. Built to address the challenge of effectively communicating entrepreneurial and technical achievements to recruiters and technical reviewers.',
+    keyFeatures: [
+      'Interactive Terminal: Real command-line interface with history, autocomplete, and command suggestions',
+      'Live File Explorer: Browse actual project files and code structure',
+      'Project Showcase: Detailed project information with architecture diagrams and tech stacks',
+      'Guided Tour: Interactive walkthrough for first-time visitors',
+      'Responsive Design: Seamless experience across all devices',
+      'Theme Support: Dark mode with customizable accents',
+      'Sound Effects: Optional keyboard sounds and background music'
+    ],
+    architecture: {
+      frontend: {
+        framework: 'React',
+        language: 'TypeScript',
+        styling: 'styled-components',
+        stateManagement: 'React Hooks'
+      },
+      backend: {
+        framework: 'None',
+        language: 'N/A',
+        database: 'N/A'
+      }
+    },
+    techStack: [
+      { name: 'React', version: '18.2.0', description: 'Frontend framework' },
+      { name: 'TypeScript', version: '4.9.5', description: 'Programming language' },
+      { name: 'styled-components', version: '6.0.7', description: 'CSS-in-JS styling' },
+      { name: 'React Joyride', version: '2.5.1', description: 'Interactive tour' },
+      { name: 'Howler.js', version: '2.2.3', description: 'Audio management' }
+    ],
+    directoryStructure: {
+      src: {
+        components: ['Terminal', 'FileExplorer', 'ProjectDetails'],
+        hooks: ['useTerminal', 'useFileSystem'],
+        services: ['commands', 'fileSystem'],
+        styles: ['theme', 'globalStyles'],
+        types: ['index']
+      }
+    },
+    apiEndpoints: [],
+    workflow: [
+      'Local development with hot module replacement',
+      'TypeScript compilation and type checking',
+      'ESLint for code quality',
+      'GitHub Actions for CI/CD'
+    ],
+    summary: 'The AzNet Terminal is more than just a portfolio - it\'s a demonstration of my approach to problem-solving and technical implementation. Born from the challenge of effectively communicating my entrepreneurial journey and technical achievements, this project showcases my ability to create engaging, interactive experiences while maintaining professional standards and technical excellence.'
   }
 ]; 
