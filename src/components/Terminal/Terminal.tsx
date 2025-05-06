@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useTerminal } from '../../hooks/useTerminal';
+import { useTypingSound } from '../../hooks/useTypingSound';
 import { projects } from '../../data/projects';
 import { WelcomeMessage } from './WelcomeMessage';
 import { ProjectDetails } from './ProjectDetails';
@@ -31,6 +32,7 @@ import {
   BlinkingCursor
 } from './Terminal.styles';
 import Joyride, { Step } from 'react-joyride';
+import { useBackgroundAudio } from '../../hooks/useBackgroundAudio';
 
 function formatPromptPath(path: string) {
   if (!path || path === '~' || path === '/' || path === '') return '/';
@@ -71,6 +73,12 @@ export const Terminal: React.FC = () => {
     changeDirectory
   } = useTerminal(projects);
 
+  const [volume, setVolume] = useState(() => {
+    const savedVolume = localStorage.getItem('terminal_volume');
+    return savedVolume ? parseFloat(savedVolume) : 0.15;
+  });
+
+  const playTypingSound = useTypingSound(volume);
   const [input, setInput] = useState('');
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [selectedSuggestion, setSelectedSuggestion] = useState(-1);
@@ -88,6 +96,23 @@ export const Terminal: React.FC = () => {
   const terminalCommands = useRef(new TerminalCommands(projects));
   const [tourOpen, setTourOpen] = useState(false);
   
+  const [isBackgroundMuted, setIsBackgroundMuted] = useState(() => {
+    const savedMute = localStorage.getItem('terminal_background_muted');
+    return savedMute ? JSON.parse(savedMute) : false;
+  });
+
+  const { toggleMute } = useBackgroundAudio(volume);
+
+  // Save volume to localStorage when it changes
+  useEffect(() => {
+    localStorage.setItem('terminal_volume', volume.toString());
+  }, [volume]);
+
+  // Save background mute state to localStorage when it changes
+  useEffect(() => {
+    localStorage.setItem('terminal_background_muted', JSON.stringify(isBackgroundMuted));
+  }, [isBackgroundMuted]);
+
   const tourSteps: Step[] = [
     {
       target: '[data-tour="sidebar"]',
@@ -206,6 +231,7 @@ export const Terminal: React.FC = () => {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setInput(value);
+    playTypingSound();
     if (value.trim()) {
       const newSuggestions = getCommandSuggestions(value).map(s => s.command);
       setSuggestions(newSuggestions);
@@ -347,6 +373,11 @@ export const Terminal: React.FC = () => {
     inputRef.current?.focus();
   };
 
+  const handleToggleBackground = () => {
+    setIsBackgroundMuted(!isBackgroundMuted);
+    toggleMute();
+  };
+
   return (
     <TerminalWrapper>
       <Sidebar data-tour="sidebar">
@@ -354,6 +385,10 @@ export const Terminal: React.FC = () => {
           onFileClick={handleFileClick} 
           onDirectoryClick={handleDirectoryClick}
           currentDirectory={state.currentDirectory}
+          volume={volume}
+          onVolumeChange={setVolume}
+          onToggleBackground={handleToggleBackground}
+          isBackgroundMuted={isBackgroundMuted}
         />
       </Sidebar>
       <TerminalContent onClick={handleTerminalClick}>

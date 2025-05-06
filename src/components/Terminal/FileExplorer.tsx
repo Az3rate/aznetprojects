@@ -6,10 +6,20 @@ import {
   DirectoryIcon,
   DirectoryName
 } from './Terminal.styles';
+import { OptionsPanel } from './OptionsPanel';
 
 const ExplorerContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  height: 100%;
   font-family: 'Fira Code', monospace;
   font-size: 0.95rem;
+`;
+
+const FileTree = styled.div`
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem;
 `;
 
 interface FileNode {
@@ -23,12 +33,20 @@ interface FileExplorerProps {
   onFileClick: (filePath: string) => void;
   onDirectoryClick: (dirPath: string) => void;
   currentDirectory: string;
+  volume: number;
+  onVolumeChange: (volume: number) => void;
+  onToggleBackground: () => void;
+  isBackgroundMuted: boolean;
 }
 
 export const FileExplorer: React.FC<FileExplorerProps> = ({ 
   onFileClick, 
   onDirectoryClick,
-  currentDirectory 
+  currentDirectory,
+  volume,
+  onVolumeChange,
+  onToggleBackground,
+  isBackgroundMuted
 }) => {
   const [expanded, setExpanded] = useState<{ [key: string]: boolean }>({});
   
@@ -113,7 +131,15 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 
   return (
     <ExplorerContainer>
-      {renderRootLevelItems()}
+      <FileTree>
+        {renderRootLevelItems()}
+      </FileTree>
+      <OptionsPanel 
+        volume={volume}
+        onVolumeChange={onVolumeChange}
+        onToggleBackground={onToggleBackground}
+        isBackgroundMuted={isBackgroundMuted}
+      />
     </ExplorerContainer>
   );
 };
