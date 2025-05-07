@@ -452,34 +452,9 @@ export class VirtualFileSystem {
   }
 
   public addProjectFiles(projects: Project[]): void {
-    const projectsDir = this.root.children?.['projects'];
-    if (!projectsDir || projectsDir.type !== 'directory' || !projectsDir.children) {
-
-      this.root.children = this.root.children || {};
-      this.root.children['projects'] = {
-        name: 'projects',
-        type: 'directory',
-        children: {}
-      };
-    }
-    
-
-    if (!this.root.children || !this.root.children['projects'] || 
-        this.root.children['projects'].type !== 'directory' || 
-        !this.root.children['projects'].children) {
-      return; 
-    }
-    
-    const currentProjectsDir = this.root.children['projects'];
-    const children = currentProjectsDir.children as Record<string, FileSystemNode>;
-    
-    projects.forEach(project => {
-      children[project.name.toLowerCase()] = {
-        name: project.name.toLowerCase(),
-        type: 'file',
-        content: `${project.name}\n${project.description}\n${project.overview || ''}`
-      };
-    });
+    // This function no longer injects a 'projects' directory into the VFS root.
+    // If you want to display projects, do so via commands or UI, not the file tree.
+    return;
   }
 
   public listDirectory(): { name: string; type: 'file' | 'directory'; size: number }[] {

@@ -2,7 +2,10 @@ import styled, { css } from 'styled-components';
 
 export const TerminalWrapper = styled.div<{ $featuredCollapsed?: boolean }>`
   display: grid;
-  grid-template-columns: ${({ $featuredCollapsed }) => $featuredCollapsed ? '40px' : 'minmax(300px, 400px)'} minmax(200px, 250px) 1fr minmax(300px, 700px);
+  grid-template-columns: ${({ $featuredCollapsed }) =>
+    $featuredCollapsed
+      ? '40px minmax(200px, 250px) 1fr auto'
+      : 'minmax(300px, 400px) minmax(200px, 250px) 1fr auto'};
   height: 100vh;
   background-color: ${({ theme }) => theme.colors.background.primary};
   color: ${({ theme }) => theme.colors.text.primary};
@@ -38,6 +41,7 @@ export const TerminalContent = styled.div`
   padding: 1rem;
   overflow-y: auto;
   font-family: 'Fira Code', monospace;
+  min-width: 0;
 `;
 
 export const CommandLine = styled.div`
@@ -94,7 +98,24 @@ export const CommandOutput = styled.div`
   margin-bottom: 1rem;
 `;
 
-export const DetailsPanel = styled.div<{ $isOpen: boolean }>`
+export const ResizerBar = styled.div`
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 6px;
+  height: 100%;
+  cursor: ew-resize;
+  z-index: 2;
+  background: ${({ theme }) => theme.colors.border};
+  opacity: 0.5;
+  transition: background 0.2s;
+  &:hover {
+    background: ${({ theme }) => theme.colors.accent};
+    opacity: 0.8;
+  }
+`;
+
+export const DetailsPanel = styled.div<{ $isOpen: boolean; $width?: number }>`
   background-color: ${({ theme }) => theme.colors.background.secondary};
   padding: 1rem;
   border-left: 1px solid ${({ theme }) => theme.colors.border};
@@ -102,9 +123,8 @@ export const DetailsPanel = styled.div<{ $isOpen: boolean }>`
   transition: transform 0.3s ease-in-out;
   overflow-y: auto;
   min-width: 300px;
-  max-width: 700px;
-  width: auto;
-  resize: horizontal;
+  width: ${({ $width }) => ($width ? `${$width}px` : 'auto')};
+  max-width: none;
   position: relative;
 `;
 

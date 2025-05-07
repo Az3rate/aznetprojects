@@ -29,7 +29,8 @@ import {
   DirSpan,
   FileSpan,
   BlinkingCursor,
-  FeaturedSidebar
+  FeaturedSidebar,
+  ResizerBar
 } from './Terminal.styles';
 import Joyride, { Step } from 'react-joyride';
 import { useBackgroundAudio } from '../../hooks/useBackgroundAudio';
@@ -126,6 +127,12 @@ const TerminalComponent: React.ForwardRefRenderFunction<TerminalRef, TerminalPro
 
   const theme = useTheme();
 
+  const [detailsPanelWidth, setDetailsPanelWidth] = useState(720);
+  const resizerRef = useRef<HTMLDivElement>(null);
+  const isResizing = useRef(false);
+  const detailsPanelRef = useRef<HTMLDivElement>(null);
+  const dragData = useRef<{right: number, startX: number, startWidth: number} | null>(null);
+
   // Save volume to localStorage when it changes
   useEffect(() => {
     localStorage.setItem('terminal_volume', volume.toString());
@@ -135,6 +142,30 @@ const TerminalComponent: React.ForwardRefRenderFunction<TerminalRef, TerminalPro
   useEffect(() => {
     localStorage.setItem('terminal_background_muted', JSON.stringify(isBackgroundMuted));
   }, [isBackgroundMuted]);
+
+  useEffect(() => {
+    function handleMouseMove(e: MouseEvent) {
+      if (!isResizing.current || !dragData.current) return;
+      const min = 300;
+    
+      // Calculate how far left the cursor has moved from the starting point
+      const deltaX = dragData.current.startX - e.clientX;
+      const newWidth = Math.max(min, dragData.current.startWidth + deltaX);
+      setDetailsPanelWidth(newWidth);
+    }
+    
+    function handleMouseUp() {
+      isResizing.current = false;
+      dragData.current = null;
+      document.body.style.cursor = '';
+    }
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, []);
 
   const recruiterTourSteps: Step[] = [
     {
@@ -463,7 +494,7 @@ const TerminalComponent: React.ForwardRefRenderFunction<TerminalRef, TerminalPro
           <div
             key={project.name}
             style={{
-              background: 'var(--background-primary, #181825)',
+              background: 'var(--background-primary,rgba(0, 0, 0, 0.68))',
               color: 'var(--text-primary, #cdd6f4)',
               border: '1px solid var(--border, #45475a)',
               marginBottom: 18,
@@ -657,7 +688,23 @@ const TerminalComponent: React.ForwardRefRenderFunction<TerminalRef, TerminalPro
         </CommandInput>
         <div ref={endOfTerminalRef} />
       </TerminalContent>
-      <DetailsPanel $isOpen={state.isDetailsPanelOpen} data-tour="details-panel">
+      <DetailsPanel ref={detailsPanelRef} $isOpen={state.isDetailsPanelOpen} data-tour="details-panel" $width={detailsPanelWidth}>
+        <ResizerBar
+          ref={resizerRef}
+          onMouseDown={e => {
+            e.preventDefault();
+            isResizing.current = true;
+            if (detailsPanelRef.current) {
+              const rect = detailsPanelRef.current.getBoundingClientRect();
+              dragData.current = {
+                right: rect.right,
+                startX: e.clientX,
+                startWidth: rect.width
+              };
+            }
+            document.body.style.cursor = 'ew-resize';
+          }}
+        />
         {state.selectedProject && (
           <ProjectDetails
             project={state.selectedProject}
