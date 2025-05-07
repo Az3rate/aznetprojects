@@ -56,9 +56,8 @@ const ModalOverlay = styled.div`
 `;
 
 const ModalContent = styled.div`
-  background-color: #1e1e1e;
+  background-color:rgba(30, 30, 30, 0.47);
   border: 1px solid #333;
-  border-radius: 8px;
   padding: 2rem;
   max-width: 1000px;
   width: 90%;
@@ -207,19 +206,19 @@ o88o     o8888o d8888888P  o8o        8  Y8bod8P'   "888"
               <Section>
                 <SectionTitle>My Journey</SectionTitle>
                 <WelcomeText>
-                  After years in corporate development, I made a deliberate choice to step back and invest in my growth as a developer. Using my savings, I dedicated myself to mastering new technologies and building practical solutions that solve real problems. This journey led me to create several successful web applications and bots that generate subscription revenue while allowing me to explore cutting-edge technologies.
+                  After years in corporate development, I chose to take time off and focus on building things that mattered to me. Using my savings, I dove into new technologies and created a series of real, working applications / tools people use and, in many cases, pay for. This period gave me space to grow, experiment, and build with care.
                 </WelcomeText>
               </Section>
               <Section>
                 <SectionTitle>The Challenge</SectionTitle>
                 <WelcomeText>
-                  Despite building and maintaining profitable applications, I noticed a disconnect between my entrepreneurial achievements and how they were perceived in traditional recruitment processes. While I had created real, working products that users paid for, these accomplishments often didn't translate effectively in interviews. This realization sparked the creation of this portfolio.
+                  Even with working applications and paying users, I found it difficult to explain the value of this work during interviews. Traditional hiring processes often overlook self-directed projects, no matter how real or successful they are. I wanted a better way to show my skills, my thinking, and what I'm capable of.
                 </WelcomeText>
               </Section>
               <Section>
-                <SectionTitle>Why This Portfolio?</SectionTitle>
+                <SectionTitle>Why This Portfolio Exists</SectionTitle>
                 <WelcomeText>
-                  This isn't just another static portfolio. It's a living demonstration of my technical capabilities, built as a modern terminal interface that lets you explore my actual codebase, architecture decisions, and project implementations. Every file you see is real, every command works, and every project shown is a testament to my commitment to quality and innovation.
+                  This site is the answer. What you're looking at isn't just a portfolio... It's one of the projects itself. The terminal you're using is a fully working application, built from scratch. When you explore the files, you're exploring the code behind this very website. You can browse directories, read real code, and see how everything works together in one place. It's a direct, transparent way to show how I build & I hope it connects with people who care about that.
                 </WelcomeText>
               </Section>
               <div style={{ display: 'flex', justifyContent: 'center', marginTop: 32 }}>

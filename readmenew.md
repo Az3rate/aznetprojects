@@ -185,4 +185,10 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## Author
 
-Hugo Villeneuve - [GitHub Profile](https://github.com/Az3rate)
+Hugo Villeneuve - [GitHub Profile](https://github.com/yourusername)
+
+## Acknowledgments
+
+- React team for the amazing framework
+- styled-components for the styling solution
+- All contributors and supporters of the project 

@@ -2,13 +2,14 @@ import styled, { css } from 'styled-components';
 
 export const TerminalWrapper = styled.div<{ $featuredCollapsed?: boolean }>`
   display: grid;
-  grid-template-columns: ${({ $featuredCollapsed }) => $featuredCollapsed ? '40px' : '400px'} 250px 1fr 700px;
+  grid-template-columns: ${({ $featuredCollapsed }) => $featuredCollapsed ? '40px' : 'minmax(300px, 400px)'} minmax(200px, 250px) 1fr minmax(300px, 700px);
   height: 100vh;
   background-color: ${({ theme }) => theme.colors.background.primary};
   color: ${({ theme }) => theme.colors.text.primary};
   font-family: 'Fira Code', monospace;
   position: relative;
   z-index: 1;
+  overflow: hidden;
 `;
 
 
@@ -19,11 +20,12 @@ export const FeaturedSidebar = styled.div<{ $collapsed?: boolean }>`
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  min-width: ${({ $collapsed }) => $collapsed ? '40px' : '400px'};
+  min-width: ${({ $collapsed }) => $collapsed ? '40px' : '300px'};
   max-width: ${({ $collapsed }) => $collapsed ? '40px' : '400px'};
-  width: ${({ $collapsed }) => $collapsed ? '40px' : '400px'};
+  width: ${({ $collapsed }) => $collapsed ? '40px' : 'auto'};
   overflow-y: auto;
   transition: all 0.2s cubic-bezier(0.4,0,0.2,1);
+  resize: horizontal;
 `;
 
 export const Sidebar = styled.div`
@@ -99,6 +101,11 @@ export const DetailsPanel = styled.div<{ $isOpen: boolean }>`
   transform: translateX(${({ $isOpen }) => ($isOpen ? '0' : '100%')});
   transition: transform 0.3s ease-in-out;
   overflow-y: auto;
+  min-width: 300px;
+  max-width: 700px;
+  width: auto;
+  resize: horizontal;
+  position: relative;
 `;
 
 export const DirectoryTree = styled.div`

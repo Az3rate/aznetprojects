@@ -154,6 +154,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = React.memo(({
               $isActive={isCurrentDir}
               onClick={(e) => {
                 e.stopPropagation();
+                toggleExpansion(cleanNodePath, e);
                 handleDirectoryClick(cleanNodePath);
               }}
             >
