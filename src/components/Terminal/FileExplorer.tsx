@@ -85,7 +85,6 @@ export const FileExplorer: React.FC<FileExplorerProps> = React.memo(({
   const [expanded, setExpanded] = useState<{ [key: string]: boolean }>({});
   const lastProcessedDir = useRef<string>('');
 
-  // Path normalization utility
   const normalizePath = useCallback((path: string): string => {
     if (!path || path === '' || path === '~') return '/';
     let cleaned = path;
@@ -95,7 +94,6 @@ export const FileExplorer: React.FC<FileExplorerProps> = React.memo(({
     return cleaned;
   }, []);
 
-  // Handle directory expansion based on current path
   useEffect(() => {
     if (currentDirectory === lastProcessedDir.current) return;
     lastProcessedDir.current = currentDirectory;
@@ -114,7 +112,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = React.memo(({
     setExpanded(prev => ({...prev, ...newExpanded}));
   }, [currentDirectory, normalizePath]);
 
-  // Handle manual toggle of directory expansion
+
   const toggleExpansion = useCallback((path: string, e: React.MouseEvent) => {
     e.stopPropagation();
     const cleanPath = normalizePath(path);
@@ -125,7 +123,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = React.memo(({
     });
   }, [normalizePath]);
 
-  // Handle directory click from FileExplorer
+
   const handleDirectoryClick = useCallback((dirPath: string) => {
     let cleanPath = dirPath;
     if (!cleanPath.startsWith('/')) cleanPath = '/' + cleanPath;
@@ -134,7 +132,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = React.memo(({
     onDirectoryClick(cleanPath);
   }, [onDirectoryClick]);
 
-  // Render a directory node and its children
+
   const renderTree = useCallback(
     (node: FileNode, path: string): React.ReactNode => {
       if (!node) return null;
@@ -144,7 +142,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = React.memo(({
       const isCurrentDir = cleanNodePath === cleanCurrent;
       const isExpanded = expanded[cleanNodePath] || false;
 
-      // Debug
+
       console.log('[FileExplorer][renderTree]', { path: cleanNodePath, isExpanded });
 
       if (isDir) {
@@ -180,11 +178,11 @@ export const FileExplorer: React.FC<FileExplorerProps> = React.memo(({
           key={cleanNodePath}
           onClick={(e) => {
             e.stopPropagation();
-            // Sync terminal to file's parent dir
+
             const segments = cleanNodePath.split('/');
             const parentDir = '/' + segments.slice(1, -1).join('/');
-            onDirectoryClick(parentDir); // Sync CD
-            // Then open file
+            onDirectoryClick(parentDir); 
+
             onFileClick('/' + cleanNodePath.replace(/^\/+/, ''));
           }}
         >
@@ -196,9 +194,9 @@ export const FileExplorer: React.FC<FileExplorerProps> = React.memo(({
     [expanded, currentDirectory, onFileClick, normalizePath, handleDirectoryClick, toggleExpansion]
   );
 
-  // Render the root level items
+
   const renderRootLevelItems = useCallback(() => {
-    // Add this declaration once before using it
+
     interface WindowWithDebugFlag extends Window {
       __fileTreeNullLogged?: boolean;
     }

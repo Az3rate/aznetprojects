@@ -133,12 +133,10 @@ const TerminalComponent: React.ForwardRefRenderFunction<TerminalRef, TerminalPro
   const detailsPanelRef = useRef<HTMLDivElement>(null);
   const dragData = useRef<{right: number, startX: number, startWidth: number} | null>(null);
 
-  // Save volume to localStorage when it changes
   useEffect(() => {
     localStorage.setItem('terminal_volume', volume.toString());
   }, [volume]);
 
-  // Save background mute state to localStorage when it changes
   useEffect(() => {
     localStorage.setItem('terminal_background_muted', JSON.stringify(isBackgroundMuted));
   }, [isBackgroundMuted]);
@@ -147,8 +145,6 @@ const TerminalComponent: React.ForwardRefRenderFunction<TerminalRef, TerminalPro
     function handleMouseMove(e: MouseEvent) {
       if (!isResizing.current || !dragData.current) return;
       const min = 300;
-    
-      // Calculate how far left the cursor has moved from the starting point
       const deltaX = dragData.current.startX - e.clientX;
       const newWidth = Math.max(min, dragData.current.startWidth + deltaX);
       setDetailsPanelWidth(newWidth);
@@ -303,7 +299,6 @@ const TerminalComponent: React.ForwardRefRenderFunction<TerminalRef, TerminalPro
   const knownCommands = [
     'help', 'clear', 'about', 'projects', 'contact', 'ls', 'cd', 'pwd', 'cat', 'echo', 'neofetch', 'exit'
   ];
-  // Track last command status for prompt color
   const lastStatus = state.history.length > 0 ? state.history[state.history.length - 1].type : 'default';
 
   useEffect(() => {
@@ -417,7 +412,6 @@ const TerminalComponent: React.ForwardRefRenderFunction<TerminalRef, TerminalPro
     }
   };
 
-  // Memoize handleFileClick so handleFileClick is also stable
   const handleFileClick = useCallback((filePath: string) => {
     handleCommandClick(`cat ${filePath.startsWith('/') ? filePath.slice(1) : filePath}`);
   }, [handleCommandClick]);
@@ -426,7 +420,6 @@ const TerminalComponent: React.ForwardRefRenderFunction<TerminalRef, TerminalPro
     setDirectory(dirPath);
   }, [setDirectory]);
 
-  // Only show history after the last clear marker
   const getVisibleHistory = () => {
     const lastClearIndex = state.history.map(h => h.type).lastIndexOf('clear');
     return lastClearIndex >= 0 ? state.history.slice(lastClearIndex + 1) : state.history;
@@ -450,12 +443,10 @@ const TerminalComponent: React.ForwardRefRenderFunction<TerminalRef, TerminalPro
     setVolume(v);
   }, []);
 
-  // Featured projects logic
   const featuredProjects = projects.filter(p => p.featured);
 
   const [featuredCollapsed, setFeaturedCollapsed] = useState(false);
 
-  // Expose startTour method through ref
   React.useImperativeHandle(ref, () => ({
     startTour: (type: 'recruiter' | 'technical') => {
       setTourType(type);
@@ -616,7 +607,6 @@ const TerminalComponent: React.ForwardRefRenderFunction<TerminalRef, TerminalPro
                 {item.command === 'ls' ? (
                   <pre style={{ margin: 0, fontFamily: 'inherit', background: 'none', color: 'inherit', whiteSpace: 'pre-wrap' }}>
                     {item.output.split('\n').map((line, i) => {
-                      // d or - at start, then size, then name
                       const match = line.match(/^([d-])\s+\d+\s+(.+)$/);
                       if (match) {
                         const [, type, name] = match;

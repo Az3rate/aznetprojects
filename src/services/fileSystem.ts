@@ -452,8 +452,6 @@ export class VirtualFileSystem {
   }
 
   public addProjectFiles(projects: Project[]): void {
-    // This function no longer injects a 'projects' directory into the VFS root.
-    // If you want to display projects, do so via commands or UI, not the file tree.
     return;
   }
 

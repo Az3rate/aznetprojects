@@ -4,7 +4,7 @@ import { Terminal } from '../components/Terminal/Terminal';
 import { projects } from '../data/projects';
 import { ThemeProvider } from '../styles/ThemeProvider';
 
-// Mock scrollIntoView
+
 Element.prototype.scrollIntoView = jest.fn();
 
 const renderWithTheme = (component: React.ReactElement) => {
