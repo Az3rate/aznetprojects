@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useTerminal } from '../../hooks/useTerminal';
 import { useTypingSound } from '../../hooks/useTypingSound';
 import { projects } from '../../data/projects';
@@ -253,64 +253,49 @@ export const Terminal: React.FC<TerminalProps> = ({ onOpenWelcome }) => {
     }
   };
 
-  const handleCommandClick = async (command: string) => {
+  const handleCommandClick = useCallback(async (command: string) => {
     const trimmedCommand = command.trim();
-    
     if (trimmedCommand.startsWith('cat ')) {
       const fileName = trimmedCommand.split(' ')[1];
-      // Check if it's a project name first
       const project = projects.find(p => p.name.toLowerCase() === fileName.toLowerCase());
       if (project) {
-        // Use the openDetailsPanel from the hook
         openDetailsPanel(project);
-        // Add only the command to history
         addCommandOnly(trimmedCommand);
         setInput('');
         setSuggestions([]);
         return;
       }
-      // Execute the cat command locally to get the file content
       try {
         const result = await commandsRef.current.execute('cat', [fileName]);
         if (result.type === 'success' && typeof result.output === 'string') {
-          // Use the openFileDetails from the hook
-          openFileDetails({
-            fileName: fileName,
-            content: result.output
-          });
-          // Add only the command to history
+          openFileDetails({ fileName, content: result.output });
           addCommandOnly(trimmedCommand);
         } else {
-          // If error, use the normal executeCommand to show the error
           await executeCommand(trimmedCommand);
         }
       } catch (error) {
-        // Handle any errors
         await executeCommand(trimmedCommand);
       }
       setInput('');
       setSuggestions([]);
       return;
     } else if (trimmedCommand.startsWith('cd ')) {
-      // Handle directory changes directly
       const dirPath = trimmedCommand.split(' ')[1];
       try {
         await changeDirectory(dirPath);
         setInput('');
         setSuggestions([]);
       } catch (error) {
-        // Fall back to normal command execution if there's an error
         await executeCommand(trimmedCommand);
         setInput('');
         setSuggestions([]);
       }
       return;
     }
-    // Execute the command normally for all other cases
     await executeCommand(trimmedCommand);
     setInput('');
     setSuggestions([]);
-  };
+  }, [openDetailsPanel, addCommandOnly, openFileDetails, executeCommand, changeDirectory, setInput, setSuggestions, projects, commandsRef]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     switch (e.key) {
@@ -357,16 +342,14 @@ export const Terminal: React.FC<TerminalProps> = ({ onOpenWelcome }) => {
     }
   };
 
-  // Handle file click from FileExplorer
-  const handleFileClick = (filePath: string) => {
-    // Pass the full file path to the cat command
+  // Memoize handleFileClick so handleFileClick is also stable
+  const handleFileClick = useCallback((filePath: string) => {
     handleCommandClick(`cat ${filePath.startsWith('/') ? filePath.slice(1) : filePath}`);
-  };
+  }, [handleCommandClick]);
 
-  // Handle directory click from FileExplorer
-  const handleDirectoryClick = (dirPath: string) => {
+  const handleDirectoryClick = useCallback((dirPath: string) => {
     setDirectory(dirPath);
-  };
+  }, [setDirectory]);
 
   // Only show history after the last clear marker
   const getVisibleHistory = () => {
@@ -383,10 +366,14 @@ export const Terminal: React.FC<TerminalProps> = ({ onOpenWelcome }) => {
     inputRef.current?.focus();
   };
 
-  const handleToggleBackground = () => {
-    setIsBackgroundMuted(!isBackgroundMuted);
+  const handleToggleBackground = useCallback(() => {
+    setIsBackgroundMuted((m: boolean) => !m);
     toggleMute();
-  };
+  }, [toggleMute]);
+
+  const handleVolumeChange = useCallback((v: number) => {
+    setVolume(v);
+  }, []);
 
   // Featured projects logic
   const featuredProjects = projects.filter(p => p.featured);
@@ -451,7 +438,7 @@ export const Terminal: React.FC<TerminalProps> = ({ onOpenWelcome }) => {
           onDirectoryClick={handleDirectoryClick}
           currentDirectory={currentDirectory}
           volume={volume}
-          onVolumeChange={setVolume}
+          onVolumeChange={handleVolumeChange}
           onToggleBackground={handleToggleBackground}
           isBackgroundMuted={isBackgroundMuted}
           onOpenWelcome={onOpenWelcome}

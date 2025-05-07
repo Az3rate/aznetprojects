@@ -1,0 +1,27 @@
+# GPT Debug Plan: File Path Resolution in getFileContent
+
+## Issue
+- When running commands like `cat src/App.tsx` from the root or a subdirectory, the file path is sometimes incorrectly resolved (e.g., `src/src/App.tsx` instead of `src/App.tsx`).
+- This results in file not found errors and incorrect file lookups.
+
+## What Was Tried
+- The getFileContent method was updated to resolve paths as follows:
+  - If the path starts with `/`, treat as absolute (remove leading `/`).
+  - If the path contains `/`, treat as relative from the current directory.
+  - Otherwise, treat as a file in the current directory.
+- This fixed some issues, but we want to ensure all edge cases are handled and the logic is robust.
+
+## What I Need From GPT
+- Review the getFileContent method in src/services/fileSystem.ts.
+- Suggest improvements or corrections to the file path resolution logic to ensure it matches real shell behavior:
+  - `cat src/App.tsx` from `/` → `src/App.tsx`
+  - `cat App.tsx` from `/src` → `src/App.tsx`
+  - `cat ./App.tsx` from `/src` → `src/App.tsx`
+  - `cat /src/App.tsx` from anywhere → `src/App.tsx`
+- Ensure that relative and absolute paths are handled correctly, and that no double-directory issues occur.
+
+## Context
+- The relevant code is in src/services/fileSystem.ts.
+- The method to review is getFileContent.
+
+# Please review src/services/fileSystem.ts and provide code updates or suggestions to fix the file path resolution issue. 

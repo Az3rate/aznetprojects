@@ -54,6 +54,21 @@ interface FileExplorerProps {
   fileTree?: any;
 }
 
+function areEqual(prevProps: FileExplorerProps, nextProps: FileExplorerProps) {
+  return (
+    prevProps.fileTree === nextProps.fileTree &&
+    prevProps.currentDirectory === nextProps.currentDirectory &&
+    prevProps.volume === nextProps.volume &&
+    prevProps.isBackgroundMuted === nextProps.isBackgroundMuted &&
+    prevProps.onFileClick === nextProps.onFileClick &&
+    prevProps.onDirectoryClick === nextProps.onDirectoryClick &&
+    prevProps.onVolumeChange === nextProps.onVolumeChange &&
+    prevProps.onToggleBackground === nextProps.onToggleBackground &&
+    prevProps.onOpenWelcome === nextProps.onOpenWelcome &&
+    prevProps.onProjectClick === nextProps.onProjectClick
+  );
+}
+
 export const FileExplorer: React.FC<FileExplorerProps> = React.memo(({ 
   onFileClick, 
   onDirectoryClick,
@@ -66,6 +81,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = React.memo(({
   onProjectClick,
   fileTree
 }) => {
+  console.log('[FileExplorer] Re-rendered');
   console.log('[FileExplorer] fileTree prop:', fileTree);
   const [expanded, setExpanded] = useState<{ [key: string]: boolean }>({});
   const lastProcessedDir = useRef<string>('');
@@ -164,7 +180,12 @@ export const FileExplorer: React.FC<FileExplorerProps> = React.memo(({
           key={cleanNodePath}
           onClick={(e) => {
             e.stopPropagation();
-            onFileClick(cleanNodePath);
+            // Sync terminal to file's parent dir
+            const segments = cleanNodePath.split('/');
+            const parentDir = '/' + segments.slice(1, -1).join('/');
+            onDirectoryClick(parentDir); // Sync CD
+            // Then open file
+            onFileClick('/' + cleanNodePath.replace(/^\/+/, ''));
           }}
         >
           <DirectoryIcon>📄</DirectoryIcon>
@@ -177,10 +198,20 @@ export const FileExplorer: React.FC<FileExplorerProps> = React.memo(({
 
   // Render the root level items
   const renderRootLevelItems = useCallback(() => {
+    // Add this declaration once before using it
+    interface WindowWithDebugFlag extends Window {
+      __fileTreeNullLogged?: boolean;
+    }
+    const debugWindow = window as WindowWithDebugFlag;
+  
     if (fileTree === null) {
-      console.log('[FileExplorer] Loading skeleton rendered');
+      if (!debugWindow.__fileTreeNullLogged) {
+        console.log('[FileExplorer] fileTree is null – loading…');
+        debugWindow.__fileTreeNullLogged = true;
+      }
       return <div>Loading file tree…</div>;
     }
+  
     if (fileTree === undefined) {
       console.log('[FileExplorer] Error UI rendered');
       return (
@@ -190,16 +221,21 @@ export const FileExplorer: React.FC<FileExplorerProps> = React.memo(({
         </div>
       );
     }
+  
     if (!fileTree?.children || Object.keys(fileTree.children).length === 0) {
       console.log('[FileExplorer] Empty state rendered');
       return <div>No files found.</div>;
     }
-
+  
     console.log('[FileExplorer] renderRootLevelItems children:', fileTree.children);
     return Object.entries(fileTree.children).map(([name, node]) =>
       renderTree(node as FileNode, `/${name}`)
     );
   }, [fileTree, renderTree]);
+  
+
+  
+
 
   const getDisplayDirectory = useCallback((): string => {
     if (!currentDirectory || currentDirectory === '~') return '/';
@@ -224,4 +260,4 @@ export const FileExplorer: React.FC<FileExplorerProps> = React.memo(({
       />
     </ExplorerContainer>
   );
-});
+}, areEqual);

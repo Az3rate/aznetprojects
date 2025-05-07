@@ -587,33 +587,38 @@ export class VirtualFileSystem {
   
   
 
-  public async getFileContent(path: string): Promise<string> {
-    // Handle special case for project files
-    if (this.currentPath.includes('projects')) {
-      const projectName = path.toLowerCase();
-      const projectsDir = this.root.children?.['projects'];
-      if (projectsDir && projectsDir.type === 'directory' && projectsDir.children && 
-          projectsDir.children[projectName] && projectsDir.children[projectName].type === 'file') {
-        return projectsDir.children[projectName].content || '';
-      }
-    }
-    
+  public async getFileContent(path: string, isAbsolute = false): Promise<string> {
     try {
-      // Build path based on current directory
+      // Add logging to debug the incoming parameters
+      console.log('[getFileContent] Current path:', this.getPathString());
+      console.log('[getFileContent] Requested file:', path);
+      
       let fullPath: string;
       
-      if (path.startsWith('/')) {
-        // Absolute path
-        fullPath = path.substring(1); // Remove leading slash
-      } else if (this.currentPath.length === 1) {
-        // Root directory
+      // Case 1: Absolute path (starts with '/')
+      if (isAbsolute || path.startsWith('/')) {
+        // Handle absolute path by removing leading slashes
+        fullPath = path.replace(/^\/+/, '');
+      } 
+      // Case 2: Path already includes the current directory 
+      // (This is the root cause of the duplicate path issue)
+      else if (path.startsWith(this.currentPath.slice(1).join('/'))) {
+        // The path already includes the current directory, so use it directly
         fullPath = path;
-      } else {
-        // Relative path
-        fullPath = [...this.currentPath.slice(1), path].join('/');
+      }
+      // Case 3: Regular relative path 
+      else {
+        // Get current directory parts (skip root slash)
+        const currentParts = this.currentPath.slice(1);
+        // Split the requested path
+        const pathParts = path.split('/').filter(Boolean);
+        // Join them to get the full path
+        fullPath = [...currentParts, ...pathParts].join('/');
       }
       
-      // Attempt to fetch content
+      console.log('[getFileContent] Resolved fullPath:', fullPath);
+      
+      // Call fetchFileContent directly with the resolved path
       const content = await this.fetchFileContent(fullPath);
       return content;
     } catch (error) {
@@ -621,6 +626,12 @@ export class VirtualFileSystem {
       return `File not found: ${path}`;
     }
   }
+  
+  
+  
+  
+  
+  
 
   public setRootFromGitHubTree(tree: FileSystemNode) {
     console.log('[VFS] setRootFromGitHubTree: replacing root');

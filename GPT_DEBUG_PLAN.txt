@@ -1,0 +1,25 @@
+# GPT Debug Plan: FileExplorer Excessive Re-render Issue
+
+## Issue
+- The FileExplorer component re-renders its entire tree (renderTree) on every keystroke in the terminal, even when the file tree and current directory have not changed.
+- This causes performance issues and unnecessary console logs.
+
+## What Was Tried
+- Wrapped FileExplorer in React.memo to prevent unnecessary re-renders if props are unchanged.
+- Memoized handler functions (onFileClick, onDirectoryClick) in the parent (Terminal) using useCallback, so their references are stable.
+- Confirmed that FileExplorer's props (fileTree, currentDirectory, etc.) are not changing on every keystroke.
+
+## What Didn't Work
+- Despite React.memo and memoized handlers, FileExplorer still re-renders on every keystroke in the terminal.
+- The renderTree function and its debug logs are triggered every time input changes in the terminal.
+
+## What I Need From GPT
+- Analyze why FileExplorer is still re-rendering on every keystroke, even with React.memo and memoized handlers.
+- Suggest specific code changes or architectural adjustments to prevent unnecessary re-renders.
+- Help ensure that FileExplorer only re-renders when its actual props (fileTree, currentDirectory, etc.) change, not on unrelated state changes in the terminal.
+
+## Context
+- FileExplorer is used in Terminal.tsx and receives props from the terminal state/context.
+- The terminal input state changes on every keystroke, but FileExplorer should not re-render unless its relevant props change.
+
+# Please review the above and provide code updates or suggestions to fix the issue. 

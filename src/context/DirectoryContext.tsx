@@ -88,10 +88,15 @@ export const useDirectory = () => {
 };
 
 export const DirectoryProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  console.log('[DirectoryProvider] Mounted');
-  const vfsRef = useRef<VirtualFileSystem>(new VirtualFileSystem());
-  const [currentDirectory, setCurrentDirectory] = useState<string>('/');
-  const [fileTree, setFileTree] = useState<any>(null);
+    const mountCount = useRef(0);
+    mountCount.current += 1;
+    if (mountCount.current === 1) {
+      console.log('[DirectoryProvider] Mounted');
+    }
+  
+    const vfsRef = useRef<VirtualFileSystem>(new VirtualFileSystem());
+    const [currentDirectory, setCurrentDirectory] = useState<string>('/');
+    const [fileTree, setFileTree] = useState<any>(null);
 
   // Add default exclusions
   const defaultExclusions: ExclusionConfig = {
@@ -142,16 +147,17 @@ export const DirectoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     ]
   };
 
+  const DEBUG = false;
+
   // Convert GitHub API tree to FileSystemNode tree
   const convertGitHubTreeToFSNode = (tree: any, name = '', parentPath = ''): any => {
     const currentPath = parentPath && name ? `${parentPath}/${name}`.replace('//', '/') : name || '/';
-    console.log('[DirectoryProvider] Converting GitHub tree to FSNode:', currentPath);
-
-    // Separate directories and files
+    if (DEBUG) console.log('[DirectoryProvider] Converting GitHub tree to FSNode:', currentPath);
+  
     const entries = Object.entries(tree);
     const directories: [string, any][] = [];
     const files: [string, any][] = [];
-
+  
     entries.forEach(([key, value]) => {
       const v = value as any;
       if (v.type === 'directory') {
@@ -160,14 +166,11 @@ export const DirectoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         files.push([key, v]);
       }
     });
-
-    // Sort both arrays alphabetically
+  
     directories.sort(([a], [b]) => a.localeCompare(b));
     files.sort(([a], [b]) => a.localeCompare(b));
-
-    // Combine sorted arrays
     const sortedEntries = [...directories, ...files];
-
+  
     return {
       name: name || '/',
       type: 'directory',
@@ -183,8 +186,7 @@ export const DirectoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             content: '',
           };
         }
-        // Debug: log after adding each child
-        if (currentPath === '/scripts') {
+        if (DEBUG && currentPath === '/scripts') {
           console.log('[convertGitHubTreeToFSNode] scripts acc after adding', key, Object.keys(acc));
         }
         return acc;
