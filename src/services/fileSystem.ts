@@ -483,12 +483,17 @@ export class VirtualFileSystem {
   }
 
   public listDirectory(): { name: string; type: 'file' | 'directory'; size: number }[] {
+    console.log('[VFS][listDirectory] currentPath:', this.currentPath, 'getPathString:', this.getPathString());
+    // Get the current directory node
     const current = this.getCurrentDirectory();
-    if (!current.children) return [];
+    if (!current || !current.children) {
+      console.debug('[listDirectory] No children in current directory:', this.getPathString());
+      return [];
+    }
     
     // Get the current path as a string for debugging
-    const currentPath = this.currentPath.join('/');
-    console.debug(`Listing directory: ${currentPath}`);
+    const currentPath = this.getPathString();
+    console.debug(`[listDirectory] Listing directory: ${currentPath}`);
     
     // Convert children object to array and sort
     return Object.entries(current.children)
@@ -509,10 +514,13 @@ export class VirtualFileSystem {
 
   public getCurrentDirectory(): FileSystemNode {
     let current = this.root;
+    // Skip the first element ('/') and traverse the path
     for (const dir of this.currentPath.slice(1)) {
-      if (current.children && current.children[dir]) {
-        current = current.children[dir];
+      if (!current.children || !current.children[dir]) {
+        console.debug(`[getCurrentDirectory] Directory not found: ${dir} in path ${this.currentPath.join('/')}`);
+        return this.root; // Return root if path is invalid
       }
+      current = current.children[dir];
     }
     return current;
   }
@@ -526,50 +534,55 @@ export class VirtualFileSystem {
   }
 
   public changeDirectory(path: string): boolean {
-    console.debug(`Changing directory to: ${path} from ${this.getPathString()}`);
-  
-    // Handle special cases
-    if (path === '..') {
-      if (this.currentPath.length > 1) {
-        this.currentPath.pop();
+    console.log('[VFS][changeDirectory] called with path:', path, 'currentPath before:', this.currentPath);
+    const result = (() => {
+      // Handle special cases
+      if (path === '..') {
+        if (this.currentPath.length > 1) {
+          this.currentPath.pop();
+        }
+        // Do not return early; update currentPath and return true
+        console.debug(`Moved up to: ${this.getPathString()}`);
         return true;
       }
-      return false;
-    }
 
-    if (path === '/' || path === '' || path === '~') {
-      this.currentPath = ['/'];
-      return true;
-    }
-
-    // Clean and normalize the path
-    let cleanPath = path.trim();
-    while (cleanPath.includes('//')) cleanPath = cleanPath.replace('//', '/');
-    if (!cleanPath.startsWith('/')) cleanPath = '/' + cleanPath;
-    if (cleanPath.length > 1 && cleanPath.endsWith('/')) cleanPath = cleanPath.slice(0, -1);
-
-    // Split into parts and remove empty strings
-    const parts = cleanPath.split('/').filter(Boolean);
-    
-    // Start from root for absolute paths
-    let current = this.root;
-    let newPath = ['/'];
-
-    // Traverse the path
-    for (const part of parts) {
-      if (current.children?.[part]?.type === 'directory') {
-        current = current.children[part];
-        newPath.push(part);
-      } else {
-        console.debug(`Directory not found: ${part} in ${newPath.join('/')}`);
-        return false;
+      if (path === '/' || path === '' || path === '~') {
+        this.currentPath = ['/'];
+        return true;
       }
-    }
 
-    // Update the current path
-    this.currentPath = newPath;
-    console.debug(`Successfully changed directory to: ${this.getPathString()}`);
-    return true;
+      // Clean and normalize the path
+      let cleanPath = path.trim();
+      while (cleanPath.includes('//')) cleanPath = cleanPath.replace('//', '/');
+      if (cleanPath.length > 1 && cleanPath.endsWith('/')) cleanPath = cleanPath.slice(0, -1);
+
+      let parts: string[];
+      if (cleanPath.startsWith('/')) {
+        // Absolute path
+        parts = cleanPath.split('/').filter(Boolean);
+      } else {
+        // Relative path
+        parts = [...this.currentPath.slice(1), ...cleanPath.split('/').filter(Boolean)];
+      }
+
+      // Start from root for absolute, or from current for relative
+      let current = this.root;
+      let newPath = ['/'];
+      for (const part of parts) {
+        if (current.children?.[part]?.type === 'directory') {
+          current = current.children[part];
+          newPath.push(part);
+        } else {
+          console.debug(`Directory not found: ${part} in ${newPath.join('/')}`);
+          return false;
+        }
+      }
+      this.currentPath = newPath;
+      console.debug(`Successfully changed directory to: ${this.getPathString()}`);
+      return true;
+    })();
+    console.log('[VFS][changeDirectory] currentPath after:', this.currentPath);
+    return result;
   }
   
   

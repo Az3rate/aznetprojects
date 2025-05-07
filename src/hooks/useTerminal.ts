@@ -5,7 +5,7 @@ import { projects } from '../data/projects';
 import { useDirectory } from '../context/DirectoryContext';
 
 export const useTerminal = (projects: Project[]) => {
-  const { currentDirectory, setDirectory } = useDirectory();
+  const { currentDirectory, setDirectory, vfs } = useDirectory();
   const [state, setState] = useState<Omit<TerminalState, 'currentDirectory'>>({
     history: [],
     isDetailsPanelOpen: false,
@@ -14,7 +14,7 @@ export const useTerminal = (projects: Project[]) => {
   });
 
   const [historyIndex, setHistoryIndex] = useState(-1);
-  const commandsRef = useRef<TerminalCommands>(new TerminalCommands(projects));
+  const commandsRef = useRef<TerminalCommands>(new TerminalCommands(projects, vfs));
 
   const executeCommand = useCallback(async (input: string) => {
     const [command, ...args] = input.trim().split(' ');
@@ -43,7 +43,7 @@ export const useTerminal = (projects: Project[]) => {
       }
     }
     setHistoryIndex(-1);
-  }, [projects, currentDirectory]);
+  }, [projects, currentDirectory, vfs]);
 
   const navigateHistory = useCallback((direction: 'up' | 'down'): string => {
     if (state.history.length === 0) return '';

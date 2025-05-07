@@ -16,12 +16,10 @@ function getCommandSuggestions(input: string, commands: string[]): string[] {
 
 export class TerminalCommands {
   private fileSystem: VirtualFileSystem;
-  private currentDirectory: string[];
   private projects: Project[];
 
-  constructor(projects: Project[]) {
-    this.fileSystem = new VirtualFileSystem();
-    this.currentDirectory = ['/'];
+  constructor(projects: Project[], vfs: VirtualFileSystem) {
+    this.fileSystem = vfs;
     this.projects = projects;
     this.fileSystem.addProjectFiles(projects);
   }
@@ -101,17 +99,11 @@ exit        - Exit the terminal`
   }
 
   private getCurrentNode(): any {
-    let current = this.fileSystem.getCurrentDirectory();
-    for (const dir of this.currentDirectory.slice(1)) {
-      if (current.children && current.children[dir]) {
-        current = current.children[dir];
-      }
-    }
-    return current;
-    }
+    return this.fileSystem.getCurrentDirectory();
+  }
 
   getCurrentDirectory(): string {
-    return this.currentDirectory.join('/');
+    return this.fileSystem.getPathString();
   }
 
   private about(args: string[]): Promise<{ type: 'success' | 'error' | 'info' | 'project-list' | 'welcome' | 'clear'; output: any }> {

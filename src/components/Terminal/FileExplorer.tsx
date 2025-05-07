@@ -54,7 +54,7 @@ interface FileExplorerProps {
   fileTree?: any;
 }
 
-export const FileExplorer: React.FC<FileExplorerProps> = ({ 
+export const FileExplorer: React.FC<FileExplorerProps> = React.memo(({ 
   onFileClick, 
   onDirectoryClick,
   currentDirectory,
@@ -224,4 +224,4 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
       />
     </ExplorerContainer>
   );
-};
+});

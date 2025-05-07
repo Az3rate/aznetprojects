@@ -106,8 +106,6 @@ export const Terminal: React.FC<TerminalProps> = ({ onOpenWelcome }) => {
   });
   const inputRef = useRef<HTMLInputElement>(null);
   const endOfTerminalRef = useRef<HTMLDivElement>(null);
-  // Create a local instance of TerminalCommands
-  const terminalCommands = useRef(new TerminalCommands(projects));
   const [tourOpen, setTourOpen] = useState(false);
   
   const [isBackgroundMuted, setIsBackgroundMuted] = useState(() => {
@@ -273,7 +271,7 @@ export const Terminal: React.FC<TerminalProps> = ({ onOpenWelcome }) => {
       }
       // Execute the cat command locally to get the file content
       try {
-        const result = await terminalCommands.current.execute('cat', [fileName]);
+        const result = await commandsRef.current.execute('cat', [fileName]);
         if (result.type === 'success' && typeof result.output === 'string') {
           // Use the openFileDetails from the hook
           openFileDetails({

@@ -1,11 +1,14 @@
 import { TerminalCommands } from '../services/commands';
+import { VirtualFileSystem } from '../services/fileSystem';
 import { projects } from '../data/projects';
 
 describe('TerminalCommands', () => {
   let commands: TerminalCommands;
+  let vfs: VirtualFileSystem;
 
   beforeEach(() => {
-    commands = new TerminalCommands(projects);
+    vfs = new VirtualFileSystem();
+    commands = new TerminalCommands(projects, vfs);
   });
 
   it('executes help command', async () => {
