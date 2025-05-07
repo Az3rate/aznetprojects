@@ -1,13 +1,11 @@
 import React, { createContext, useContext, useState, useRef, useEffect } from 'react';
 import { VirtualFileSystem } from '../services/fileSystem';
 
-// Add exclusion configuration interface
 interface ExclusionConfig {
   directories?: string[];
   files?: string[];
 }
 
-// Moved outside component for better memoization and reuse
 export async function fetchGitHubTree(
   owner: string,
   repo: string,
@@ -31,7 +29,6 @@ export async function fetchGitHubTree(
 
     const tree: any = {};
     for (const item of items) {
-      // Skip excluded directories and files
       if (item.type === 'dir' && exclusions.directories?.includes(item.name)) {
         console.log(`[fetchGitHubTree] Skipping excluded directory: ${item.name}`);
         continue;
@@ -55,7 +52,7 @@ export async function fetchGitHubTree(
           type: 'file',
           size: item.size,
           path: item.path,
-          content: '' // Will be loaded on demand
+          content: ''
         };
       }
     }
@@ -98,7 +95,6 @@ export const DirectoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const [currentDirectory, setCurrentDirectory] = useState<string>('/');
     const [fileTree, setFileTree] = useState<any>(null);
 
-  // Add default exclusions
   const defaultExclusions: ExclusionConfig = {
     directories: [
       'node_modules',
@@ -149,7 +145,7 @@ export const DirectoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const DEBUG = false;
 
-  // Convert GitHub API tree to FileSystemNode tree
+
   const convertGitHubTreeToFSNode = (tree: any, name = '', parentPath = ''): any => {
     const currentPath = parentPath && name ? `${parentPath}/${name}`.replace('//', '/') : name || '/';
     if (DEBUG) console.log('[DirectoryProvider] Converting GitHub tree to FSNode:', currentPath);
@@ -201,11 +197,11 @@ export const DirectoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       const tree = await fetchGitHubTree('Az3rate', 'aznetprojects', '', defaultExclusions);
       const fsTree = convertGitHubTreeToFSNode(tree, '');
 
-      // ⬆️ set the VFS root *before* wiring it into React‑state
+
       vfsRef.current.setRootFromGitHubTree(fsTree);
       setFileTree(fsTree);
 
-      // extra visibility for the missing‑file issue
+
       if (fsTree.children?.scripts) {
         console.log(
           '[DirectoryProvider] scripts children after root set:',
@@ -215,7 +211,7 @@ export const DirectoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       console.log('[DirectoryProvider] Tree refreshed ✅');
     };
     fetchAndSetTree();
-  }, []); // Empty deps since fetchGitHubTree is now outside component
+  }, []); 
 
   const setDirectory = async (path: string) => {
     console.log('[DirectoryProvider] Setting directory to:', path);
@@ -223,7 +219,6 @@ export const DirectoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setCurrentDirectory(vfsRef.current.getPathString());
   };
 
-  // Provide a dummy refreshTree for compatibility
   const refreshTree = async () => {};
 
   return (

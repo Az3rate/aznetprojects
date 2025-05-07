@@ -10,7 +10,6 @@ interface FileViewerProps {
 }
 
 export const FileViewer: React.FC<FileViewerProps> = ({ fileName, content, onClose }) => {
-  // Simple extension check for syntax highlighting
   const ext = fileName.split('.').pop()?.toLowerCase();
   const language =
     ext === 'js' ? 'javascript' :

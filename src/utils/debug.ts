@@ -1,4 +1,4 @@
-// Debug utility for terminal commands
+
 let isDebugEnabled = true;
 
 export const debug = {

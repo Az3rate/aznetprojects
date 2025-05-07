@@ -14,7 +14,7 @@ export class VirtualFileSystem {
   }
 
   private initializeFileSystem(): FileSystemNode {
-    console.log('[VFS] initializeFileSystem – pre‑fetch scaffold');  // lets us see when the fallback tree is used
+    console.log('[VFS] initializeFileSystem – pre‑fetch scaffold');
     return {
       name: '/',
       type: 'directory',
@@ -255,7 +255,7 @@ export class VirtualFileSystem {
               type: 'file',
               content: 'Loading…'
             },
-            'generateTypingSounds.js': { // ← NEW placeholder so lookup never fails
+            'generateTypingSounds.js': { 
               name: 'generateTypingSounds.js',
               type: 'file',
               content: 'Loading…'
@@ -385,7 +385,7 @@ export class VirtualFileSystem {
     };
   }
 
-  // Helper to get a node by full path from the root
+
   private getNodeByPath(path: string): FileSystemNode | null {
     const parts = path.split('/').filter(Boolean);
     let current = this.root;
@@ -403,19 +403,19 @@ export class VirtualFileSystem {
 
   private async fetchFileContent(filePath: string): Promise<string> {
     console.log('[fetchFileContent] Requested file path:', filePath);
-    // Check cache first
+
     if (this.fileCache.has(filePath)) {
       return this.fileCache.get(filePath)!;
     }
 
     try {
-      // Always resolve from root
+
       const fileNode = this.getNodeByPath(filePath);
       if (!fileNode || fileNode.type !== 'file') {
         throw new Error(`File not found: ${filePath}`);
       }
 
-      // Use the GitHub path if available, otherwise construct it
+
       const githubPath = (fileNode as any).path || filePath;
       const url = `${GITHUB_RAW_BASE}/${githubPath}`;
       console.debug(`Fetching from: ${url}`);
@@ -454,7 +454,7 @@ export class VirtualFileSystem {
   public addProjectFiles(projects: Project[]): void {
     const projectsDir = this.root.children?.['projects'];
     if (!projectsDir || projectsDir.type !== 'directory' || !projectsDir.children) {
-      // Create projects directory if it doesn't exist
+
       this.root.children = this.root.children || {};
       this.root.children['projects'] = {
         name: 'projects',
@@ -463,11 +463,11 @@ export class VirtualFileSystem {
       };
     }
     
-    // Ensure projects directory exists and has children
+
     if (!this.root.children || !this.root.children['projects'] || 
         this.root.children['projects'].type !== 'directory' || 
         !this.root.children['projects'].children) {
-      return; // Exit if directory structure is invalid
+      return; 
     }
     
     const currentProjectsDir = this.root.children['projects'];
@@ -484,18 +484,18 @@ export class VirtualFileSystem {
 
   public listDirectory(): { name: string; type: 'file' | 'directory'; size: number }[] {
     console.log('[VFS][listDirectory] currentPath:', this.currentPath, 'getPathString:', this.getPathString());
-    // Get the current directory node
+
     const current = this.getCurrentDirectory();
     if (!current || !current.children) {
       console.debug('[listDirectory] No children in current directory:', this.getPathString());
       return [];
     }
     
-    // Get the current path as a string for debugging
+
     const currentPath = this.getPathString();
     console.debug(`[listDirectory] Listing directory: ${currentPath}`);
     
-    // Convert children object to array and sort
+
     return Object.entries(current.children)
       .map(([name, item]) => ({
         name,
@@ -503,22 +503,21 @@ export class VirtualFileSystem {
         size: item.type === 'file' ? (item.content?.length || 0) : 0
       }))
       .sort((a, b) => {
-        // Directories first
+
         if (a.type !== b.type) {
           return a.type === 'directory' ? -1 : 1;
         }
-        // Then alphabetically
+
         return a.name.localeCompare(b.name);
       });
   }
 
   public getCurrentDirectory(): FileSystemNode {
     let current = this.root;
-    // Skip the first element ('/') and traverse the path
     for (const dir of this.currentPath.slice(1)) {
       if (!current.children || !current.children[dir]) {
         console.debug(`[getCurrentDirectory] Directory not found: ${dir} in path ${this.currentPath.join('/')}`);
-        return this.root; // Return root if path is invalid
+        return this.root; 
       }
       current = current.children[dir];
     }
@@ -526,7 +525,7 @@ export class VirtualFileSystem {
   }
 
   public getPathString(): string {
-    // Return the current path as a string, root is '/'
+
     if (this.currentPath.length === 1) {
       return '/';
     }
@@ -536,12 +535,10 @@ export class VirtualFileSystem {
   public changeDirectory(path: string): boolean {
     console.log('[VFS][changeDirectory] called with path:', path, 'currentPath before:', this.currentPath);
     const result = (() => {
-      // Handle special cases
       if (path === '..') {
         if (this.currentPath.length > 1) {
           this.currentPath.pop();
         }
-        // Do not return early; update currentPath and return true
         console.debug(`Moved up to: ${this.getPathString()}`);
         return true;
       }
@@ -551,21 +548,16 @@ export class VirtualFileSystem {
         return true;
       }
 
-      // Clean and normalize the path
       let cleanPath = path.trim();
       while (cleanPath.includes('//')) cleanPath = cleanPath.replace('//', '/');
       if (cleanPath.length > 1 && cleanPath.endsWith('/')) cleanPath = cleanPath.slice(0, -1);
 
       let parts: string[];
       if (cleanPath.startsWith('/')) {
-        // Absolute path
         parts = cleanPath.split('/').filter(Boolean);
       } else {
-        // Relative path
         parts = [...this.currentPath.slice(1), ...cleanPath.split('/').filter(Boolean)];
       }
-
-      // Start from root for absolute, or from current for relative
       let current = this.root;
       let newPath = ['/'];
       for (const part of parts) {
@@ -589,36 +581,27 @@ export class VirtualFileSystem {
 
   public async getFileContent(path: string, isAbsolute = false): Promise<string> {
     try {
-      // Add logging to debug the incoming parameters
+
       console.log('[getFileContent] Current path:', this.getPathString());
       console.log('[getFileContent] Requested file:', path);
       
       let fullPath: string;
       
-      // Case 1: Absolute path (starts with '/')
       if (isAbsolute || path.startsWith('/')) {
-        // Handle absolute path by removing leading slashes
         fullPath = path.replace(/^\/+/, '');
       } 
-      // Case 2: Path already includes the current directory 
-      // (This is the root cause of the duplicate path issue)
       else if (path.startsWith(this.currentPath.slice(1).join('/'))) {
-        // The path already includes the current directory, so use it directly
         fullPath = path;
       }
-      // Case 3: Regular relative path 
+
       else {
-        // Get current directory parts (skip root slash)
         const currentParts = this.currentPath.slice(1);
-        // Split the requested path
         const pathParts = path.split('/').filter(Boolean);
-        // Join them to get the full path
         fullPath = [...currentParts, ...pathParts].join('/');
       }
       
       console.log('[getFileContent] Resolved fullPath:', fullPath);
       
-      // Call fetchFileContent directly with the resolved path
       const content = await this.fetchFileContent(fullPath);
       return content;
     } catch (error) {
