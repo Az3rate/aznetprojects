@@ -10,7 +10,7 @@ export async function fetchGitHubTree(
   console.log('[fetchGitHubTree] start', { owner, repo, path });
 
   const url = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
-  const token = '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';
+  const token = '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';
   const headers: Record<string, string> = token ? { Authorization: `token ${token}` } : {};
 
   try {

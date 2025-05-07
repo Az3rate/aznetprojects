@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import styled from 'styled-components';
 import {
   DirectoryItem,
@@ -71,14 +71,14 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
   const lastProcessedDir = useRef<string>('');
 
   // Path normalization utility
-  const normalizePath = (path: string): string => {
+  const normalizePath = useCallback((path: string): string => {
     if (!path || path === '' || path === '~') return '/';
     let cleaned = path;
     while (cleaned.includes('//')) cleaned = cleaned.replace('//', '/');
     if (!cleaned.startsWith('/')) cleaned = '/' + cleaned;
     if (cleaned.length > 1 && cleaned.endsWith('/')) cleaned = cleaned.slice(0, -1);
     return cleaned;
-  };
+  }, []);
 
   // Handle directory expansion based on current path
   useEffect(() => {
@@ -97,10 +97,10 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
       newExpanded[path] = true;
     }
     setExpanded(prev => ({...prev, ...newExpanded}));
-  }, [currentDirectory]);
+  }, [currentDirectory, normalizePath]);
 
   // Handle manual toggle of directory expansion
-  const toggleExpansion = (path: string, e: React.MouseEvent) => {
+  const toggleExpansion = useCallback((path: string, e: React.MouseEvent) => {
     e.stopPropagation();
     const cleanPath = normalizePath(path);
     setExpanded(prev => {
@@ -108,54 +108,60 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
       newState[cleanPath] = !prev[cleanPath];
       return newState;
     });
-  };
+  }, [normalizePath]);
 
   // Handle directory click from FileExplorer
-  const handleDirectoryClick = (dirPath: string) => {
+  const handleDirectoryClick = useCallback((dirPath: string) => {
     let cleanPath = dirPath;
     if (!cleanPath.startsWith('/')) cleanPath = '/' + cleanPath;
     while (cleanPath.includes('//')) cleanPath = cleanPath.replace('//', '/');
     if (cleanPath.length > 1 && cleanPath.endsWith('/')) cleanPath = cleanPath.slice(0, -1);
     onDirectoryClick(cleanPath);
-  };
+  }, [onDirectoryClick]);
 
   // Render a directory node and its children
-  const renderTree = (node: FileNode, path: string) => {
-    if (!node) return null;
-    const isDir = node.type === 'directory';
-    const cleanNodePath = normalizePath(path);
-    const cleanCurrentDir = normalizePath(currentDirectory);
-    const isCurrentDir = cleanNodePath === cleanCurrentDir;
-    const isExpanded = expanded[cleanNodePath] || false;
-    if (isDir) {
+  const renderTree = useCallback(
+    (node: FileNode, path: string): React.ReactNode => {
+      if (!node) return null;
+      const isDir = node.type === 'directory';
+      const cleanNodePath = normalizePath(path);
+      const cleanCurrent = normalizePath(currentDirectory);
+      const isCurrentDir = cleanNodePath === cleanCurrent;
+      const isExpanded = expanded[cleanNodePath] || false;
+
+      // Debug
+      console.log('[FileExplorer][renderTree]', { path: cleanNodePath, isExpanded });
+
+      if (isDir) {
+        return (
+          <div key={cleanNodePath}>
+            <DirectoryItem
+              $isActive={isCurrentDir}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDirectoryClick(cleanNodePath);
+              }}
+            >
+              <DirectoryIcon onClick={(e) => toggleExpansion(cleanNodePath, e)}>
+                {isExpanded ? '📂' : '📁'}
+              </DirectoryIcon>
+              <DirectoryName>{node.name || path.split('/').pop()}</DirectoryName>
+            </DirectoryItem>
+            {isExpanded && node.children && (
+              <div style={{ marginLeft: '1rem' }}>
+                {Object.entries(node.children).map(([childName, childNode]) =>
+                  renderTree(childNode as FileNode, `${cleanNodePath}/${childName}`)
+                )}
+              </div>
+            )}
+          </div>
+        );
+      }
+
       return (
-        <div key={cleanNodePath}>
-          <DirectoryItem 
-            $isActive={isCurrentDir} 
-            onClick={(e) => {
-              e.stopPropagation();
-              handleDirectoryClick(cleanNodePath);
-            }}
-          >
-            <DirectoryIcon onClick={(e) => toggleExpansion(cleanNodePath, e)}>
-              {isExpanded ? '📂' : '📁'}
-            </DirectoryIcon>
-            <DirectoryName>{node.name || path.split('/').pop()}</DirectoryName>
-          </DirectoryItem>
-          {isExpanded && node.children && (
-            <div style={{ marginLeft: '1rem' }}>
-              {Object.entries(node.children).map(([childName, childNode]) =>
-                renderTree(childNode as FileNode, `${cleanNodePath}/${childName}`)
-              )}
-            </div>
-          )}
-        </div>
-      );
-    } else {
-      return (
-        <DirectoryItem 
-          $isActive={isCurrentDir} 
-          key={cleanNodePath} 
+        <DirectoryItem
+          $isActive={isCurrentDir}
+          key={cleanNodePath}
           onClick={(e) => {
             e.stopPropagation();
             onFileClick(cleanNodePath);
@@ -165,22 +171,40 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
           <DirectoryName>{node.name || path.split('/').pop()}</DirectoryName>
         </DirectoryItem>
       );
-    }
-  };
+    },
+    [expanded, currentDirectory, onFileClick, normalizePath, handleDirectoryClick, toggleExpansion]
+  );
 
   // Render the root level items
-  const renderRootLevelItems = () => {
-    if (!fileTree) return null;
+  const renderRootLevelItems = useCallback(() => {
+    if (fileTree === null) {
+      console.log('[FileExplorer] Loading skeleton rendered');
+      return <div>Loading file tree…</div>;
+    }
+    if (fileTree === undefined) {
+      console.log('[FileExplorer] Error UI rendered');
+      return (
+        <div>
+          Error loading file tree.&nbsp;
+          <button onClick={() => window.location.reload()}>Retry</button>
+        </div>
+      );
+    }
+    if (!fileTree?.children || Object.keys(fileTree.children).length === 0) {
+      console.log('[FileExplorer] Empty state rendered');
+      return <div>No files found.</div>;
+    }
+
     console.log('[FileExplorer] renderRootLevelItems children:', fileTree.children);
-    return Object.entries(fileTree.children).map(([name, node]) => 
+    return Object.entries(fileTree.children).map(([name, node]) =>
       renderTree(node as FileNode, `/${name}`)
     );
-  };
+  }, [fileTree, renderTree]);
 
-  const getDisplayDirectory = (): string => {
+  const getDisplayDirectory = useCallback((): string => {
     if (!currentDirectory || currentDirectory === '~') return '/';
     return normalizePath(currentDirectory);
-  };
+  }, [currentDirectory, normalizePath]);
 
   return (
     <ExplorerContainer>
