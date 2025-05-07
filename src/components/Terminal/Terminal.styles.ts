@@ -7,7 +7,10 @@ export const TerminalWrapper = styled.div<{ $featuredCollapsed?: boolean }>`
   background-color: ${({ theme }) => theme.colors.background.primary};
   color: ${({ theme }) => theme.colors.text.primary};
   font-family: 'Fira Code', monospace;
+  position: relative;
+  z-index: 1;
 `;
+
 
 export const FeaturedSidebar = styled.div<{ $collapsed?: boolean }>`
   background-color: ${({ theme }) => theme.colors.background.secondary};
@@ -44,10 +47,10 @@ export const CommandLine = styled.div`
 export const Prompt = styled.span<{ $status?: 'success' | 'error' | 'default' }>`
   color: ${({ theme, $status }) =>
     $status === 'success'
-      ? theme.colors.success || '#50fa7b'
+      ? '#32a87a'
       : $status === 'error'
-      ? theme.colors.error || '#ff5555'
-      : theme.colors.promptDefault || theme.colors.prompt || '#8be9fd'};
+      ? '#a8324a'
+      : theme.colors.command};
   margin-right: 0.5rem;
   font-weight: bold;
 `;
@@ -67,14 +70,14 @@ export const Input = styled.input`
 
 export const Output = styled.div<{ type: 'success' | 'error' | 'info' }>`
   margin-bottom: 1rem;
-  color: ${({ theme, type }) => {
+  color: ${({ type }) => {
     switch (type) {
       case 'success':
-        return theme.colors.success;
+        return '#32a87a';
       case 'error':
-        return theme.colors.error;
+        return '#a8324a';
       case 'info':
-        return theme.colors.text.primary;
+        return '#fff';
     }
   }};
 `;
@@ -150,10 +153,11 @@ export const SuggestionItem = styled.div<{ $isSelected: boolean }>`
 `;
 
 export const ClickableText = styled.span`
-  color: ${({ theme }) => theme.colors.link};
+  color: ${({ theme }) => theme.colors.accent};
   cursor: pointer;
   &:hover {
     text-decoration: underline;
+    color: ${({ theme }) => theme.colors.accent};
   }
 `;
 
@@ -186,7 +190,7 @@ export const DetailsContainer = styled.div`
 `;
 
 export const Title = styled.h1`
-  color: ${({ theme }) => theme.colors.prompt};
+  color: ${({ theme }) => theme.colors.command};
   font-size: 1.5rem;
   margin-bottom: 1rem;
   font-family: 'Fira Code', monospace;
@@ -198,7 +202,7 @@ export const Section = styled.div`
 `;
 
 export const SectionTitle = styled.h2`
-  color: ${({ theme }) => theme.colors.link};
+  color: ${({ theme }) => theme.colors.accent};
   font-size: 1.2rem;
   margin-bottom: 0.5rem;
   border-bottom: 1px solid ${({ theme }) => theme.colors.border};
@@ -224,7 +228,7 @@ export const ListItem = styled.li`
   font-family: 'Fira Code', monospace;
   &:before {
     content: "•";
-    color: ${({ theme }) => theme.colors.prompt};
+    color: ${({ theme }) => theme.colors.command};
     margin-right: 0.5rem;
   }
 `;
@@ -258,30 +262,30 @@ export const CloseButton = styled.button`
 `;
 
 export const CommandSpan = styled.span`
-  color: ${({ theme }) => theme.colors.command || '#00ff99'};
+  color: ${({ theme }) => theme.colors.command};
   font-weight: bold;
 `;
 
 export const PathSpan = styled.span`
-  color: ${({ theme }) => theme.colors.path || '#a78bfa'};
+  color: ${({ theme }) => theme.colors.path};
 `;
 
 export const ArgSpan = styled.span`
-  color: ${({ theme }) => theme.colors.argument || '#ffb86c'};
+  color: ${({ theme }) => theme.colors.argument};
 `;
 
 export const ErrorSpan = styled.span`
-  color: ${({ theme }) => theme.colors.error || '#ff5555'};
+  color: #a8324a;
   font-weight: bold;
 `;
 
 export const DirSpan = styled.span`
-  color: ${({ theme }) => theme.colors.dir || '#00bfff'};
+  color: ${({ theme }) => theme.colors.dir};
   font-weight: bold;
 `;
 
 export const FileSpan = styled.span`
-  color: ${({ theme }) => theme.colors.file || '#cdd6f4'};
+  color: ${({ theme }) => theme.colors.file};
 `;
 
 export const BlinkingCursor = styled.span`

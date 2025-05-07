@@ -38,13 +38,13 @@ const VolumeSlider = styled.input`
     -webkit-appearance: none;
     width: 12px;
     height: 12px;
-    background: ${({ theme }) => theme.colors.link};
+    background: ${({ theme }) => theme.colors.accent};
     border-radius: 50%;
     cursor: pointer;
     transition: background 0.2s;
 
     &:hover {
-      background: ${({ theme }) => theme.colors.linkHover};
+      background: ${({ theme }) => theme.colors.accent};
     }
   }
 `;
@@ -58,8 +58,24 @@ const VolumeIcon = styled.span`
   transition: color 0.2s;
 
   &:hover {
-    color: ${({ theme }) => theme.colors.link};
+    color: ${({ theme }) => theme.colors.accent};
   }
+`;
+
+const AboutButton = styled.button`
+  background: ${({ theme }) => theme.colors.button};
+  color: ${({ theme }) => theme.colors.text.primary};
+  border: 2px solid ${({ theme }) => theme.colors.button};
+  border-radius: 2px;
+  padding: 8px 18px;
+  font-weight: 700;
+  font-family: 'Fira Code', monospace;
+  font-size: 15px;
+  cursor: pointer;
+  box-shadow: 0 0 8px ${({ theme }) => theme.colors.button}55;
+  margin-top: 6px;
+  margin-bottom: 2px;
+  width: 100%;
 `;
 
 interface OptionsPanelProps {
@@ -111,26 +127,9 @@ export const OptionsPanel: React.FC<OptionsPanelProps> = ({
       </OptionGroup>
       <OptionGroup>
         <OptionLabel>Controls</OptionLabel>
-        <button
-          style={{
-            background: '#00ff99',
-            color: '#181825',
-            border: '2px solid #00ff99',
-            borderRadius: 2,
-            padding: '8px 18px',
-            fontWeight: 700,
-            fontFamily: 'Fira Code, monospace',
-            fontSize: 15,
-            cursor: 'pointer',
-            boxShadow: '0 0 8px #00ff9955',
-            marginTop: 6,
-            marginBottom: 2,
-            width: '100%'
-          }}
-          onClick={onOpenWelcome}
-        >
+        <AboutButton onClick={onOpenWelcome}>
           About This Portfolio
-        </button>
+        </AboutButton>
       </OptionGroup>
     </OptionsContainer>
   );

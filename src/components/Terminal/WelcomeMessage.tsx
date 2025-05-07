@@ -6,7 +6,7 @@ const WelcomeContainer = styled.div`
 `;
 
 const AsciiArt = styled.pre`
-  color: ${({ theme }) => theme.colors.prompt};
+  color: ${({ theme }) => theme.colors.accent};
   margin: 0;
   white-space: pre;
   font-family: 'Fira Code', monospace;
@@ -24,7 +24,7 @@ const Subtitle = styled.div`
   margin: 0.5rem 0;
   
   .heart {
-    color: ${({ theme }) => theme.colors.error};
+    color: #a8324a;
   }
 `;
 
@@ -41,10 +41,10 @@ const QuickMenu = styled.div`
 `;
 
 const ClickableItem = styled.span`
-  color: ${({ theme }) => theme.colors.link};
+  color: ${({ theme }) => theme.colors.accent};
   cursor: pointer;
   &:hover {
-    color: ${({ theme }) => theme.colors.linkHover};
+    color: ${({ theme }) => theme.colors.accent};
     text-decoration: underline;
   }
 `;
@@ -65,7 +65,7 @@ const FirstTimeHint = styled.div`
   }
   
   .highlight {
-    color: ${({ theme }) => theme.colors.link};
+    color: ${({ theme }) => theme.colors.accent};
   }
 `;
 
@@ -114,6 +114,20 @@ const ProjectDescription = styled.div`
   line-height: 1.5;
 `;
 
+const StartTourButton = styled.button`
+  background: ${({ theme }) => theme.colors.button};
+  color: ${({ theme }) => theme.colors.text.primary};
+  border: 2px solid ${({ theme }) => theme.colors.button};
+  border-radius: 2px;
+  padding: 8px 22px;
+  font-weight: 700;
+  font-family: 'Fira Code', monospace;
+  font-size: 16px;
+  cursor: pointer;
+  box-shadow: 0 0 8px ${({ theme }) => theme.colors.button}55;
+  transition: background 0.2s, color 0.2s;
+`;
+
 interface WelcomeMessageProps {
   onCommandClick: (command: string) => void;
   isFirstTime: boolean;
@@ -151,24 +165,9 @@ o88o     o8888o d8888888P  o8o        ︻8  ︻Y8bod8P'   "888"
       <Title>Welcome to the AzNet Terminal Portfolio</Title>
       {onStartTour && (
         <div style={{ display: 'flex', justifyContent: 'flex-start', margin: '12px 0 20px 0' }}>
-          <button
-            onClick={onStartTour}
-            style={{
-              background: '#00ff99',
-              color: '#181825',
-              border: '2px solid #00ff99',
-              borderRadius: 2,
-              padding: '8px 22px',
-              fontWeight: 700,
-              fontFamily: 'Fira Code, monospace',
-              fontSize: 16,
-              cursor: 'pointer',
-              boxShadow: '0 0 8px #00ff9955',
-              transition: 'background 0.2s, color 0.2s',
-            }}
-          >
+          <StartTourButton onClick={onStartTour}>
             Start Guided Tour
-          </button>
+          </StartTourButton>
         </div>
       )}
       <Subtitle>

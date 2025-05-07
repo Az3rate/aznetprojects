@@ -34,6 +34,8 @@ import {
 import Joyride, { Step } from 'react-joyride';
 import { useBackgroundAudio } from '../../hooks/useBackgroundAudio';
 import { useDirectory } from '../../context/DirectoryContext';
+import { SwirlBackground } from './SwirlBackground';
+import { useTheme } from 'styled-components';
 
 function formatPromptPath(path: string) {
   if (!path || path === '~' || path === '/' || path === '') return '/';
@@ -121,6 +123,8 @@ const TerminalComponent: React.ForwardRefRenderFunction<TerminalRef, TerminalPro
   });
 
   const { toggleMute } = useBackgroundAudio(volume);
+
+  const theme = useTheme();
 
   // Save volume to localStorage when it changes
   useEffect(() => {
@@ -429,7 +433,8 @@ const TerminalComponent: React.ForwardRefRenderFunction<TerminalRef, TerminalPro
   }));
 
   return (
-    <TerminalWrapper $featuredCollapsed={featuredCollapsed}>
+    <TerminalWrapper $featuredCollapsed={featuredCollapsed} style={{ position: 'relative', overflow: 'hidden' }}>
+      <SwirlBackground />
       <FeaturedSidebar data-tour="project-list" $collapsed={featuredCollapsed} style={{ position: 'relative' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: featuredCollapsed ? 0 : '1.5rem', height: featuredCollapsed ? '100%' : undefined }}>
           {!featuredCollapsed && (
@@ -506,21 +511,21 @@ const TerminalComponent: React.ForwardRefRenderFunction<TerminalRef, TerminalPro
           styles={{
             options: {
               zIndex: 10000,
-              primaryColor: '#00ff99',
-              backgroundColor: '#181825',
-              textColor: '#fff',
-              arrowColor: '#181825',
+              primaryColor: theme.colors.button,
+              backgroundColor: theme.colors.background.primary,
+              textColor: theme.colors.text.primary,
+              arrowColor: theme.colors.background.primary,
               overlayColor: 'rgba(10, 10, 20, 0.92)',
-              spotlightShadow: '0 0 0 2px #00ff99',
+              spotlightShadow: `0 0 0 2px ${theme.colors.button}`,
               width: 420,
             },
             tooltip: {
-              backgroundColor: '#181825',
-              color: '#fff',
+              backgroundColor: theme.colors.background.primary,
+              color: theme.colors.text.primary,
               fontFamily: 'Fira Code, monospace',
               fontSize: 16,
-              border: '2px solid #00ff99',
-              boxShadow: '0 0 12px #00ff9955',
+              border: `2px solid ${theme.colors.button}`,
+              boxShadow: `0 0 12px ${theme.colors.button}55`,
               textAlign: 'left',
               padding: '24px',
               width: 420,
@@ -529,19 +534,19 @@ const TerminalComponent: React.ForwardRefRenderFunction<TerminalRef, TerminalPro
               borderRadius: 2,
             },
             buttonNext: {
-              backgroundColor: '#00ff99',
-              color: '#181825',
+              backgroundColor: theme.colors.button,
+              color: theme.colors.text.primary,
               fontWeight: 600,
               borderRadius: 2,
-              border: '2px solid #00ff99',
+              border: `2px solid ${theme.colors.button}`,
               fontFamily: 'Fira Code, monospace',
             },
             buttonBack: {
-              color: '#00ff99',
+              color: theme.colors.button,
               fontFamily: 'Fira Code, monospace',
             },
             buttonSkip: {
-              color: '#fff',
+              color: theme.colors.text.primary,
               background: 'none',
               fontFamily: 'Fira Code, monospace',
             },

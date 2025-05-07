@@ -1,27 +1,22 @@
 export const theme = {
   colors: {
     background: {
-      primary: '#181825',
-      secondary: '#232634',
-      hover: '#313244'
+      primary: 'rgb(12,12,20)', // main background
+      secondary: 'rgba(35, 13, 43, 0.32)', // extra, for panels/cards
+      hover: 'rgba(110,40,120,0.08)' // subtle accent hover (darker)
     },
     text: {
-      primary: '#cdd6f4',
-      secondary: '#a6adc8'
+      primary: '#fff', // white text
+      secondary: 'rgba(255,255,255,0.7)'
     },
-    prompt: '#a78bfa',
-    success: '#50fa7b',
-    error: '#ff5555',
-    info: '#8be9fd',
-    link: '#8be9fd',
-    linkHover: '#b4befe',
-    border: '#45475a',
-    command: '#00ff99',
-    path: '#a78bfa',
-    argument: '#ffb86c',
-    promptDefault: '#8be9fd',
-    dir: '#00bfff',
-    file: '#cdd6f4',
+    accent: 'rgb(110,40,120)', // darker accent for scrollbars, highlights
+    button: 'rgb(34, 8, 34)', // for buttons
+    border: 'rgb(110,40,120)', // accent border (darker)
+    command: 'rgb(110,40,120)', // accent for command prompt (darker)
+    path: 'rgb(84,63,192)', // path color (button color)
+    argument: 'rgb(110,40,120)', // accent for arguments (darker)
+    dir: 'rgb(84,63,192)', // directory color (button color)
+    file: '#fff', // file color (white)
   },
   spacing: {
     xs: '0.25rem',

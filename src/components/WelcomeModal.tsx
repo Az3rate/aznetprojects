@@ -1,8 +1,8 @@
 import React, { useState, useImperativeHandle, forwardRef } from 'react';
-import styled from 'styled-components';
+import styled, { useTheme } from 'styled-components';
 
 const AsciiArt = styled.pre`
-  color: #00FFB2;
+  color:rgba(234, 0, 255, 0.6);
   margin: 0 0 1.5rem;
   white-space: pre;
   font-family: 'Fira Code', monospace;
@@ -101,7 +101,7 @@ const CloseButton = styled.button`
 `;
 
 const TourButton = styled.button`
-  background: #00FFB2;
+  background:rgba(183, 0, 255, 0.64);
   color: #171A23;
   border: none;
   border-radius: 6px;
@@ -114,7 +114,7 @@ const TourButton = styled.button`
   transition: all 0.2s ease;
   
   &:hover {
-    background: #00E6A1;
+    background:rgba(230, 0, 219, 0.89);
     transform: translateY(-2px);
   }
   
@@ -125,7 +125,7 @@ const TourButton = styled.button`
 
 const UserTypeButtons = styled.div`
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
   gap: 1rem;
   margin-top: 1rem;
 `;
@@ -178,6 +178,7 @@ export interface WelcomeModalRef {
 export const WelcomeModal = forwardRef<WelcomeModalRef, WelcomeModalProps>(
   ({ open, onClose, onStartTour }, ref) => {
     const [step, setStep] = useState(1);
+    const theme = useTheme();
 
     useImperativeHandle(ref, () => ({
       resetStep: () => setStep(1),
@@ -231,17 +232,36 @@ o88o     o8888o d8888888P  o8o        8  Y8bod8P'   "888"
                 <SectionTitle>How would you like to explore?</SectionTitle>
                 <UserTypeButtons>
                   <UserTypeButton onClick={() => onStartTour('recruiter')}>
-                    <UserTypeIcon>👥</UserTypeIcon>
+                    <UserTypeIcon>
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: 32, height: 32, color: theme.colors.button }}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m10-7.13a4 4 0 11-8 0 4 4 0 018 0zm6 4a2 2 0 11-4 0 2 2 0 014 0zm-14 0a2 2 0 11-4 0 2 2 0 014 0z" />
+                      </svg>
+                    </UserTypeIcon>
                     <UserTypeTitle>I'm a Recruiter</UserTypeTitle>
                     <UserTypeDescription>
                       Get an overview of featured projects and key achievements
                     </UserTypeDescription>
                   </UserTypeButton>
                   <UserTypeButton onClick={() => onStartTour('technical')}>
-                    <UserTypeIcon>👨‍💻</UserTypeIcon>
+                    <UserTypeIcon>
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: 32, height: 32, color: theme.colors.button }}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 4.75l-7 7 7 7" />
+                      </svg>
+                    </UserTypeIcon>
                     <UserTypeTitle>I'm a Technical Resource</UserTypeTitle>
                     <UserTypeDescription>
                       Explore technical details and implementation specifics
+                    </UserTypeDescription>
+                  </UserTypeButton>
+                  <UserTypeButton onClick={onClose}>
+                    <UserTypeIcon>
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: 32, height: 32, color: theme.colors.button }}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 21c4.97 0 9-4.03 9-9s-4.03-9-9-9-9 4.03-9 9 4.03 9 9 9zm0-9.75a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm0 0v.008m0 0l2.25 2.25m-2.25-2.25l-2.25 2.25" />
+                      </svg>
+                    </UserTypeIcon>
+                    <UserTypeTitle>I've been here before</UserTypeTitle>
+                    <UserTypeDescription>
+                      Skip the guided tour and jump straight into the portfolio.
                     </UserTypeDescription>
                   </UserTypeButton>
                 </UserTypeButtons>

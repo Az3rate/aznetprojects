@@ -6,7 +6,6 @@ import {
   DirectoryName
 } from './Terminal.styles';
 import { OptionsPanel } from './OptionsPanel';
-import { projects } from '../../data/projects';
 import { Project } from '../../types';
 
 const ExplorerContainer = styled.div`
