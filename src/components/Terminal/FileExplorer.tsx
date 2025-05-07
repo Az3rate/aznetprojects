@@ -244,10 +244,6 @@ export const FileExplorer: React.FC<FileExplorerProps> = React.memo(({
 
   return (
     <ExplorerContainer>
-      <DebugPanel>
-        <div>Current: {getDisplayDirectory()}</div>
-        <div>Expanded: {Object.keys(expanded).join(', ')}</div>
-      </DebugPanel>
       <FileTree>
         {renderRootLevelItems()}
       </FileTree>

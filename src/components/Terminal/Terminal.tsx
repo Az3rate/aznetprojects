@@ -65,7 +65,13 @@ interface TerminalProps {
   onOpenWelcome: () => void;
 }
 
-export const Terminal: React.FC<TerminalProps> = ({ onOpenWelcome }) => {
+export interface TerminalRef {
+  startTour: (type: 'recruiter' | 'technical') => void;
+}
+
+const TerminalComponent: React.ForwardRefRenderFunction<TerminalRef, TerminalProps> = (props, ref) => {
+  const { onOpenWelcome } = props;
+  
   const {
     state,
     executeCommand,
@@ -107,7 +113,8 @@ export const Terminal: React.FC<TerminalProps> = ({ onOpenWelcome }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const endOfTerminalRef = useRef<HTMLDivElement>(null);
   const [tourOpen, setTourOpen] = useState(false);
-  
+  const [tourType, setTourType] = useState<'recruiter' | 'technical'>('recruiter');
+
   const [isBackgroundMuted, setIsBackgroundMuted] = useState(() => {
     const savedMute = localStorage.getItem('terminal_background_muted');
     return savedMute ? JSON.parse(savedMute) : false;
@@ -125,18 +132,63 @@ export const Terminal: React.FC<TerminalProps> = ({ onOpenWelcome }) => {
     localStorage.setItem('terminal_background_muted', JSON.stringify(isBackgroundMuted));
   }, [isBackgroundMuted]);
 
-  const tourSteps: Step[] = [
+  const recruiterTourSteps: Step[] = [
+    {
+      target: 'body',
+      content: (
+        <div style={{ textAlign: 'left' }}>
+          <b>Welcome to the HV Portfolio</b>
+          <br /><br />
+          This short tour will introduce you to the featured projects and show you how to explore them.
+          <br /><br />
+          Click <b>Next</b> to continue.
+        </div>
+      ),
+      disableBeacon: true,
+      placement: 'center',
+    },
+    {
+      target: '[data-tour="project-list"]',
+      content: (
+        <div style={{ textAlign: 'left' }}>
+          <b>Featured Projects</b>
+          <br /><br />
+          - Browse a curated list of impactful projects.<br />
+          - Each project includes real user feedback and business results.<br />
+          - Click a project to see its overview and details.
+        </div>
+      ),
+      disableBeacon: true,
+      placement: 'right',
+    },
     {
       target: '[data-tour="sidebar"]',
       content: (
-        <div>
-          <b>File Explorer (Sidebar)</b><br/>
-          This is the <b>live file explorer</b>. Browse the real project directory, just like a developer would. <br/>
-          <ul style={{ margin: '0.5rem 0 0.5rem 1.5rem', padding: 0, listStylePosition: 'inside', textAlign: 'left' }}>
-            <li>Click any <b>folder</b> to expand and see its contents.</li>
-            <li>Click any <b>file</b> to instantly view its code or content in the details panel.</li>
-          </ul>
-          <i>Recruiter tip: This is a real file tree, not a mockup!</i>
+        <div style={{ textAlign: 'left' }}>
+          <b>Directory Tree</b>
+          <br /><br />
+          - On the left, you'll find the real codebase structure.<br />
+          - Click a folder to expand it.<br />
+          - Click a file to view the actual code behind this application.
+        </div>
+      ),
+      disableBeacon: true,
+      placement: 'right',
+    },
+  ];
+
+  const technicalTourSteps: Step[] = [
+    {
+      target: '[data-tour="sidebar"]',
+      content: (
+        <div style={{ textAlign: 'left' }}>
+          <b>Directory Tree</b>
+          <br /><br />
+          - This sidebar shows the real file structure from GitHub.<br />
+          - Browse all folders and files.<br />
+          - Click a file to view its source code.
+          <br /><br />
+          Navigation is synced with the terminal.
         </div>
       ),
       disableBeacon: true,
@@ -145,85 +197,73 @@ export const Terminal: React.FC<TerminalProps> = ({ onOpenWelcome }) => {
     {
       target: '[data-tour="terminal-input"]',
       content: (
-        <div>
-          <b>Terminal Input</b><br/>
-          This is the <b>interactive terminal</b>. Type or click commands here, just like a real developer.<br/>
-          <ul style={{ margin: '0.5rem 0 0.5rem 1.5rem', padding: 0, listStylePosition: 'inside', textAlign: 'left' }}>
-            <li>Try <b>ls</b> to list files, <b>cd</b> to change directory, or <b>cat</b> to view file contents.</li>
-            <li>Use <b>Tab</b> for autocomplete and <b>Arrow keys</b> for command history.</li>
-            <li>Click suggested commands for a quick demo.</li>
-          </ul>
-          <i>No coding experience required!</i>
+        <div style={{ textAlign: 'left' }}>
+          <b>Interactive Terminal</b>
+          <br /><br />
+          - Run commands like <b>ls</b>, <b>cd</b>, <b>cat</b>, and <b>pwd</b>.<br />
+          - Use <b>Tab</b> for autocomplete.<br />
+          - Use <b>Arrow keys</b> for command history.
+          <br /><br />
+          The terminal and file explorer are fully integrated.
         </div>
       ),
+      disableBeacon: true,
       placement: 'top',
     },
     {
       target: '[data-tour="details-panel"]',
       content: (
-        <div>
-          <b>Details Panel</b><br/>
-          This panel displays <b>project overviews, code, images, and architecture diagrams</b>.<br/>
-          <ul style={{ margin: '0.5rem 0 0.5rem 1.5rem', padding: 0, listStylePosition: 'inside', textAlign: 'left' }}>
-            <li>When you select a project or file, its details appear here.</li>
-            <li>See screenshots, flowcharts, and code with syntax highlighting.</li>
-          </ul>
-          <i>Perfect for technical reviewers and recruiters alike.</i>
+        <div style={{ textAlign: 'left' }}>
+          <b>Code Viewer</b>
+          <br /><br />
+          - View syntax-highlighted code for every file.<br />
+          - See component structure and state management.<br />
+          - Directly inspect how features are implemented.
+          <br /><br />
+          Click a file or use <b>cat &lt;filename&gt;</b> in the terminal.
         </div>
       ),
+      disableBeacon: true,
       placement: 'left',
     },
     {
       target: '[data-tour="project-d4ut"]',
       content: (
-        <div>
-          <b>D4UT</b><br/>
-          A powerful web-based utility tool for Diablo 4 players, offering advanced build optimization, damage calculations, and item comparison.<br/>
-          <i>Click to see a deep-dive overview, features, and code.</i>
+        <div style={{ textAlign: 'left' }}>
+          <b>How It Works</b>
+          <br /><br />
+          - Files and folders are fetched live from GitHub.<br />
+          - A virtual file system manages navigation and state.<br />
+          - React context and hooks keep everything in sync.<br />
+          - Terminal commands update the UI and file system in real time.
+          <br /><br />
+          Example: Type <b>cd src</b> to change directory. The sidebar updates instantly.
         </div>
       ),
-      placement: 'bottom',
-    },
-    {
-      target: '[data-tour="project-lootmanager"]',
-      content: (
-        <div>
-          <b>LootManager</b><br/>
-          A comprehensive guild management system for Throne and Liberty, focusing on DKP tracking, raid scheduling, and loot distribution.<br/>
-          <i>Click to see a deep-dive overview, features, and code.</i>
-        </div>
-      ),
-      placement: 'bottom',
-    },
-    {
-      target: '[data-tour="project-raidalert"]',
-      content: (
-        <div>
-          <b>RaidAlert</b><br/>
-          A Discord bot and web dashboard for ARK Survival Evolved, providing real-time raid notifications and tribe management.<br/>
-          <i>Click to see a deep-dive overview, features, and code.</i>
-        </div>
-      ),
+      disableBeacon: true,
       placement: 'bottom',
     },
     {
       target: '[data-tour="quick-menu"]',
       content: (
-        <div>
-          <b>Quick Menu</b><br/>
-          Use these shortcuts for common actions:<br/>
-          <ul style={{ margin: '0.5rem 0 0.5rem 1.5rem', padding: 0, listStylePosition: 'inside', textAlign: 'left' }}>
-            <li><b>Help</b>: See all available commands.</li>
-            <li><b>About</b>: Learn more about this portfolio.</li>
-            <li><b>List Files</b>: Instantly list all files in the current directory.</li>
-            <li><b>Clear</b>: Clear the terminal output.</li>
-          </ul>
-          <i>You can restart this tour anytime from here!</i>
+        <div style={{ textAlign: 'left' }}>
+          <b>Explore Further</b>
+          <br /><br />
+          - Try <b>ls</b> in different folders.<br />
+          - Use <b>cat</b> to read any file.<br />
+          - Open multiple files to see how everything connects.<br />
+          - Check the terminal's own code in <b>src/components/Terminal/</b>.
         </div>
       ),
+      disableBeacon: true,
       placement: 'bottom',
     },
   ];
+
+  const handleStartTour = (type: 'recruiter' | 'technical') => {
+    setTourType(type);
+    setTourOpen(true);
+  };
 
   const knownCommands = [
     'help', 'clear', 'about', 'projects', 'contact', 'ls', 'cd', 'pwd', 'cat', 'echo', 'neofetch', 'exit'
@@ -380,9 +420,17 @@ export const Terminal: React.FC<TerminalProps> = ({ onOpenWelcome }) => {
 
   const [featuredCollapsed, setFeaturedCollapsed] = useState(false);
 
+  // Expose startTour method through ref
+  React.useImperativeHandle(ref, () => ({
+    startTour: (type: 'recruiter' | 'technical') => {
+      setTourType(type);
+      setTourOpen(true);
+    }
+  }));
+
   return (
     <TerminalWrapper $featuredCollapsed={featuredCollapsed}>
-      <FeaturedSidebar $collapsed={featuredCollapsed} style={{ position: 'relative' }}>
+      <FeaturedSidebar data-tour="project-list" $collapsed={featuredCollapsed} style={{ position: 'relative' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: featuredCollapsed ? 0 : '1.5rem', height: featuredCollapsed ? '100%' : undefined }}>
           {!featuredCollapsed && (
             <span style={{ fontWeight: 700, fontSize: '1.1rem', color: '#fff', letterSpacing: '-0.01em' }}>Featured Projects</span>
@@ -446,11 +494,14 @@ export const Terminal: React.FC<TerminalProps> = ({ onOpenWelcome }) => {
         />
       </Sidebar>
       <TerminalContent onClick={handleTerminalClick}>
+        <div data-tour="quick-menu" style={{ width: '100%' }} />
         <Joyride
-          steps={tourSteps}
+          steps={tourType === 'recruiter' ? recruiterTourSteps : technicalTourSteps}
           run={tourOpen}
           continuous
-          showSkipButton
+          showSkipButton={false}
+          disableCloseOnEsc={true}
+          disableOverlayClose={true}
           showProgress
           styles={{
             options: {
@@ -459,7 +510,7 @@ export const Terminal: React.FC<TerminalProps> = ({ onOpenWelcome }) => {
               backgroundColor: '#181825',
               textColor: '#fff',
               arrowColor: '#181825',
-              overlayColor: 'rgba(40, 40, 60, 0.7)',
+              overlayColor: 'rgba(10, 10, 20, 0.92)',
               spotlightShadow: '0 0 0 2px #00ff99',
               width: 420,
             },
@@ -495,9 +546,7 @@ export const Terminal: React.FC<TerminalProps> = ({ onOpenWelcome }) => {
               fontFamily: 'Fira Code, monospace',
             },
             buttonClose: {
-              color: '#fff',
-              background: 'none',
-              fontFamily: 'Fira Code, monospace',
+              display: 'none',
             },
           }}
           callback={data => {
@@ -621,3 +670,5 @@ export const Terminal: React.FC<TerminalProps> = ({ onOpenWelcome }) => {
     </TerminalWrapper>
   );
 };
+
+export const Terminal = React.forwardRef(TerminalComponent);
