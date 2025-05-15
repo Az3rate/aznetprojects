@@ -11,10 +11,10 @@ class ApiService {
   constructor() {
     // Get environment variables
     // aznetrule: debug env
-    console.log('[API] process.env.VITE_API_KEY:', process.env.VITE_API_KEY);
-    console.log('[API] process.env.VITE_API_URL:', process.env.VITE_API_URL);
-    const apiKey = process.env.VITE_API_KEY;
-    const apiUrl = process.env.VITE_API_URL;
+    console.log('[API] import.meta.env.VITE_API_KEY:', import.meta.env.VITE_API_KEY);
+    console.log('[API] import.meta.env.VITE_API_URL:', import.meta.env.VITE_API_URL);
+    const apiKey = import.meta.env.VITE_API_KEY;
+    const apiUrl = import.meta.env.VITE_API_URL;
 
     if (!apiKey) {
       throw new Error('API key is not configured. Please check your .env file.');
