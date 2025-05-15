@@ -34,7 +34,7 @@ The HV Portfolio Terminal is more than just a portfolio - it's a living demonstr
   - Technical Tour: Delves into implementation details and architecture
 - **Responsive Design**: Seamless experience across all devices
 - **Theme Support**: Dark mode with customizable accents
-- **Audio Integration**: Optional keyboard sounds and background music
+- **Audio Integration**: Optional keyboard sounds and background music.
 
 ### AI Chat Companion
 - **Conversational AI**: Use the `ai` command to chat with AzNet, your friendly AI companion. AzNet responds in a warm, conversational, and human-like way, avoiding technical or coding topics unless you specifically ask. All AI responses appear inline in the terminal, alternating between your input and AzNet's reply.
