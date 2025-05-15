@@ -5,7 +5,6 @@ import styled from 'styled-components';
 import { Terminal } from './components/Terminal/Terminal';
 import { WelcomeModal, WelcomeModalRef } from './components/WelcomeModal';
 import { DirectoryProvider } from './context/DirectoryContext';
-import { projects } from './data/projects';
 import type { TerminalRef } from './components/Terminal/Terminal';
 
 const AppContainer = styled.div`
@@ -37,18 +36,18 @@ export const App: React.FC = () => {
     <ThemeProvider>
       <GlobalStyles />
       <DirectoryProvider>
-          <AppContainer>
-            <Terminal
-              ref={terminalRef}
-              onOpenWelcome={handleOpenWelcome}
-            />
-            <WelcomeModal
-              ref={welcomeModalRef}
-              open={welcomeOpen}
-              onClose={() => setWelcomeOpen(false)}
-              onStartTour={handleStartTour}
-            />
-          </AppContainer>
+        <AppContainer>
+          <Terminal
+            ref={terminalRef}
+            onOpenWelcome={handleOpenWelcome}
+          />
+          <WelcomeModal
+            ref={welcomeModalRef}
+            open={welcomeOpen}
+            onClose={() => setWelcomeOpen(false)}
+            onStartTour={handleStartTour}
+          />
+        </AppContainer>
       </DirectoryProvider>
     </ThemeProvider>
   );

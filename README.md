@@ -34,11 +34,7 @@ The HV Portfolio Terminal is more than just a portfolio - it's a living demonstr
   - Technical Tour: Delves into implementation details and architecture
 - **Responsive Design**: Seamless experience across all devices
 - **Theme Support**: Dark mode with customizable accents
-- **Audio Integration**: Optional keyboard sounds and background music.
-
-### AI Chat Companion
-- **Conversational AI**: Use the `ai` command to chat with AzNet, your friendly AI companion. AzNet responds in a warm, conversational, and human-like way, avoiding technical or coding topics unless you specifically ask. All AI responses appear inline in the terminal, alternating between your input and AzNet's reply.
-- **Usage**: Type `ai <your message>` (e.g., `ai How are you today?`). AzNet will reply directly in the terminal, and the chat alternates between you and AzNet, always ending with your prompt.
+- **Audio Integration**: Optional keyboard sounds and background music
 
 ## Technical Stack
 
@@ -84,11 +80,109 @@ src/
 - `neofetch` - Display system information
 - `exit` - Close the terminal
 
-### AI Chat Companion
-- `ai <message>` - Chat with AzNet, your AI companion. Example: `ai Tell me a joke!`
-  - AzNet responds in green text, inline in the terminal, and always in a friendly, conversational tone.
-
 ## Development Setup
 
 1. Clone the repository:
+```bash
+git clone https://github.com/yourusername/terminal-interface.git
+cd terminal-interface
 ```
+
+2. Install dependencies:
+```bash
+npm install
+```
+
+3. Start the development server:
+```bash
+npm start
+```
+
+4. Run tests:
+```bash
+npm test
+```
+
+5. Run tests in watch mode:
+```bash
+npm run test:watch
+```
+
+6. Generate test coverage report:
+```bash
+npm run test:coverage
+```
+
+## Project Structure
+
+The project is organized into several key components:
+
+### Terminal Component
+- Handles command input and execution
+- Manages terminal history and state
+- Provides command suggestions
+- Controls the details panel
+
+### File Explorer
+- Displays the project's file structure
+- Handles directory navigation
+- Manages file selection and viewing
+
+### Project Details
+- Shows comprehensive project information
+- Displays architecture diagrams
+- Lists technical stack and features
+
+## Key Functions
+
+### Terminal Commands (`src/services/commands.ts`)
+- `execute(command, args)` - Main command execution handler
+- `getCommandSuggestions(input, commands)` - Fuzzy command matching
+- `resolvePath(path)` - Resolves file system paths
+- `getCurrentNode()` - Gets current directory node
+- `getCurrentDirectory()` - Returns current directory path
+
+### Terminal Component (`src/components/Terminal/Terminal.tsx`)
+- `handleInputChange(e)` - Handles command input changes
+- `handleCommandClick(command)` - Executes commands from clicks
+- `handleKeyDown(e)` - Handles keyboard navigation
+- `handleCloseProject()` - Closes project details panel
+- `getVisibleHistory()` - Filters terminal history
+
+### Terminal Hook (`src/hooks/useTerminal.ts`)
+- `executeCommand(command)` - Executes terminal commands
+- `navigateHistory(direction)` - Handles command history navigation
+- `getCommandSuggestions(input)` - Gets command suggestions
+- `addCommandOnly(command)` - Adds command to history without output
+- `openDetailsPanel(project)` - Opens project details panel
+- `closeDetailsPanel()` - Closes details panel
+
+## Development Workflow
+
+1. Local development with hot module replacement
+2. TypeScript compilation and type checking
+3. ESLint for code quality
+4. GitHub Actions for CI/CD
+
+## Styling Guidelines
+
+- Use styled-components for component styling
+- Follow the established theme system
+- Maintain consistent spacing and typography
+- Ensure responsive design across all components
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Author
+
+Hugo Villeneuve - [GitHub Profile](https://github.com/Az3rate)

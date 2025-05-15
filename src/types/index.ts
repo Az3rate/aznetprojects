@@ -64,7 +64,7 @@ export type TerminalCommandType = 'success' | 'error' | 'info' | 'project-list' 
 
 export interface TerminalCommand {
   command: string;
-  output: string | { type: 'project-list'; projects: Project[] } | { type: 'welcome' } | { type: 'clear' } | { type: 'aznet-loading' };
+  output: string | { type: 'project-list'; projects: Project[] } | { type: 'welcome' } | { type: 'clear' };
   type: TerminalCommandType;
   currentDirectory?: string; 
 }

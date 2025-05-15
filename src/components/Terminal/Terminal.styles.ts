@@ -13,12 +13,6 @@ export const TerminalWrapper = styled.div<{ $featuredCollapsed?: boolean }>`
   position: relative;
   z-index: 1;
   overflow: hidden;
-
-  @media (max-width: 900px) {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto 1fr auto;
-    height: 100dvh;
-  }
 `;
 
 
@@ -35,29 +29,12 @@ export const FeaturedSidebar = styled.div<{ $collapsed?: boolean }>`
   overflow-y: auto;
   transition: all 0.2s cubic-bezier(0.4,0,0.2,1);
   resize: horizontal;
-
-  @media (max-width: 900px) {
-    min-width: 0;
-    max-width: none;
-    width: 100vw;
-    border-right: none;
-    border-bottom: 1px solid ${({ theme }) => theme.colors.border};
-    padding: 0.5rem;
-    font-size: 0.95rem;
-  }
 `;
 
 export const Sidebar = styled.div`
   background-color: ${({ theme }) => theme.colors.background.secondary};
   padding: 1rem;
   border-right: 1px solid ${({ theme }) => theme.colors.border};
-
-  @media (max-width: 900px) {
-    border-right: none;
-    border-bottom: 1px solid ${({ theme }) => theme.colors.border};
-    padding: 0.5rem;
-    font-size: 0.95rem;
-  }
 `;
 
 export const TerminalContent = styled.div`
@@ -65,11 +42,6 @@ export const TerminalContent = styled.div`
   overflow-y: auto;
   font-family: 'Fira Code', monospace;
   min-width: 0;
-
-  @media (max-width: 900px) {
-    padding: 0.5rem;
-    font-size: 0.97rem;
-  }
 `;
 
 export const CommandLine = styled.div`
@@ -154,18 +126,6 @@ export const DetailsPanel = styled.div<{ $isOpen: boolean; $width?: number }>`
   width: ${({ $width }) => ($width ? `${$width}px` : 'auto')};
   max-width: none;
   position: relative;
-
-  @media (max-width: 900px) {
-    min-width: 0;
-    width: 100vw !important;
-    max-width: 100vw;
-    left: 0;
-    right: 0;
-    border-left: none;
-    border-top: 1px solid ${({ theme }) => theme.colors.border};
-    padding: 0.5rem;
-    font-size: 0.97rem;
-  }
 `;
 
 export const DirectoryTree = styled.div`
@@ -232,7 +192,7 @@ export const FileCodeBlock = styled.div`
   flex: 1 1 auto;
   height: 100%;
   min-height: 0;
-  overflow-x: auto;
+  overflow-y: auto;
   background: #1e1e1e;
   border-radius: 4px;
   padding: 8px;

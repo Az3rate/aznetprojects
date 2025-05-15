@@ -71,8 +71,7 @@ export const useTerminal = (projects: Project[]) => {
       'cat',
       'echo',
       'neofetch',
-      'exit',
-      'ai'
+      'exit'
     ];
     return availableCommands
       .filter(cmd => cmd.startsWith(input.toLowerCase()))
@@ -126,28 +125,6 @@ export const useTerminal = (projects: Project[]) => {
     }));
   }, []);
 
-  const removeLastHistoryEntry = useCallback(() => {
-    setState(prev => ({
-      ...prev,
-      history: prev.history.slice(0, -1)
-    }));
-  }, []);
-
-  const replaceLastHistoryEntry = useCallback((output: string) => {
-    setState(prev => {
-      if (prev.history.length === 0) return prev;
-      const newHistory = prev.history.slice();
-      newHistory[newHistory.length - 1] = {
-        ...newHistory[newHistory.length - 1],
-        output
-      };
-      return {
-        ...prev,
-        history: newHistory
-      };
-    });
-  }, []);
-
   return {
     state: { ...state, currentDirectory },
     executeCommand,
@@ -158,8 +135,6 @@ export const useTerminal = (projects: Project[]) => {
     closeDetailsPanel,
     addCommandOnly,
     changeDirectory,
-    commandsRef,
-    removeLastHistoryEntry,
-    replaceLastHistoryEntry
+    commandsRef
   };
 };
