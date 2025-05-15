@@ -6,7 +6,7 @@ import { ProjectDetails } from './ProjectDetails';
 import { FileExplorer } from './FileExplorer';
 import { FileViewer } from './FileViewer';
 import { Project } from '../../types';
-import type { FileDetails } from '../../types';
+import type { FileDetails, TerminalCommand } from '../../types';
 import { TerminalCommands } from '../../services/commands';
 import {
   TerminalWrapper,
@@ -37,6 +37,8 @@ import { useBackgroundAudio } from '../../hooks/useBackgroundAudio';
 import { useDirectory } from '../../context/DirectoryContext';
 import { SwirlBackground } from './SwirlBackground';
 import { useTheme } from 'styled-components';
+import { aiService } from '../../services/ai';
+import styled, { keyframes } from 'styled-components';
 
 function formatPromptPath(path: string) {
   if (!path || path === '~' || path === '/' || path === '') return '/';
@@ -72,6 +74,29 @@ export interface TerminalRef {
   startTour: (type: 'recruiter' | 'technical') => void;
 }
 
+const AzNetOutput = styled.div`
+  color: #4CAF50;
+  font-weight: 600;
+  margin: 0.5rem 0 0.5rem 2.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+`;
+
+const spin = keyframes`
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+`;
+
+const LoadingSpinner = styled.div`
+  border: 2px solid #444;
+  border-top: 2px solid #4CAF50;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  animation: ${spin} 1s linear infinite;
+`;
+
 const TerminalComponent: React.ForwardRefRenderFunction<TerminalRef, TerminalProps> = (props, ref) => {
   const { onOpenWelcome } = props;
   
@@ -85,7 +110,9 @@ const TerminalComponent: React.ForwardRefRenderFunction<TerminalRef, TerminalPro
     closeDetailsPanel,
     addCommandOnly,
     changeDirectory,
-    commandsRef
+    commandsRef,
+    removeLastHistoryEntry,
+    replaceLastHistoryEntry
   } = useTerminal(projects);
 
   const {
@@ -132,6 +159,13 @@ const TerminalComponent: React.ForwardRefRenderFunction<TerminalRef, TerminalPro
   const isResizing = useRef(false);
   const detailsPanelRef = useRef<HTMLDivElement>(null);
   const dragData = useRef<{right: number, startX: number, startWidth: number} | null>(null);
+
+  const [showAISuggestion, setShowAISuggestion] = useState(false);
+  const [currentCode, setCurrentCode] = useState('');
+  const [currentContext, setCurrentContext] = useState('');
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiLoadingKey, setAiLoadingKey] = useState<number | null>(null);
 
   useEffect(() => {
     localStorage.setItem('terminal_volume', volume.toString());
@@ -297,7 +331,7 @@ const TerminalComponent: React.ForwardRefRenderFunction<TerminalRef, TerminalPro
   };
 
   const knownCommands = [
-    'help', 'clear', 'about', 'projects', 'contact', 'ls', 'cd', 'pwd', 'cat', 'echo', 'neofetch', 'exit'
+    'help', 'clear', 'about', 'projects', 'contact', 'ls', 'cd', 'pwd', 'cat', 'echo', 'neofetch', 'exit', 'ai'
   ];
   const lastStatus = state.history.length > 0 ? state.history[state.history.length - 1].type : 'default';
 
@@ -323,9 +357,44 @@ const TerminalComponent: React.ForwardRefRenderFunction<TerminalRef, TerminalPro
     }
   };
 
+  // Add a helper to push a TerminalCommand directly to history
+  const addHistoryEntry = useCallback((entry: TerminalCommand) => {
+    state.history.push(entry);
+    setTimeout(() => setInput(input => input), 0);
+  }, [state.history]);
+
   const handleCommandClick = useCallback(async (command: string) => {
     const trimmedCommand = command.trim();
-    if (trimmedCommand.startsWith('cat ')) {
+    if (trimmedCommand === 'ai' || trimmedCommand.startsWith('ai ')) {
+      if (trimmedCommand === 'ai') {
+        setAiError("Say something to your AI companion! Example: ai How are you today?");
+        setInput('');
+        return;
+      }
+      setInput('');
+      setAiError(null);
+      setAiLoading(true);
+      const loadingKey = Date.now();
+      setAiLoadingKey(loadingKey);
+      addHistoryEntry({
+        command,
+        output: { type: 'aznet-loading' },
+        type: 'info',
+        currentDirectory: state.currentDirectory
+      });
+      try {
+        const message = trimmedCommand.slice(3).trim();
+        const chatResult = await aiService.chatCompanion(message, state.currentDirectory);
+        setAiLoading(false);
+        setAiLoadingKey(null);
+        replaceLastHistoryEntry(`AzNet: ${chatResult.message}`);
+      } catch (error) {
+        setAiLoading(false);
+        setAiLoadingKey(null);
+        replaceLastHistoryEntry('AzNet: Failed to get a response from your AI companion.');
+      }
+      return;
+    } else if (trimmedCommand.startsWith('cat ')) {
       const fileName = trimmedCommand.split(' ')[1];
       const project = projects.find(p => p.name.toLowerCase() === fileName.toLowerCase());
       if (project) {
@@ -365,50 +434,34 @@ const TerminalComponent: React.ForwardRefRenderFunction<TerminalRef, TerminalPro
     await executeCommand(trimmedCommand);
     setInput('');
     setSuggestions([]);
-  }, [openDetailsPanel, addCommandOnly, openFileDetails, executeCommand, changeDirectory, setInput, setSuggestions, projects, commandsRef]);
+  }, [openDetailsPanel, addCommandOnly, openFileDetails, executeCommand, changeDirectory, setInput, setSuggestions, projects, commandsRef, state.history, addHistoryEntry, removeLastHistoryEntry, replaceLastHistoryEntry]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    switch (e.key) {
-      case 'Enter':
-        if (selectedSuggestion >= 0 && selectedSuggestion < suggestions.length) {
-          const selectedCommand = suggestions[selectedSuggestion];
-          handleCommandClick(selectedCommand);
-        } else {
-          handleCommandClick(input);
-        }
-        break;
-      case 'ArrowUp':
-        e.preventDefault();
-        if (suggestions.length > 0) {
-          setSelectedSuggestion(prev =>
-            prev <= 0 ? suggestions.length - 1 : prev - 1
-          );
-        } else {
-          setInput(navigateHistory('up'));
-        }
-        break;
-      case 'ArrowDown':
-        e.preventDefault();
-        if (suggestions.length > 0) {
-          setSelectedSuggestion(prev =>
-            prev >= suggestions.length - 1 ? 0 : prev + 1
-          );
-        } else {
-          setInput(navigateHistory('down'));
-        }
-        break;
-      case 'Tab':
-        e.preventDefault();
-        if (suggestions.length > 0) {
-          setInput(suggestions[0]);
-          setSuggestions([]);
-          setSelectedSuggestion(-1);
-        }
-        break;
-      case 'Escape':
-        setSuggestions([]);
-        setSelectedSuggestion(-1);
-        break;
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      const trimmedInput = input.trim();
+      
+      if (selectedSuggestion >= 0 && selectedSuggestion < suggestions.length) {
+        const selectedCommand = suggestions[selectedSuggestion];
+        handleCommandClick(selectedCommand);
+      } else {
+        handleCommandClick(input);
+      }
+      setAiError(null);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      navigateHistory('up');
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      navigateHistory('down');
+    } else if (e.key === 'Tab') {
+      e.preventDefault();
+      if (suggestions.length > 0) {
+        setSelectedSuggestion((prev) => (prev + 1) % suggestions.length);
+      }
+    } else if (e.key === 'Escape') {
+      setSuggestions([]);
+      setSelectedSuggestion(-1);
     }
   };
 
@@ -588,7 +641,9 @@ const TerminalComponent: React.ForwardRefRenderFunction<TerminalRef, TerminalPro
               </Prompt>
               {item.command}
             </CommandLine>
-            {typeof item.output === 'object' && item.output !== null && 'projects' in item.output ? (
+            {typeof item.output === 'object' && item.output !== null && item.output.type === 'aznet-loading' ? (
+              <AzNetOutput><LoadingSpinner /> AzNet is thinking...</AzNetOutput>
+            ) : typeof item.output === 'object' && item.output !== null && 'projects' in item.output ? (
               <Output type="info">
                 {(item.output as { projects: Project[] }).projects.map((project: Project) => (
                   <div key={project.name}>
@@ -603,28 +658,32 @@ const TerminalComponent: React.ForwardRefRenderFunction<TerminalRef, TerminalPro
                 ))}
               </Output>
             ) : typeof item.output === 'string' ? (
-              <Output type={item.type === 'project-list' || item.type === 'welcome' || item.type === 'clear' ? 'info' : item.type as 'success' | 'error' | 'info'}>
-                {item.command === 'ls' ? (
-                  <pre style={{ margin: 0, fontFamily: 'inherit', background: 'none', color: 'inherit', whiteSpace: 'pre-wrap' }}>
-                    {item.output.split('\n').map((line, i) => {
-                      const match = line.match(/^([d-])\s+\d+\s+(.+)$/);
-                      if (match) {
-                        const [, type, name] = match;
-                        return (
-                          <div key={i} style={{ display: 'flex', alignItems: 'center' }}>
-                            <span style={{ minWidth: 20 }}>{type}</span>
-                            <span style={{ minWidth: 40, textAlign: 'right', marginRight: 8 }}>{line.split(/\s+/)[1]}</span>
-                            {type === 'd' ? <DirSpan>{name}</DirSpan> : <FileSpan>{name}</FileSpan>}
-                          </div>
-                        );
-                      }
-                      return <div key={i}>{line}</div>;
-                    })}
-                  </pre>
-                ) : (
-                  <pre style={{ margin: 0, fontFamily: 'inherit', background: 'none', color: 'inherit', whiteSpace: 'pre-wrap' }}>{item.output}</pre>
-                )}
-              </Output>
+              item.output.startsWith('AzNet:') ? (
+                <AzNetOutput>{item.output}</AzNetOutput>
+              ) : (
+                <Output type={item.type === 'project-list' || item.type === 'welcome' || item.type === 'clear' ? 'info' : item.type as 'success' | 'error' | 'info'}>
+                  {item.command === 'ls' ? (
+                    <pre style={{ margin: 0, fontFamily: 'inherit', background: 'none', color: 'inherit', whiteSpace: 'pre-wrap' }}>
+                      {item.output.split('\n').map((line, i) => {
+                        const match = line.match(/^([d-])\s+\d+\s+(.+)$/);
+                        if (match) {
+                          const [, type, name] = match;
+                          return (
+                            <div key={i} style={{ display: 'flex', alignItems: 'center' }}>
+                              <span style={{ minWidth: 20 }}>{type}</span>
+                              <span style={{ minWidth: 40, textAlign: 'right', marginRight: 8 }}>{line.split(/\s+/)[1]}</span>
+                              {type === 'd' ? <DirSpan>{name}</DirSpan> : <FileSpan>{name}</FileSpan>}
+                            </div>
+                          );
+                        }
+                        return <div key={i}>{line}</div>;
+                      })}
+                    </pre>
+                  ) : (
+                    <pre style={{ margin: 0, fontFamily: 'inherit', background: 'none', color: 'inherit', whiteSpace: 'pre-wrap' }}>{item.output}</pre>
+                  )}
+                </Output>
+              )
             ) : null}
           </React.Fragment>
         ))}
@@ -677,6 +736,9 @@ const TerminalComponent: React.ForwardRefRenderFunction<TerminalRef, TerminalPro
           )}
         </CommandInput>
         <div ref={endOfTerminalRef} />
+        {aiError && (
+          <Output type="error">{aiError}</Output>
+        )}
       </TerminalContent>
       <DetailsPanel ref={detailsPanelRef} $isOpen={state.isDetailsPanelOpen} data-tour="details-panel" $width={detailsPanelWidth}>
         <ResizerBar
