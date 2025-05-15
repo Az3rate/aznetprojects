@@ -14,6 +14,80 @@ function getCommandSuggestions(input: string, commands: string[]): string[] {
   return scored.filter(s => s.score > 0.5).sort((a, b) => b.score - a.score).map(s => s.cmd);
 }
 
+export interface Command {
+  name: string;
+  description: string;
+  usage: string;
+  execute: (args: string[]) => void;
+}
+
+export const createCommands = (projects: Project[]): Command[] => [
+  {
+    name: 'help',
+    description: 'Display available commands and their usage',
+    usage: 'help [command]',
+    execute: (args) => {
+      // Implementation will be added in the Terminal component
+    }
+  },
+  {
+    name: 'ls',
+    description: 'List files and directories in the current directory',
+    usage: 'ls [path]',
+    execute: (args) => {
+      // Implementation will be added in the Terminal component
+    }
+  },
+  {
+    name: 'cd',
+    description: 'Change the current directory',
+    usage: 'cd <path>',
+    execute: (args) => {
+      // Implementation will be added in the Terminal component
+    }
+  },
+  {
+    name: 'cat',
+    description: 'Display the contents of a file',
+    usage: 'cat <file>',
+    execute: (args) => {
+      // Implementation will be added in the Terminal component
+    }
+  },
+  {
+    name: 'clear',
+    description: 'Clear the terminal screen',
+    usage: 'clear',
+    execute: (args) => {
+      // Implementation will be added in the Terminal component
+    }
+  },
+  {
+    name: 'projects',
+    description: 'List all available projects',
+    usage: 'projects',
+    execute: (args) => {
+      // Implementation will be added in the Terminal component
+    }
+  },
+  {
+    name: 'about',
+    description: 'Display information about the terminal',
+    usage: 'about',
+    execute: (args) => {
+      // Implementation will be added in the Terminal component
+    }
+  },
+  {
+    name: 'ai',
+    description: 'Get AI-powered code suggestions and explanations',
+    usage: 'ai <code>',
+    execute: (args) => {
+      // Implementation will be handled by the Terminal component
+    }
+  }
+];
+
 export class TerminalCommands {
   private fileSystem: VirtualFileSystem;
   private projects: Project[];
@@ -81,16 +155,17 @@ export class TerminalCommands {
       output: `Available commands:
   help        - Show this help message
   clear       - Clear the terminal
-about       - Show about information
-projects    - List all projects
+  about       - Show about information
+  projects    - List all projects
   contact     - Show contact information
   ls          - List directory contents
   cd          - Change directory
   pwd         - Print working directory
-cat         - Display file contents
+  cat         - Display file contents
   echo        - Print text
   neofetch    - Display system information
-exit        - Exit the terminal`
+  ai          - Get AI-powered code suggestions
+  exit        - Exit the terminal`
     });
   }
 
