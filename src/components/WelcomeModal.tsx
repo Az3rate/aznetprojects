@@ -2,43 +2,43 @@ import React, { useState, useImperativeHandle, forwardRef } from 'react';
 import styled, { useTheme } from 'styled-components';
 
 const AsciiArt = styled.pre`
-  color:rgba(234, 0, 255, 0.6);
-  margin: 0 0 1.5rem;
+  color: ${({ theme }) => theme.colors.accent};
+  margin: 0 0 ${({ theme }) => theme.spacing.lg};
   white-space: pre;
-  font-family: 'Fira Code', monospace;
+  font-family: ${({ theme }) => theme.typography.fontFamily.monospace};
   line-height: 1.2;
-  font-size: 0.85rem;
+  font-size: ${({ theme }) => theme.typography.fontSize.sm};
 `;
 
 const Title = styled.h1`
-  color: #FFFFFF;
-  font-size: 1.8rem;
-  margin: 1.5rem 0;
-  font-weight: 600;
+  color: ${({ theme }) => theme.colors.text.primary};
+  font-size: ${({ theme }) => theme.typography.fontSize.xxl};
+  margin: ${({ theme }) => theme.spacing.lg} 0;
+  font-weight: ${({ theme }) => theme.typography.fontWeight.bold};
   letter-spacing: -0.02em;
 `;
 
 const Subtitle = styled.div`
-  color: rgba(255, 255, 255, 0.7);
-  margin: 0.75rem 0 2rem;
-  font-size: 1rem;
+  color: ${({ theme }) => theme.colors.text.secondary};
+  margin: ${({ theme }) => theme.spacing.sm} 0 ${({ theme }) => theme.spacing.xl};
+  font-size: ${({ theme }) => theme.typography.fontSize.base};
 `;
 
 const WelcomeText = styled.div`
-  color: rgba(255, 255, 255, 0.9);
-  margin: 0 0 0.5rem;
+  color: ${({ theme }) => theme.colors.text.primary};
+  margin: 0 0 ${({ theme }) => theme.spacing.sm};
   line-height: 1.6;
 `;
 
 const Section = styled.div`
-  margin-bottom: 2rem;
+  margin-bottom: ${({ theme }) => theme.spacing.xl};
 `;
 
 const SectionTitle = styled.div`
-  color: #FFFFFF;
-  font-size: 1.15rem;
-  font-weight: 600;
-  margin-bottom: 0.75rem;
+  color: ${({ theme }) => theme.colors.text.primary};
+  font-size: ${({ theme }) => theme.typography.fontSize.lg};
+  font-weight: ${({ theme }) => theme.typography.fontWeight.bold};
+  margin-bottom: ${({ theme }) => theme.spacing.sm};
   letter-spacing: -0.01em;
 `;
 
@@ -48,72 +48,72 @@ const ModalOverlay = styled.div`
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.75);
+  background-color: ${({ theme }) => theme.colors.background.glass};
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000;
+  z-index: ${({ theme }) => theme.zIndex.modal};
 `;
 
 const ModalContent = styled.div`
-  background-color:rgba(30, 30, 30, 0.47);
-  border: 1px solid #333;
-  padding: 2rem;
+  background-color: ${({ theme }) => theme.colors.background.glass};
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  padding: ${({ theme }) => theme.spacing.xl};
   max-width: 1000px;
   width: 90%;
-  color: #fff;
+  color: ${({ theme }) => theme.colors.text.primary};
 `;
 
 const ModalHeader = styled.h2`
-  margin: 0 0 1.5rem;
-  font-size: 1.8rem;
-  color: #fff;
+  margin: 0 0 ${({ theme }) => theme.spacing.lg};
+  font-size: ${({ theme }) => theme.typography.fontSize.xxl};
+  color: ${({ theme }) => theme.colors.text.primary};
   text-align: center;
 `;
 
 const ModalBody = styled.div`
   p {
-    margin-bottom: 1.5rem;
+    margin-bottom: ${({ theme }) => theme.spacing.lg};
     text-align: center;
-    color: #ccc;
+    color: ${({ theme }) => theme.colors.text.secondary};
   }
 `;
 
 const CloseButton = styled.button`
-  background-color: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.8);
+  background-color: ${({ theme }) => theme.colors.background.secondary};
+  color: ${({ theme }) => theme.colors.text.secondary};
   border: none;
-  padding: 0.5rem 1rem;
+  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
   cursor: pointer;
-  border-radius: 6px;
-  font-size: 0.9rem;
+  border-radius: ${({ theme }) => theme.effects.borderRadius.sm};
+  font-size: ${({ theme }) => theme.typography.fontSize.sm};
   position: absolute;
-  top: 1.5rem;
-  right: 1.5rem;
-  transition: all 0.2s ease;
-  font-family: 'Fira Code', monospace;
+  top: ${({ theme }) => theme.spacing.lg};
+  right: ${({ theme }) => theme.spacing.lg};
+  transition: all ${({ theme }) => theme.effects.transition.fast};
+  font-family: ${({ theme }) => theme.typography.fontFamily.monospace};
   
   &:hover {
-    background-color: rgba(255, 255, 255, 0.2);
-    color: #FFFFFF;
+    background-color: ${({ theme }) => theme.colors.background.hover};
+    color: ${({ theme }) => theme.colors.text.primary};
   }
 `;
 
 const TourButton = styled.button`
-  background:rgba(183, 0, 255, 0.64);
-  color: #171A23;
+  background: ${({ theme }) => theme.colors.accent};
+  color: ${({ theme }) => theme.colors.text.primary};
   border: none;
-  border-radius: 6px;
-  padding: 12px 28px;
-  font-weight: 600;
-  font-family: 'Fira Code', monospace;
-  font-size: 16px;
+  border-radius: ${({ theme }) => theme.effects.borderRadius.sm};
+  padding: ${({ theme }) => theme.spacing.md} ${({ theme }) => theme.spacing.xl};
+  font-weight: ${({ theme }) => theme.typography.fontWeight.bold};
+  font-family: ${({ theme }) => theme.typography.fontFamily.monospace};
+  font-size: ${({ theme }) => theme.typography.fontSize.md};
   cursor: pointer;
-  margin-bottom: 2rem;
-  transition: all 0.2s ease;
+  margin-bottom: ${({ theme }) => theme.spacing.xl};
+  transition: all ${({ theme }) => theme.effects.transition.fast};
   
   &:hover {
-    background:rgba(230, 0, 219, 0.89);
+    background: ${({ theme }) => theme.colors.accent};
     transform: translateY(-2px);
   }
   
@@ -125,43 +125,60 @@ const TourButton = styled.button`
 const UserTypeButtons = styled.div`
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
-  gap: 1rem;
-  margin-top: 1rem;
+  gap: ${({ theme }) => theme.spacing.md};
+  margin-top: ${({ theme }) => theme.spacing.md};
 `;
 
 const UserTypeButton = styled.button`
-  background-color: #2a2a2a;
-  border: 1px solid #333;
-  border-radius: 6px;
-  padding: 1.5rem;
+  background-color: ${({ theme }) => theme.colors.background.secondary};
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: ${({ theme }) => theme.effects.borderRadius.sm};
+  padding: ${({ theme }) => theme.spacing.lg};
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all ${({ theme }) => theme.effects.transition.fast};
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  color: #fff;
+  color: ${({ theme }) => theme.colors.text.primary};
 
   &:hover {
-    background-color: #333;
+    background-color: ${({ theme }) => theme.colors.background.hover};
     transform: translateY(-2px);
   }
 `;
 
 const UserTypeIcon = styled.span`
-  font-size: 2rem;
-  margin-bottom: 0.5rem;
+  font-size: ${({ theme }) => theme.typography.fontSize.xxl};
+  margin-bottom: ${({ theme }) => theme.spacing.sm};
 `;
 
 const UserTypeTitle = styled.span`
-  font-size: 1.2rem;
-  font-weight: 600;
-  margin-bottom: 0.5rem;
+  font-size: ${({ theme }) => theme.typography.fontSize.lg};
+  font-weight: ${({ theme }) => theme.typography.fontWeight.bold};
+  margin-bottom: ${({ theme }) => theme.spacing.sm};
 `;
 
 const UserTypeDescription = styled.span`
-  font-size: 0.9rem;
-  color: #ccc;
+  font-size: ${({ theme }) => theme.typography.fontSize.sm};
+  color: ${({ theme }) => theme.colors.text.secondary};
+`;
+
+const ModalBodyScrollable = styled(ModalBody)`
+  max-height: 70vh;
+  overflow-y: auto;
+`;
+
+const ButtonContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  margin-top: ${({ theme }) => theme.spacing.xl};
+`;
+
+const StyledSvg = styled.svg`
+  width: 32px;
+  height: 32px;
+  color: ${({ theme }) => theme.colors.button};
 `;
 
 interface WelcomeModalProps {
@@ -189,7 +206,7 @@ export const WelcomeModal = forwardRef<WelcomeModalRef, WelcomeModalProps>(
       <ModalOverlay>
         <ModalContent>
           {step === 1 ? (
-            <ModalBody style={{ maxHeight: '70vh', overflowY: 'auto' }}>
+            <ModalBodyScrollable>
               <AsciiArt>
                 {`
  .o.                  ooooo      ooo               .   
@@ -199,7 +216,7 @@ export const WelcomeModal = forwardRef<WelcomeModalRef, WelcomeModalProps>(
 .88ooo8888.      .d8P'    8     88b.8  888ooo888   888   
 .8'     888.   .d8P'  .P  8       888  888    .o   888 . 
 o88o     o8888o d8888888P  o8o        8  Y8bod8P'   "888"       
-              `}
+                `}
               </AsciiArt>
               <Title>Welcome to the HV Portfolio Terminal</Title>
               <Subtitle>Created by <b>Hugo Villeneuve</b></Subtitle>
@@ -221,20 +238,20 @@ o88o     o8888o d8888888P  o8o        8  Y8bod8P'   "888"
                   This site is the answer. What you're looking at isn't just a portfolio... It's one of the projects itself. The terminal you're using is a fully working application, built from scratch. When you explore the files, you're exploring the code behind this very website. You can browse directories, read real code, and see how everything works together in one place. It's a direct, transparent way to show how I build & I hope it connects with people who care about that.
                 </WelcomeText>
               </Section>
-              <div style={{ display: 'flex', justifyContent: 'center', marginTop: 32 }}>
+              <ButtonContainer>
                 <TourButton onClick={() => setStep(2)}>Get Started</TourButton>
-              </div>
-            </ModalBody>
+              </ButtonContainer>
+            </ModalBodyScrollable>
           ) : (
-            <ModalBody style={{ maxHeight: '70vh', overflowY: 'auto' }}>
+            <ModalBodyScrollable>
               <Section>
                 <SectionTitle>How would you like to explore?</SectionTitle>
                 <UserTypeButtons>
                   <UserTypeButton onClick={() => onStartTour('recruiter')}>
                     <UserTypeIcon>
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: 32, height: 32, color: theme.colors.button }}>
+                      <StyledSvg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m10-7.13a4 4 0 11-8 0 4 4 0 018 0zm6 4a2 2 0 11-4 0 2 2 0 014 0zm-14 0a2 2 0 11-4 0 2 2 0 014 0z" />
-                      </svg>
+                      </StyledSvg>
                     </UserTypeIcon>
                     <UserTypeTitle>I'm a Recruiter</UserTypeTitle>
                     <UserTypeDescription>
@@ -243,9 +260,9 @@ o88o     o8888o d8888888P  o8o        8  Y8bod8P'   "888"
                   </UserTypeButton>
                   <UserTypeButton onClick={() => onStartTour('technical')}>
                     <UserTypeIcon>
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: 32, height: 32, color: theme.colors.button }}>
+                      <StyledSvg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 4.75l-7 7 7 7" />
-                      </svg>
+                      </StyledSvg>
                     </UserTypeIcon>
                     <UserTypeTitle>I'm a Technical Resource</UserTypeTitle>
                     <UserTypeDescription>
@@ -254,9 +271,9 @@ o88o     o8888o d8888888P  o8o        8  Y8bod8P'   "888"
                   </UserTypeButton>
                   <UserTypeButton onClick={onClose}>
                     <UserTypeIcon>
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: 32, height: 32, color: theme.colors.button }}>
+                      <StyledSvg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 21c4.97 0 9-4.03 9-9s-4.03-9-9-9-9 4.03-9 9 4.03 9 9 9zm0-9.75a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm0 0v.008m0 0l2.25 2.25m-2.25-2.25l-2.25 2.25" />
-                      </svg>
+                      </StyledSvg>
                     </UserTypeIcon>
                     <UserTypeTitle>I've been here before</UserTypeTitle>
                     <UserTypeDescription>
@@ -265,7 +282,7 @@ o88o     o8888o d8888888P  o8o        8  Y8bod8P'   "888"
                   </UserTypeButton>
                 </UserTypeButtons>
               </Section>
-            </ModalBody>
+            </ModalBodyScrollable>
           )}
         </ModalContent>
       </ModalOverlay>

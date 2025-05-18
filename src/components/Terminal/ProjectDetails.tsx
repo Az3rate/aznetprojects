@@ -3,32 +3,32 @@ import styled, { useTheme } from 'styled-components';
 import { Project } from '../../types';
 
 const DetailsContainer = styled.div`
-  padding: 2rem;
+  padding: ${({ theme }) => theme.spacing.xl};
   color: ${({ theme }) => theme.colors.text.primary};
 `;
 
 const Title = styled.h1`
   color: ${({ theme }) => theme.colors.text.primary};
-  font-size: 2rem;
-  margin-bottom: 2rem;
-  font-weight: 600;
+  font-size: ${({ theme }) => theme.typography.fontSize.xxl};
+  margin-bottom: ${({ theme }) => theme.spacing.xl};
+  font-weight: ${({ theme }) => theme.typography.fontWeight.bold};
 `;
 
 const Section = styled.div`
-  margin-bottom: 2rem;
+  margin-bottom: ${({ theme }) => theme.spacing.xl};
 `;
 
 const SectionTitle = styled.h2`
   color: ${({ theme }) => theme.colors.text.primary};
-  font-size: 1.5rem;
-  margin-bottom: 1rem;
-  font-weight: 600;
+  font-size: ${({ theme }) => theme.typography.fontSize.xl};
+  margin-bottom: ${({ theme }) => theme.spacing.md};
+  font-weight: ${({ theme }) => theme.typography.fontWeight.bold};
 `;
 
 const Description = styled.p`
   color: ${({ theme }) => theme.colors.text.secondary};
   line-height: 1.6;
-  margin-bottom: 1rem;
+  margin-bottom: ${({ theme }) => theme.spacing.md};
 `;
 
 const List = styled.ul`
@@ -39,8 +39,8 @@ const List = styled.ul`
 
 const ListItem = styled.li`
   color: ${({ theme }) => theme.colors.text.secondary};
-  margin-bottom: 0.5rem;
-  padding-left: 1.5rem;
+  margin-bottom: ${({ theme }) => theme.spacing.sm};
+  padding-left: ${({ theme }) => theme.spacing.lg};
   position: relative;
   
   &:before {
@@ -54,13 +54,13 @@ const ListItem = styled.li`
 const TechStack = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 1rem;
+  gap: ${({ theme }) => theme.spacing.md};
 `;
 
 const TechItem = styled.div`
   background: ${({ theme }) => theme.colors.background.secondary};
-  padding: 1rem;
-  border-radius: 4px;
+  padding: ${({ theme }) => theme.spacing.md};
+  border-radius: ${({ theme }) => theme.effects.borderRadius.sm};
   border: 1px solid ${({ theme }) => theme.colors.border};
   color: ${({ theme }) => theme.colors.text.secondary};
   
@@ -73,12 +73,52 @@ const CloseButton = styled.button`
   background-color: ${({ theme }) => theme.colors.background.secondary};
   color: ${({ theme }) => theme.colors.text.primary};
   border: 1px solid ${({ theme }) => theme.colors.border};
-  padding: 0.5rem 1rem;
+  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
   cursor: pointer;
-  margin-top: 1rem;
+  margin-top: ${({ theme }) => theme.spacing.md};
   &:hover {
     background-color: ${({ theme }) => theme.colors.background.hover};
   }
+`;
+
+const ProjectImage = styled.img`
+  width: 100%;
+  max-width: 600px;
+  margin: ${({ theme }) => theme.spacing.xl} auto;
+  display: block;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  box-shadow: 0 0 10px ${({ theme }) => theme.colors.border};
+  background: ${({ theme }) => theme.colors.background.secondary};
+`;
+
+const ApiTable = styled.table`
+  width: 100%;
+  border-collapse: collapse;
+  background: ${({ theme }) => theme.colors.background.secondary};
+  border: 1px solid ${({ theme }) => theme.colors.accent};
+  box-shadow: 0 0 10px ${({ theme }) => theme.colors.accent};
+  margin: ${({ theme }) => theme.spacing.lg} 0;
+`;
+
+const ApiTableHeader = styled.th`
+  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
+  border-bottom: 1px solid ${({ theme }) => theme.colors.accent};
+  color: ${({ theme }) => theme.colors.accent};
+  text-align: left;
+`;
+
+const ApiTableCell = styled.td`
+  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
+  border-bottom: 1px solid ${({ theme }) => theme.colors.accent};
+  color: ${({ theme }) => theme.colors.accent};
+`;
+
+const ApiTableContainer = styled.div`
+  overflow-x: auto;
+`;
+
+const DirectoryEntry = styled.div`
+  margin-left: ${({ theme }) => theme.spacing.md};
 `;
 
 interface ProjectDetailsProps {
@@ -93,18 +133,9 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({ project, onClose
     <DetailsContainer>
       <Title>{project.name}</Title>
       {project.image && (
-        <img
+        <ProjectImage
           src={project.image.startsWith('http') ? project.image : `/images/${project.image}`}
           alt={`${project.name} screenshot`}
-          style={{ 
-            width: '100%', 
-            maxWidth: 600, 
-            margin: '2rem auto', 
-            display: 'block', 
-            border: `1px solid ${theme.colors.border}`, 
-            boxShadow: `0 0 10px ${theme.colors.border}`, 
-            background: 'rgba(0,0,0,0.8)' 
-          }}
         />
       )}
       <Section>
@@ -122,18 +153,9 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({ project, onClose
       {project.architectureImage && (
         <Section>
           <SectionTitle>Architecture Flowchart</SectionTitle>
-          <img
+          <ProjectImage
             src={project.architectureImage.startsWith('http') ? project.architectureImage : `/images/${project.architectureImage}`}
             alt={`${project.name} architecture diagram`}
-            style={{ 
-              width: '100%', 
-              maxWidth: 600, 
-              margin: '2rem auto', 
-              display: 'block', 
-              border: `1px solid ${theme.colors.border}`, 
-              boxShadow: `0 0 10px ${theme.colors.border}`, 
-              background: 'rgba(0,0,0,0.8)' 
-            }}
           />
         </Section>
       )}
@@ -156,9 +178,9 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({ project, onClose
               <strong>{dir}/</strong>
               <br />
               {Object.entries(contents).map(([subdir, files]) => (
-                <div key={subdir}>
-                  &nbsp;&nbsp;{subdir}/: {files.join(', ')}
-                </div>
+                <DirectoryEntry key={subdir}>
+                  {subdir}/: {files.join(', ')}
+                </DirectoryEntry>
               ))}
             </ListItem>
           ))}
@@ -167,26 +189,26 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({ project, onClose
       {project.apiEndpoints && project.apiEndpoints.length > 0 && (
         <Section>
           <SectionTitle>API Endpoints</SectionTitle>
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', background: 'rgba(0,0,0,0.8)', border: '1px solid #4CAF50', boxShadow: '0 0 10px #4CAF50', margin: '1.5rem 0' }}>
+          <ApiTableContainer>
+            <ApiTable>
               <thead>
                 <tr>
-                  <th style={{ padding: '0.7rem 1rem', borderBottom: '1px solid #4CAF50', color: '#4CAF50', textAlign: 'left' }}>Method</th>
-                  <th style={{ padding: '0.7rem 1rem', borderBottom: '1px solid #4CAF50', color: '#4CAF50', textAlign: 'left' }}>Endpoint</th>
-                  <th style={{ padding: '0.7rem 1rem', borderBottom: '1px solid #4CAF50', color: '#4CAF50', textAlign: 'left' }}>Description</th>
+                  <ApiTableHeader>Method</ApiTableHeader>
+                  <ApiTableHeader>Endpoint</ApiTableHeader>
+                  <ApiTableHeader>Description</ApiTableHeader>
                 </tr>
               </thead>
               <tbody>
                 {project.apiEndpoints.map((endpoint, idx) => (
                   <tr key={idx}>
-                    <td style={{ padding: '0.7rem 1rem', borderBottom: '1px solid #4CAF50', color: '#4CAF50' }}>{endpoint.method}</td>
-                    <td style={{ padding: '0.7rem 1rem', borderBottom: '1px solid #4CAF50', color: '#4CAF50' }}>{endpoint.path}</td>
-                    <td style={{ padding: '0.7rem 1rem', borderBottom: '1px solid #4CAF50', color: '#4CAF50' }}>{endpoint.description}</td>
+                    <ApiTableCell>{endpoint.method}</ApiTableCell>
+                    <ApiTableCell>{endpoint.path}</ApiTableCell>
+                    <ApiTableCell>{endpoint.description}</ApiTableCell>
                   </tr>
                 ))}
               </tbody>
-            </table>
-          </div>
+            </ApiTable>
+          </ApiTableContainer>
         </Section>
       )}
       {project.workflow && project.workflow.length > 0 && (

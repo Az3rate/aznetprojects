@@ -18,7 +18,6 @@ import {
   Output,
   CommandInput,
   CommandOutput,
-  DetailsPanel,
   SuggestionBox,
   SuggestionItem,
   ClickableText,
@@ -37,6 +36,8 @@ import { useBackgroundAudio } from '../../hooks/useBackgroundAudio';
 import { useDirectory } from '../../context/DirectoryContext';
 import { SwirlBackground } from './SwirlBackground';
 import { useTheme } from 'styled-components';
+import { TerminalLayout } from './TerminalLayout';
+import styled from 'styled-components';
 
 function formatPromptPath(path: string) {
   if (!path || path === '~' || path === '/' || path === '') return '/';
@@ -66,6 +67,11 @@ function highlightInput(input: string, knownCommands: string[], lastError: boole
 
 interface TerminalProps {
   onOpenWelcome: () => void;
+  onTourComplete?: () => void;
+  volume: number;
+  isMuted: boolean;
+  onVolumeChange: (v: number) => void;
+  onToggleMute: () => void;
 }
 
 export interface TerminalRef {
@@ -73,7 +79,7 @@ export interface TerminalRef {
 }
 
 const TerminalComponent: React.ForwardRefRenderFunction<TerminalRef, TerminalProps> = (props, ref) => {
-  const { onOpenWelcome } = props;
+  const { onOpenWelcome, onTourComplete, volume, isMuted, onVolumeChange, onToggleMute } = props;
   
   const {
     state,
@@ -96,11 +102,6 @@ const TerminalComponent: React.ForwardRefRenderFunction<TerminalRef, TerminalPro
     refreshTree
   } = useDirectory();
 
-  const [volume, setVolume] = useState(() => {
-    const savedVolume = localStorage.getItem('terminal_volume');
-    return savedVolume ? parseFloat(savedVolume) : 0.15;
-  });
-
   const playTypingSound = useTypingSound(volume);
   const [input, setInput] = useState('');
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -118,12 +119,7 @@ const TerminalComponent: React.ForwardRefRenderFunction<TerminalRef, TerminalPro
   const [tourOpen, setTourOpen] = useState(false);
   const [tourType, setTourType] = useState<'recruiter' | 'technical'>('recruiter');
 
-  const [isBackgroundMuted, setIsBackgroundMuted] = useState(() => {
-    const savedMute = localStorage.getItem('terminal_background_muted');
-    return savedMute ? JSON.parse(savedMute) : false;
-  });
-
-  const { toggleMute } = useBackgroundAudio(volume);
+  const { toggleMute } = useBackgroundAudio(isMuted ? 0 : volume);
 
   const theme = useTheme();
 
@@ -138,8 +134,8 @@ const TerminalComponent: React.ForwardRefRenderFunction<TerminalRef, TerminalPro
   }, [volume]);
 
   useEffect(() => {
-    localStorage.setItem('terminal_background_muted', JSON.stringify(isBackgroundMuted));
-  }, [isBackgroundMuted]);
+    localStorage.setItem('terminal_background_muted', JSON.stringify(isMuted));
+  }, [isMuted]);
 
   useEffect(() => {
     function handleMouseMove(e: MouseEvent) {
@@ -435,13 +431,13 @@ const TerminalComponent: React.ForwardRefRenderFunction<TerminalRef, TerminalPro
   };
 
   const handleToggleBackground = useCallback(() => {
-    setIsBackgroundMuted((m: boolean) => !m);
+    onToggleMute();
     toggleMute();
-  }, [toggleMute]);
+  }, [onToggleMute, toggleMute]);
 
   const handleVolumeChange = useCallback((v: number) => {
-    setVolume(v);
-  }, []);
+    onVolumeChange(v);
+  }, [onVolumeChange]);
 
   const featuredProjects = projects.filter(p => p.featured);
 
@@ -454,262 +450,291 @@ const TerminalComponent: React.ForwardRefRenderFunction<TerminalRef, TerminalPro
     }
   }));
 
+  const handleTourCallback = (data: any) => {
+    const { status } = data;
+    if (status === 'finished' || status === 'skipped') {
+      setTourOpen(false);
+      onTourComplete?.();
+    }
+  };
+
+  // Add interface for $collapsed prop
+  interface FeaturedHeaderProps {
+    $collapsed: boolean;
+  }
+
+  const FeaturedHeader = styled.div<FeaturedHeaderProps>`
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: ${({ $collapsed, theme }) => $collapsed ? 0 : theme.spacing.lg};
+    height: ${({ $collapsed }) => $collapsed ? '100%' : 'auto'};
+  `;
+
+  const FeaturedTitle = styled.span`
+    font-weight: 700;
+    font-size: ${({ theme }) => theme.typography.fontSize.md};
+    color: ${({ theme }) => theme.colors.text.primary};
+    letter-spacing: -0.01em;
+  `;
+
+  const CollapseButton = styled.button`
+    background: none;
+    border: none;
+    color: ${({ theme }) => theme.colors.text.primary};
+    cursor: pointer;
+    font-size: 18px;
+    transition: transform 0.2s;
+    margin-left: ${({ theme }) => theme.spacing.xs};
+    padding: 0;
+    line-height: 1;
+    align-self: center;
+  `;
+
+  const ProjectCard = styled.div`
+    background: ${({ theme }) => theme.colors.background.primary}CC;
+    color: ${({ theme }) => theme.colors.text.primary};
+    border: 1px solid ${({ theme }) => theme.colors.border};
+    margin-bottom: 18px;
+    padding: ${({ theme }) => `${theme.spacing.md} ${theme.spacing.sm}`};
+    cursor: pointer;
+    font-weight: 600;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    box-sizing: border-box;
+    overflow: hidden;
+  `;
+
+  const ProjectName = styled.div`
+    font-size: ${({ theme }) => theme.typography.fontSize.md};
+    font-weight: 700;
+    margin-bottom: 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  `;
+
+  const ProjectDescription = styled.div`
+    font-size: ${({ theme }) => theme.typography.fontSize.sm};
+    font-weight: 400;
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+  `;
+
+  const QuickMenuDiv = styled.div`
+    width: 100%;
+  `;
+
+  const StyledPre = styled.pre`
+    margin: 0;
+    font-family: inherit;
+    background: none;
+    color: inherit;
+    white-space: pre-wrap;
+  `;
+
+  const OutputRow = styled.div`
+    display: flex;
+    align-items: center;
+  `;
+
+  const OutputTypeSpan = styled.span`
+    min-width: 20px;
+  `;
+
+  const OutputNameSpan = styled.span`
+    min-width: 40px;
+    text-align: right;
+    margin-right: 8px;
+  `;
+
+  const ClickableProjectText = styled(ClickableText)`
+    cursor: pointer;
+    color: ${({ theme }) => theme.colors.accent};
+    font-weight: 600;
+  `;
+
+  const InputOverlay = styled.input`
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: text;
+  `;
+
+  const HighlightInputSpan = styled.span`
+    pointer-events: none;
+    min-width: 2px;
+    min-height: 1em;
+    display: inline-block;
+  `;
+
   return (
-    <TerminalWrapper $featuredCollapsed={featuredCollapsed} style={{ position: 'relative', overflow: 'hidden' }}>
-      <SwirlBackground />
-      <FeaturedSidebar data-tour="project-list" $collapsed={featuredCollapsed} style={{ position: 'relative' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: featuredCollapsed ? 0 : '1.5rem', height: featuredCollapsed ? '100%' : undefined }}>
-          {!featuredCollapsed && (
-            <span style={{ fontWeight: 700, fontSize: '1.1rem', color: '#fff', letterSpacing: '-0.01em' }}>Featured Projects</span>
-          )}
-          <button
-            aria-label={featuredCollapsed ? 'Expand featured projects' : 'Collapse featured projects'}
-            onClick={() => setFeaturedCollapsed(c => !c)}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: '#fff',
-              cursor: 'pointer',
-              fontSize: 18,
-              transition: 'transform 0.2s',
-              marginLeft: 8,
-              padding: 0,
-              lineHeight: 1,
-              alignSelf: featuredCollapsed ? 'center' : undefined,
+    <TerminalLayout
+      sidebar={
+        <Sidebar data-tour="sidebar">
+          <FileExplorer 
+            onFileClick={handleFileClick} 
+            onDirectoryClick={handleDirectoryClick}
+            currentDirectory={currentDirectory}
+            volume={volume}
+            onVolumeChange={handleVolumeChange}
+            onToggleBackground={handleToggleBackground}
+            isBackgroundMuted={isMuted}
+            onOpenWelcome={onOpenWelcome}
+            fileTree={fileTree}
+          />
+        </Sidebar>
+      }
+      mainContent={
+        <TerminalContent onClick={handleTerminalClick}>
+          <QuickMenuDiv data-tour="quick-menu" />
+          <Joyride
+            steps={tourType === 'recruiter' ? recruiterTourSteps : technicalTourSteps}
+            run={tourOpen}
+            continuous
+            showSkipButton
+            callback={handleTourCallback}
+            styles={{
+              options: {
+                primaryColor: theme.colors.accent,
+                backgroundColor: theme.colors.background.primary,
+                textColor: theme.colors.text.primary,
+                arrowColor: theme.colors.background.primary,
+              }
             }}
-          >
-            {featuredCollapsed ? '▶' : '◀'}
-          </button>
-        </div>
-        {!featuredCollapsed && featuredProjects.map(project => (
-          <div
-            key={project.name}
-            style={{
-              background: 'var(--background-primary,rgba(0, 0, 0, 0.68))',
-              color: 'var(--text-primary, #cdd6f4)',
-              border: '1px solid var(--border, #45475a)',
-              marginBottom: 18,
-              padding: '1rem 0.75rem',
-              cursor: 'pointer',
-              fontWeight: 600,
-              flex: 1,
-              minHeight: 0,
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'flex-start',
-              boxSizing: 'border-box',
-              overflow: 'hidden',
-            }}
-            onClick={() => openDetailsPanel(project)}
-          >
-            <div style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: 6, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{project.name}</div>
-            <div style={{ fontSize: '0.95rem', fontWeight: 400, flex: 1, overflowY: 'auto', minHeight: 0 }}>{project.description}</div>
-          </div>
-        ))}
-      </FeaturedSidebar>
-      <Sidebar data-tour="sidebar">
-        <FileExplorer 
-          onFileClick={handleFileClick} 
-          onDirectoryClick={handleDirectoryClick}
-          currentDirectory={currentDirectory}
-          volume={volume}
-          onVolumeChange={handleVolumeChange}
-          onToggleBackground={handleToggleBackground}
-          isBackgroundMuted={isBackgroundMuted}
-          onOpenWelcome={onOpenWelcome}
-          fileTree={fileTree}
-        />
-      </Sidebar>
-      <TerminalContent onClick={handleTerminalClick}>
-        <div data-tour="quick-menu" style={{ width: '100%' }} />
-        <Joyride
-          steps={tourType === 'recruiter' ? recruiterTourSteps : technicalTourSteps}
-          run={tourOpen}
-          continuous
-          showSkipButton={false}
-          disableCloseOnEsc={true}
-          disableOverlayClose={true}
-          showProgress
-          styles={{
-            options: {
-              zIndex: 10000,
-              primaryColor: theme.colors.button,
-              backgroundColor: theme.colors.background.primary,
-              textColor: theme.colors.text.primary,
-              arrowColor: theme.colors.background.primary,
-              overlayColor: 'rgba(10, 10, 20, 0.92)',
-              spotlightShadow: `0 0 0 2px ${theme.colors.button}`,
-              width: 420,
-            },
-            tooltip: {
-              backgroundColor: theme.colors.background.primary,
-              color: theme.colors.text.primary,
-              fontFamily: 'Fira Code, monospace',
-              fontSize: 16,
-              border: `2px solid ${theme.colors.button}`,
-              boxShadow: `0 0 12px ${theme.colors.button}55`,
-              textAlign: 'left',
-              padding: '24px',
-              width: 420,
-              minWidth: 320,
-              maxWidth: 480,
-              borderRadius: 2,
-            },
-            buttonNext: {
-              backgroundColor: theme.colors.button,
-              color: theme.colors.text.primary,
-              fontWeight: 600,
-              borderRadius: 2,
-              border: `2px solid ${theme.colors.button}`,
-              fontFamily: 'Fira Code, monospace',
-            },
-            buttonBack: {
-              color: theme.colors.button,
-              fontFamily: 'Fira Code, monospace',
-            },
-            buttonSkip: {
-              color: theme.colors.text.primary,
-              background: 'none',
-              fontFamily: 'Fira Code, monospace',
-            },
-            buttonClose: {
-              display: 'none',
-            },
-          }}
-          callback={data => {
-            if (data.status === 'finished' || data.status === 'skipped') setTourOpen(false);
-          }}
-        />
-        {getVisibleHistory().map((item, index) => (
-          <React.Fragment key={index}>
-            <CommandLine>
-              <Prompt $status={item.type === 'success' ? 'success' : item.type === 'error' ? 'error' : 'default'}>
-                user@aznet:{formatPromptPath(String(item.currentDirectory))}$
-              </Prompt>
-              {item.command}
-            </CommandLine>
-            {typeof item.output === 'object' && item.output !== null && 'projects' in item.output ? (
-              <Output type="info">
-                {(item.output as { projects: Project[] }).projects.map((project: Project) => (
-                  <div key={project.name}>
-                    <ClickableText
-                      onClick={() => handleCommandClick(`cat ${project.name.toLowerCase()}`)}
-                      style={{ cursor: 'pointer', color: '#a78bfa', fontWeight: 600 }}
-                    >
-                      {project.name}
-                    </ClickableText>
-                    {': '}{project.description}
-                  </div>
+          />
+          {getVisibleHistory().map((item, index) => (
+            <React.Fragment key={index}>
+              <CommandLine>
+                <Prompt $status={item.type === 'success' ? 'success' : item.type === 'error' ? 'error' : 'default'}>
+                  user@aznet:{formatPromptPath(String(item.currentDirectory))}$
+                </Prompt>
+                {item.command}
+              </CommandLine>
+              {typeof item.output === 'object' && item.output !== null && 'projects' in item.output ? (
+                <Output type="info">
+                  {(item.output as { projects: Project[] }).projects.map((project: Project) => (
+                    <div key={project.name}>
+                      <ClickableProjectText
+                        onClick={() => handleCommandClick(`cat ${project.name.toLowerCase()}`)}
+                      >
+                        {project.name}
+                      </ClickableProjectText>
+                      {': '}{project.description}
+                    </div>
+                  ))}
+                </Output>
+              ) : typeof item.output === 'string' ? (
+                <Output type={item.type === 'project-list' || item.type === 'welcome' || item.type === 'clear' ? 'info' : item.type as 'success' | 'error' | 'info'}>
+                  {item.command === 'ls' ? (
+                    <StyledPre>
+                      {item.output.split('\n').map((line, i) => {
+                        const match = line.match(/^([d-])\s+\d+\s+(.+)$/);
+                        if (match) {
+                          const [, type, name] = match;
+                          return (
+                            <OutputRow key={i}>
+                              <OutputTypeSpan>{type}</OutputTypeSpan>
+                              <OutputNameSpan>{line.split(/\s+/)[1]}</OutputNameSpan>
+                              {type === 'd' ? <DirSpan>{name}</DirSpan> : <FileSpan>{name}</FileSpan>}
+                            </OutputRow>
+                          );
+                        }
+                        return <div key={i}>{line}</div>;
+                      })}
+                    </StyledPre>
+                  ) : (
+                    <StyledPre>{item.output}</StyledPre>
+                  )}
+                </Output>
+              ) : null}
+            </React.Fragment>
+          ))}
+          <CommandInput data-tour="terminal-input">
+            <Prompt $status="default">
+              user@aznet:{formatPromptPath(currentDirectory)}$
+            </Prompt>
+            <div style={{ position: 'relative', flex: 1, minWidth: 0 }}>
+              <HighlightInputSpan>
+                {highlightInput(input, knownCommands, lastStatus === 'error')}
+              </HighlightInputSpan>
+              <InputOverlay
+                ref={inputRef}
+                value={input}
+                onChange={handleInputChange}
+                onKeyDown={handleKeyDown}
+                placeholder="Type a command..."
+                tabIndex={0}
+                autoFocus
+              />
+            </div>
+            {suggestions.length > 0 && (
+              <SuggestionBox role="list" aria-label="command suggestions">
+                {suggestions.map((suggestion, index) => (
+                  <SuggestionItem
+                    key={suggestion}
+                    $isSelected={index === selectedSuggestion}
+                    onClick={() => {
+                      setInput(suggestion);
+                      setSuggestions([]);
+                      setSelectedSuggestion(-1);
+                      inputRef.current?.focus();
+                    }}
+                    role="listitem"
+                    aria-label={suggestion}
+                  >
+                    {suggestion}
+                  </SuggestionItem>
                 ))}
-              </Output>
-            ) : typeof item.output === 'string' ? (
-              <Output type={item.type === 'project-list' || item.type === 'welcome' || item.type === 'clear' ? 'info' : item.type as 'success' | 'error' | 'info'}>
-                {item.command === 'ls' ? (
-                  <pre style={{ margin: 0, fontFamily: 'inherit', background: 'none', color: 'inherit', whiteSpace: 'pre-wrap' }}>
-                    {item.output.split('\n').map((line, i) => {
-                      const match = line.match(/^([d-])\s+\d+\s+(.+)$/);
-                      if (match) {
-                        const [, type, name] = match;
-                        return (
-                          <div key={i} style={{ display: 'flex', alignItems: 'center' }}>
-                            <span style={{ minWidth: 20 }}>{type}</span>
-                            <span style={{ minWidth: 40, textAlign: 'right', marginRight: 8 }}>{line.split(/\s+/)[1]}</span>
-                            {type === 'd' ? <DirSpan>{name}</DirSpan> : <FileSpan>{name}</FileSpan>}
-                          </div>
-                        );
-                      }
-                      return <div key={i}>{line}</div>;
-                    })}
-                  </pre>
-                ) : (
-                  <pre style={{ margin: 0, fontFamily: 'inherit', background: 'none', color: 'inherit', whiteSpace: 'pre-wrap' }}>{item.output}</pre>
-                )}
-              </Output>
-            ) : null}
-          </React.Fragment>
-        ))}
-        <CommandInput data-tour="terminal-input">
-          <Prompt $status="default">
-            user@aznet:{formatPromptPath(currentDirectory)}$
-          </Prompt>
-          <div style={{ position: 'relative', flex: 1, minWidth: 0 }}>
-            <span style={{ pointerEvents: 'none', minWidth: '2px', minHeight: '1em', display: 'inline-block' }}>
-              {highlightInput(input, knownCommands, lastStatus === 'error')}
-            </span>
-            <Input
-              ref={inputRef}
-              value={input}
-              onChange={handleInputChange}
-              onKeyDown={handleKeyDown}
-              placeholder="Type a command..."
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                width: '100%',
-                height: '100%',
-                opacity: 0,
-                cursor: 'text'
-              }}
-              tabIndex={0}
-              autoFocus
+              </SuggestionBox>
+            )}
+          </CommandInput>
+          <div ref={endOfTerminalRef} />
+        </TerminalContent>
+      }
+      detailsPanel={state.isDetailsPanelOpen ? (
+        <>
+          <ResizerBar
+            ref={resizerRef}
+            onMouseDown={e => {
+              e.preventDefault();
+              isResizing.current = true;
+              if (detailsPanelRef.current) {
+                const rect = detailsPanelRef.current.getBoundingClientRect();
+                dragData.current = {
+                  right: rect.right,
+                  startX: e.clientX,
+                  startWidth: rect.width
+                };
+              }
+              document.body.style.cursor = 'ew-resize';
+            }}
+          />
+          {state.selectedProject && (
+            <ProjectDetails
+              project={state.selectedProject}
+              onClose={closeDetailsPanel}
             />
-          </div>
-          {suggestions.length > 0 && (
-            <SuggestionBox role="list" aria-label="command suggestions">
-              {suggestions.map((suggestion, index) => (
-                <SuggestionItem
-                  key={suggestion}
-                  $isSelected={index === selectedSuggestion}
-                  onClick={() => {
-                    setInput(suggestion);
-                    setSuggestions([]);
-                    setSelectedSuggestion(-1);
-                    inputRef.current?.focus();
-                  }}
-                  role="listitem"
-                  aria-label={suggestion}
-                >
-                  {suggestion}
-                </SuggestionItem>
-              ))}
-            </SuggestionBox>
           )}
-        </CommandInput>
-        <div ref={endOfTerminalRef} />
-      </TerminalContent>
-      <DetailsPanel ref={detailsPanelRef} $isOpen={state.isDetailsPanelOpen} data-tour="details-panel" $width={detailsPanelWidth}>
-        <ResizerBar
-          ref={resizerRef}
-          onMouseDown={e => {
-            e.preventDefault();
-            isResizing.current = true;
-            if (detailsPanelRef.current) {
-              const rect = detailsPanelRef.current.getBoundingClientRect();
-              dragData.current = {
-                right: rect.right,
-                startX: e.clientX,
-                startWidth: rect.width
-              };
-            }
-            document.body.style.cursor = 'ew-resize';
-          }}
-        />
-        {state.selectedProject && (
-          <ProjectDetails
-            project={state.selectedProject}
-            onClose={closeDetailsPanel}
-          />
-        )}
-        {state.selectedFile && (
-          <FileViewer
-            fileName={state.selectedFile.fileName}
-            content={state.selectedFile.content}
-            onClose={closeDetailsPanel}
-          />
-        )}
-      </DetailsPanel>
-    </TerminalWrapper>
+          {state.selectedFile && (
+            <FileViewer
+              fileName={state.selectedFile.fileName}
+              content={state.selectedFile.content}
+              onClose={closeDetailsPanel}
+            />
+          )}
+        </>
+      ) : null}
+      isDetailsOpen={state.isDetailsPanelOpen}
+      detailsWidth={detailsPanelWidth}
+    />
   );
 };
 

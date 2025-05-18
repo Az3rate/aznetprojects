@@ -13,24 +13,40 @@ const ExplorerContainer = styled.div`
   flex-direction: column;
   height: 100%;
   max-height: 100vh;
-  font-family: 'Fira Code', monospace;
+  font-family: ${({ theme }) => theme.typography.fontFamily.monospace};
+  justify-content: space-between;
 `;
 
 const FileTree = styled.div`
   flex: 1 1 0;
   overflow-y: auto;
+  overflow-x: hidden;
   min-height: 0;
-  padding: 1rem;
+  min-width: 0;
+  padding: ${({ theme }) => theme.spacing.sm};
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  /* Removed debug background */
 `;
 
 const DebugPanel = styled.div`
-  padding: 0.5rem;
-  font-size: 0.8rem;
-  color: #888;
-  border-bottom: 1px solid #333;
+  padding: ${({ theme }) => theme.spacing.xs};
+  font-size: ${({ theme }) => theme.typography.fontSize.xs};
+  color: ${({ theme }) => theme.colors.text.secondary};
+  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: ${({ theme }) => theme.spacing.xs};
+`;
+
+const TreeContainer = styled.div`
+  margin-left: ${({ theme }) => theme.spacing.xs};
+`;
+
+const OptionsPanelWrapper = styled.div`
+  border-top: 1px solid ${({ theme }) => theme.colors.border};
+  padding: ${({ theme }) => `${theme.spacing.lg} ${theme.spacing.sm}`};
 `;
 
 interface FileNode {
@@ -162,11 +178,11 @@ export const FileExplorer: React.FC<FileExplorerProps> = React.memo(({
               <DirectoryName>{node.name || path.split('/').pop()}</DirectoryName>
             </DirectoryItem>
             {isExpanded && node.children && (
-              <div style={{ marginLeft: '1rem' }}>
+              <TreeContainer>
                 {Object.entries(node.children).map(([childName, childNode]) =>
                   renderTree(childNode as FileNode, `${cleanNodePath}/${childName}`)
                 )}
-              </div>
+              </TreeContainer>
             )}
           </div>
         );
@@ -245,13 +261,6 @@ export const FileExplorer: React.FC<FileExplorerProps> = React.memo(({
       <FileTree>
         {renderRootLevelItems()}
       </FileTree>
-      <OptionsPanel 
-        volume={volume}
-        onVolumeChange={onVolumeChange}
-        onToggleBackground={onToggleBackground}
-        isBackgroundMuted={isBackgroundMuted}
-        onOpenWelcome={onOpenWelcome}
-      />
     </ExplorerContainer>
   );
 }, areEqual);

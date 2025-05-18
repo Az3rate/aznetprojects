@@ -10,7 +10,6 @@ export const GlobalStyles = createGlobalStyle`
   html, body {
     height: 100%;
     width: 100%;
-    overflow: hidden;
   }
 
   body {
@@ -19,11 +18,15 @@ export const GlobalStyles = createGlobalStyle`
     line-height: 1.5;
     color: ${({ theme }) => theme.colors.text.primary};
     background-color: ${({ theme }) => theme.colors.background.primary}; 
+    margin: 0;
+    min-width: 320px;
+    min-height: 100vh;
   }
 
   #root {
-    height: 100%;
-    width: 100%;
+    height: 100vh;
+    width: 100vw;
+    position: relative; /* # Reason: Ensures absolutely positioned SwirlBackground canvas is visible and not clipped */
   }
 
   ::-webkit-scrollbar {
@@ -37,7 +40,7 @@ export const GlobalStyles = createGlobalStyle`
 
   ::-webkit-scrollbar-thumb {
     background: ${({ theme }) => theme.colors.accent};
-    border-radius: 4px;
+    border-radius: ${({ theme }) => theme.effects.borderRadius.sm};
   }
 
   ::-webkit-scrollbar-thumb:hover {
@@ -51,7 +54,7 @@ export const GlobalStyles = createGlobalStyle`
     border: 2px solid ${({ theme }) => theme.colors.button} !important;
     font-family: 'Fira Code', monospace !important;
     font-weight: 600;
-    border-radius: 2px;
+    border-radius: ${({ theme }) => theme.effects.borderRadius.sm};
   }
   .react-joyride__button--back {
     background: none !important;
@@ -63,7 +66,7 @@ export const GlobalStyles = createGlobalStyle`
     color: ${({ theme }) => theme.colors.text.primary} !important;
     border: 2px solid ${({ theme }) => theme.colors.button} !important;
     font-family: 'Fira Code', monospace !important;
-    border-radius: 2px;
+    border-radius: ${({ theme }) => theme.effects.borderRadius.sm};
   }
   .react-joyride__tooltip .react-joyride__tooltip-content {
     color: ${({ theme }) => theme.colors.text.primary} !important;
@@ -74,5 +77,15 @@ export const GlobalStyles = createGlobalStyle`
   }
   .react-joyride__beacon {
     box-shadow: 0 0 0 2px ${({ theme }) => theme.colors.button} !important;
+  }
+
+  :root {
+    font-family: ${({ theme }) => theme.typography.fontFamily.monospace};
+    line-height: 1.5;
+    font-weight: 400;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 `; 
