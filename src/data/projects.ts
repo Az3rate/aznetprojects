@@ -212,10 +212,11 @@ export const projects: Project[] = [
   },
   {
     name: 'AzNet Terminal',
+    featured: true,
     description: 'A modern, interactive terminal interface built with React and TypeScript, designed to showcase my projects and technical capabilities in a unique and engaging way.',
     url: 'https://github.com/username/aznet-terminal',
-    image: 'terminal.png',
-    architectureImage: 'terminal-mermaid.png',
+    image: 'aznet-terminal.png',
+    architectureImage: 'aznet-terminal-architecture.png',
     overview: 'A sophisticated terminal interface that serves as both a portfolio and a demonstration of technical expertise. Built to address the challenge of effectively communicating entrepreneurial and technical achievements to recruiters and technical reviewers.',
     keyFeatures: [
       'Interactive Terminal: Real command-line interface with history, autocomplete, and command suggestions',

@@ -1,7 +1,40 @@
 import React from 'react';
+import styled from 'styled-components';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { FileCodeBlock } from './Terminal.styles';
+
+const ViewerContainer = styled.div`
+  padding: ${({ theme }) => theme.spacing.md};
+  color: ${({ theme }) => theme.colors.text.primary};
+  font-family: ${({ theme }) => theme.typography.fontFamily.monospace};
+`;
+
+const Header = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: ${({ theme }) => theme.spacing.sm};
+`;
+
+const FileName = styled.span`
+  font-weight: ${({ theme }) => theme.typography.fontWeight.medium};
+`;
+
+const CloseButton = styled.button`
+  background: none;
+  color: ${({ theme }) => theme.colors.text.primary};
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: ${({ theme }) => theme.effects.borderRadius.sm};
+  padding: ${({ theme }) => `${theme.spacing.xs} ${theme.spacing.sm}`};
+  cursor: pointer;
+  font-family: ${({ theme }) => theme.typography.fontFamily.monospace};
+  transition: ${({ theme }) => theme.effects.transition.fast};
+
+  &:hover {
+    background: ${({ theme }) => theme.colors.background.hover};
+  }
+`;
 
 interface FileViewerProps {
   fileName: string;
@@ -19,17 +52,18 @@ export const FileViewer: React.FC<FileViewerProps> = ({ fileName, content, onClo
     ext === 'css' ? 'css' :
     ext === 'md' ? 'markdown' :
     'text';
+
   return (
-    <div style={{ padding: '1rem', color: '#fff', fontFamily: 'Fira Mono, monospace' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-        <span style={{ fontWeight: 600 }}>{fileName}</span>
-        <button onClick={onClose} style={{ background: 'none', color: '#fff', border: '1px solid #444', borderRadius: 4, padding: '2px 8px', cursor: 'pointer' }}>Close</button>
-      </div>
+    <ViewerContainer>
+      <Header>
+        <FileName>{fileName}</FileName>
+        <CloseButton onClick={onClose}>Close</CloseButton>
+      </Header>
       <FileCodeBlock>
         <SyntaxHighlighter language={language} style={vscDarkPlus} showLineNumbers wrapLongLines>
           {content}
         </SyntaxHighlighter>
       </FileCodeBlock>
-    </div>
+    </ViewerContainer>
   );
 }; 

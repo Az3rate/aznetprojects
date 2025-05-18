@@ -9,19 +9,19 @@ const AsciiArt = styled.pre`
   color: ${({ theme }) => theme.colors.accent};
   margin: 0;
   white-space: pre;
-  font-family: 'Fira Code', monospace;
+  font-family: ${({ theme }) => theme.typography.fontFamily.monospace};
   line-height: 1.2;
 `;
 
 const Title = styled.h1`
   color: ${({ theme }) => theme.colors.text.primary};
-  font-size: 1.5rem;
-  margin: 1rem 0;
+  font-size: ${({ theme }) => theme.typography.fontSize.xxl};
+  margin: ${({ theme }) => `${theme.spacing.md} 0`};
 `;
 
 const Subtitle = styled.div`
   color: ${({ theme }) => theme.colors.text.secondary};
-  margin: 0.5rem 0;
+  margin: ${({ theme }) => `${theme.spacing.xs} 0`};
   
   .heart {
     color: #a8324a;
@@ -30,13 +30,13 @@ const Subtitle = styled.div`
 
 const WelcomeText = styled.div`
   color: ${({ theme }) => theme.colors.text.primary};
-  margin: 1rem 0;
+  margin: ${({ theme }) => `${theme.spacing.md} 0`};
 `;
 
 const QuickMenu = styled.div`
   display: flex;
-  gap: 1rem;
-  margin: 1rem 0;
+  gap: ${({ theme }) => theme.spacing.md};
+  margin: ${({ theme }) => `${theme.spacing.md} 0`};
   flex-wrap: wrap;
 `;
 
@@ -51,17 +51,17 @@ const ClickableItem = styled.span`
 
 const FirstTimeHint = styled.div`
   background-color: ${({ theme }) => theme.colors.background.secondary};
-  padding: 1rem;
-  border-radius: 4px;
-  margin: 1rem 0;
+  padding: ${({ theme }) => theme.spacing.md};
+  border-radius: ${({ theme }) => theme.effects.borderRadius.sm};
+  margin: ${({ theme }) => `${theme.spacing.md} 0`};
   
   ul {
-    margin: 0.5rem 0;
-    padding-left: 1.5rem;
+    margin: ${({ theme }) => `${theme.spacing.xs} 0`};
+    padding-left: ${({ theme }) => theme.spacing.lg};
   }
   
   li {
-    margin: 0.5rem 0;
+    margin: ${({ theme }) => `${theme.spacing.xs} 0`};
   }
   
   .highlight {
@@ -71,46 +71,45 @@ const FirstTimeHint = styled.div`
 
 const ProjectsSection = styled.div`
   background-color: ${({ theme }) => theme.colors.background.secondary};
-  padding: 1.5rem;
-  border-radius: 4px;
-  margin: 1.5rem 0;
+  padding: ${({ theme }) => theme.spacing.lg};
+  border-radius: ${({ theme }) => theme.effects.borderRadius.sm};
+  margin: ${({ theme }) => `${theme.spacing.lg} 0`};
   border: 1px solid ${({ theme }) => theme.colors.border};
 `;
 
 const ProjectsTitle = styled.div`
   color: ${({ theme }) => theme.colors.text.primary};
-  font-size: 1.2rem;
+  font-size: ${({ theme }) => theme.typography.fontSize.lg};
   font-weight: 600;
-  margin-bottom: 1rem;
+  margin-bottom: ${({ theme }) => theme.spacing.sm};
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: ${({ theme }) => theme.spacing.xs};
 `;
 
 const ProjectItem = styled.div`
-  margin: 1rem 0;
-  padding: 1rem;
+  margin: ${({ theme }) => `${theme.spacing.md} 0`};
+  padding: ${({ theme }) => theme.spacing.md};
   background-color: ${({ theme }) => theme.colors.background.primary};
-  border-radius: 4px;
+  border-radius: ${({ theme }) => theme.effects.borderRadius.sm};
   border: 1px solid ${({ theme }) => theme.colors.border};
   transition: transform 0.2s, box-shadow 0.2s;
-
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    box-shadow: ${({ theme }) => theme.effects.boxShadow.projectHover};
   }
 `;
 
 const ProjectName = styled(ClickableItem)`
-  font-size: 1.1rem;
+  font-size: ${({ theme }) => theme.typography.fontSize.md};
   font-weight: 600;
   display: inline-block;
-  margin-bottom: 0.5rem;
+  margin-bottom: ${({ theme }) => theme.spacing.xs};
 `;
 
 const ProjectDescription = styled.div`
   color: ${({ theme }) => theme.colors.text.secondary};
-  font-size: 0.95rem;
+  font-size: ${({ theme }) => theme.typography.fontSize.sm};
   line-height: 1.5;
 `;
 
@@ -118,13 +117,13 @@ const StartTourButton = styled.button`
   background: ${({ theme }) => theme.colors.button};
   color: ${({ theme }) => theme.colors.text.primary};
   border: 2px solid ${({ theme }) => theme.colors.button};
-  border-radius: 2px;
-  padding: 8px 22px;
+  border-radius: ${({ theme }) => theme.effects.borderRadius.sm};
+  padding: ${({ theme }) => `${theme.spacing.xs} ${theme.spacing.lg}`};
   font-weight: 700;
-  font-family: 'Fira Code', monospace;
-  font-size: 16px;
+  font-family: ${({ theme }) => theme.typography.fontFamily.monospace};
+  font-size: ${({ theme }) => theme.typography.fontSize.base};
   cursor: pointer;
-  box-shadow: 0 0 8px ${({ theme }) => theme.colors.button}55;
+  box-shadow: ${({ theme }) => theme.effects.boxShadow.sm};
   transition: background 0.2s, color 0.2s;
 `;
 
@@ -164,7 +163,7 @@ o88o     o8888o d8888888P  o8o        ︻8  ︻Y8bod8P'   "888"
       </AsciiArt>
       <Title>Welcome to the AzNet Terminal Portfolio</Title>
       {onStartTour && (
-        <div style={{ display: 'flex', justifyContent: 'flex-start', margin: '12px 0 20px 0' }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-start', margin: undefined }}>
           <StartTourButton onClick={onStartTour}>
             Start Guided Tour
           </StartTourButton>
@@ -187,7 +186,7 @@ o88o     o8888o d8888888P  o8o        ︻8  ︻Y8bod8P'   "888"
       </WelcomeText>
       <WelcomeText>
         <b>What You'll Find Here</b><br/>
-        <ul style={{ margin: '0.5rem 0 0.5rem 1.5rem' }}>
+        <ul style={{ margin: undefined, paddingLeft: undefined }}>
           <li><b>Real Code:</b> Browse through actual project files and see how I structure and implement features.</li>
           <li><b>Architecture:</b> Explore the technical decisions behind each project, from frontend frameworks to backend services.</li>
           <li><b>Problem Solving:</b> Understand how I approach challenges and implement solutions that scale.</li>

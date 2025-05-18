@@ -1,161 +1,117 @@
-import styled, { css } from 'styled-components';
+import styled from 'styled-components';
+import { glassEffect, glassEffectLight } from '../../styles/mixins/glass';
+import { blink } from '../../styles/mixins/animations';
+import type { Theme } from '../../styles/theme';
 
-export const TerminalWrapper = styled.div<{ $featuredCollapsed?: boolean }>`
-  display: grid;
-  grid-template-columns: ${({ $featuredCollapsed }) =>
-    $featuredCollapsed
-      ? '40px minmax(200px, 250px) 1fr auto'
-      : 'minmax(300px, 400px) minmax(200px, 250px) 1fr auto'};
-  height: 100vh;
-  background-color: ${({ theme }) => theme.colors.background.primary};
-  color: ${({ theme }) => theme.colors.text.primary};
-  font-family: 'Fira Code', monospace;
-  position: relative;
-  z-index: 1;
-  overflow: hidden;
-`;
+// Common styles that can be reused
+const glassEffectMixin = glassEffect;
+const glassEffectLightMixin = glassEffectLight;
 
-
-export const FeaturedSidebar = styled.div<{ $collapsed?: boolean }>`
-  background-color: ${({ theme }) => theme.colors.background.secondary};
-  padding: 1rem;
-  border-right: 1px solid ${({ theme }) => theme.colors.border};
+export const TerminalWrapper = styled.div<{ $featuredCollapsed: boolean }>`
   display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  min-width: ${({ $collapsed }) => $collapsed ? '40px' : '300px'};
-  max-width: ${({ $collapsed }) => $collapsed ? '40px' : '400px'};
-  width: ${({ $collapsed }) => $collapsed ? '40px' : 'auto'};
-  overflow-y: auto;
-  transition: all 0.2s cubic-bezier(0.4,0,0.2,1);
-  resize: horizontal;
+  height: calc(100vh - 120px);
+  width: 100%;
+  overflow: hidden;
+  position: relative;
+  background: transparent;
+  z-index: 1;
+  padding: ${({ theme }) => theme.spacing.lg};
+  gap: ${({ theme }) => theme.spacing.lg};
 `;
 
 export const Sidebar = styled.div`
-  background-color: ${({ theme }) => theme.colors.background.secondary};
-  padding: 1rem;
+  width: 250px;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
   border-right: 1px solid ${({ theme }) => theme.colors.border};
+  backdrop-filter: blur(${({ theme }) => theme.effects.blur.md});
+  flex-shrink: 0;
+  padding: ${({ theme }) => theme.spacing.sm};
+  border-radius: 0;
+`;
+
+export const FeaturedSidebar = styled.div<{ $collapsed: boolean }>`
+  width: ${({ $collapsed }) => $collapsed ? '40px' : '280px'};
+  height: 100%;
+  overflow-y: auto;
+  border-right: 1px solid ${({ theme }) => theme.colors.border};
+  backdrop-filter: blur(${({ theme }) => theme.effects.blur.md});
+  flex-shrink: 0;
+  padding: ${({ theme }) => theme.spacing.lg};
+  display: flex;
+  flex-direction: column;
+  transition: width 0.3s ease;
+  border-radius: 0;
 `;
 
 export const TerminalContent = styled.div`
-  padding: 1rem;
+  flex: 1;
+  height: 100%;
   overflow-y: auto;
-  font-family: 'Fira Code', monospace;
+  padding: ${({ theme }) => theme.spacing.xl};
+  display: flex;
+  flex-direction: column;
   min-width: 0;
+  backdrop-filter: blur(${({ theme }) => theme.effects.blur.md});
+  gap: ${({ theme }) => theme.spacing.xs};
+  border-radius: 0;
 `;
 
 export const CommandLine = styled.div`
   display: flex;
   align-items: center;
-  margin-bottom: 0.5rem;
+  margin-bottom: ${({ theme }) => theme.spacing.md};
+  font-family: ${({ theme }) => theme.typography.fontFamily.monospace};
 `;
 
-export const Prompt = styled.span<{ $status?: 'success' | 'error' | 'default' }>`
+export const Prompt = styled.span<{ $status: 'success' | 'error' | 'default' }>`
   color: ${({ theme, $status }) =>
-    $status === 'success'
-      ? '#32a87a'
-      : $status === 'error'
-      ? '#a8324a'
-      : theme.colors.command};
-  margin-right: 0.5rem;
-  font-weight: bold;
+    $status === 'success' ? theme.colors.success :
+    $status === 'error' ? theme.colors.error :
+    theme.colors.text.primary
+  };
+  margin-right: ${({ theme }) => theme.spacing.sm};
+  white-space: nowrap;
 `;
 
 export const Input = styled.input`
-  background: transparent;
+  background: none;
   border: none;
-  color: ${({ theme }) => theme.colors.text.primary};
-  font-family: 'Fira Code', monospace;
-  font-size: 1rem;
+  color: transparent;
+  caret-color: transparent;
+  font-family: ${({ theme }) => theme.typography.fontFamily.monospace};
+  font-size: ${({ theme }) => theme.typography.fontSize.base};
   width: 100%;
   outline: none;
-  &::placeholder {
-    color: ${({ theme }) => theme.colors.text.secondary};
-  }
+  padding: 0;
+  margin: 0;
 `;
 
 export const Output = styled.div<{ type: 'success' | 'error' | 'info' }>`
-  margin-bottom: 1rem;
-  color: ${({ type }) => {
-    switch (type) {
-      case 'success':
-        return '#32a87a';
-      case 'error':
-        return '#a8324a';
-      case 'info':
-        return '#fff';
-    }
-  }};
+  color: ${({ theme, type }) => 
+    type === 'success' ? theme.colors.success :
+    type === 'error' ? theme.colors.error :
+    theme.colors.text.primary
+  };
+  margin-bottom: ${({ theme }) => theme.spacing.xs};
+  font-family: ${({ theme }) => theme.typography.fontFamily.monospace};
+  white-space: pre-wrap;
+  line-height: 1.2;
 `;
 
 export const CommandInput = styled.div`
   display: flex;
   align-items: center;
+  margin-top: ${({ theme }) => theme.spacing.md};
+  padding: ${({ theme }) => theme.spacing.sm};
+  font-family: ${({ theme }) => theme.typography.fontFamily.monospace};
   position: relative;
+  ${glassEffectLightMixin}
 `;
 
 export const CommandOutput = styled.div`
-  margin-bottom: 1rem;
-`;
-
-export const ResizerBar = styled.div`
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 6px;
-  height: 100%;
-  cursor: ew-resize;
-  z-index: 2;
-  background: ${({ theme }) => theme.colors.border};
-  opacity: 0.5;
-  transition: background 0.2s;
-  &:hover {
-    background: ${({ theme }) => theme.colors.accent};
-    opacity: 0.8;
-  }
-`;
-
-export const DetailsPanel = styled.div<{ $isOpen: boolean; $width?: number }>`
-  background-color: ${({ theme }) => theme.colors.background.secondary};
-  padding: 1rem;
-  border-left: 1px solid ${({ theme }) => theme.colors.border};
-  transform: translateX(${({ $isOpen }) => ($isOpen ? '0' : '100%')});
-  transition: transform 0.3s ease-in-out;
-  overflow-y: auto;
-  min-width: 300px;
-  width: ${({ $width }) => ($width ? `${$width}px` : 'auto')};
-  max-width: none;
-  position: relative;
-`;
-
-export const DirectoryTree = styled.div`
-  margin-top: 1rem;
-`;
-
-export const DirectoryItem = styled.div<{ $isActive?: boolean }>`
-  display: flex;
-  align-items: center;
-  padding: 0.5rem;
-  cursor: pointer;
-  background-color: ${({ theme, $isActive }) => 
-    $isActive ? theme.colors.background.hover : 'transparent'};
-  font-family: 'Fira Code', monospace;
-  &:hover {
-    background-color: ${({ theme }) => theme.colors.background.hover};
-  }
-`;
-
-export const DirectoryIcon = styled.span`
-  margin-right: 0.5rem;
-  font-family: 'Fira Code', monospace;
-`;
-
-export const DirectoryName = styled.span`
-  flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-family: 'Fira Code', monospace;
+  margin-left: ${({ theme }) => theme.spacing.sm};
 `;
 
 export const SuggestionBox = styled.div`
@@ -163,134 +119,34 @@ export const SuggestionBox = styled.div`
   top: 100%;
   left: 0;
   right: 0;
-  background-color: ${({ theme }) => theme.colors.background.secondary};
+  ${glassEffectMixin}
   border: 1px solid ${({ theme }) => theme.colors.border};
-  border-top: none;
-  z-index: 1;
+  margin-top: ${({ theme }) => theme.spacing.xs};
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 1000;
 `;
 
 export const SuggestionItem = styled.div<{ $isSelected: boolean }>`
-  padding: 0.5rem;
+  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
   cursor: pointer;
-  background-color: ${({ theme, $isSelected }) =>
-    $isSelected ? theme.colors.background.hover : 'transparent'};
+  background: ${({ theme, $isSelected }) => 
+    $isSelected ? theme.colors.background.hover : 'transparent'
+  };
+
   &:hover {
-    background-color: ${({ theme }) => theme.colors.background.hover};
+    background: ${({ theme }) => theme.colors.background.hover};
   }
 `;
 
 export const ClickableText = styled.span`
   color: ${({ theme }) => theme.colors.accent};
   cursor: pointer;
-  &:hover {
-    text-decoration: underline;
-    color: ${({ theme }) => theme.colors.accent};
-  }
-`;
-
-export const FileCodeBlock = styled.div`
-  flex: 1 1 auto;
-  height: 100%;
-  min-height: 0;
-  overflow-y: auto;
-  background: #1e1e1e;
-  border-radius: 4px;
-  padding: 8px;
-  font-family: 'Fira Code', monospace;
-`;
-
-export const TerminalInput = styled.input`
-  background: transparent;
-  border: none;
-  color: ${({ theme }) => theme.colors.text.primary};
-  font-family: 'Fira Code', monospace;
-  width: 100%;
-  &:focus {
-    outline: none;
-  }
-`;
-
-export const DetailsContainer = styled.div`
-  padding: 1rem;
-  color: ${({ theme }) => theme.colors.text.primary};
-  font-family: 'Fira Code', monospace;
-`;
-
-export const Title = styled.h1`
-  color: ${({ theme }) => theme.colors.command};
-  font-size: 1.5rem;
-  margin-bottom: 1rem;
-  font-family: 'Fira Code', monospace;
-`;
-
-export const Section = styled.div`
-  margin-bottom: 1.5rem;
-  font-family: 'Fira Code', monospace;
-`;
-
-export const SectionTitle = styled.h2`
-  color: ${({ theme }) => theme.colors.accent};
-  font-size: 1.2rem;
-  margin-bottom: 0.5rem;
-  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
-  padding-bottom: 0.5rem;
-  font-family: 'Fira Code', monospace;
-`;
-
-export const Description = styled.p`
-  margin-bottom: 1rem;
-  line-height: 1.5;
-  font-family: 'Fira Code', monospace;
-`;
-
-export const List = styled.ul`
-  list-style-type: none;
-  padding-left: 1rem;
-  margin-bottom: 1rem;
-  font-family: 'Fira Code', monospace;
-`;
-
-export const ListItem = styled.li`
-  margin-bottom: 0.5rem;
-  font-family: 'Fira Code', monospace;
-  &:before {
-    content: "•";
-    color: ${({ theme }) => theme.colors.command};
-    margin-right: 0.5rem;
-  }
-`;
-
-export const TechStack = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 1rem;
-  margin-bottom: 1rem;
-  font-family: 'Fira Code', monospace;
-`;
-
-export const TechItem = styled.div`
-  background-color: ${({ theme }) => theme.colors.background.secondary};
-  padding: 0.5rem;
-  border-radius: 4px;
-  font-family: 'Fira Code', monospace;
-`;
-
-export const CloseButton = styled.button`
-  background-color: ${({ theme }) => theme.colors.background.secondary};
-  color: ${({ theme }) => theme.colors.text.primary};
-  border: 1px solid ${({ theme }) => theme.colors.border};
-  padding: 0.5rem 1rem;
-  cursor: pointer;
-  margin-top: 1rem;
-  font-family: 'Fira Code', monospace;
-  &:hover {
-    background-color: ${({ theme }) => theme.colors.background.hover};
-  }
+  text-decoration: underline;
 `;
 
 export const CommandSpan = styled.span`
   color: ${({ theme }) => theme.colors.command};
-  font-weight: bold;
 `;
 
 export const PathSpan = styled.span`
@@ -302,13 +158,12 @@ export const ArgSpan = styled.span`
 `;
 
 export const ErrorSpan = styled.span`
-  color: #a8324a;
-  font-weight: bold;
+  color: ${({ theme }) => theme.colors.text.secondary};
+  font-style: italic;
 `;
 
 export const DirSpan = styled.span`
   color: ${({ theme }) => theme.colors.dir};
-  font-weight: bold;
 `;
 
 export const FileSpan = styled.span`
@@ -316,17 +171,144 @@ export const FileSpan = styled.span`
 `;
 
 export const BlinkingCursor = styled.span`
-  display: inline-block;
-  width: 1ch;
+  animation: ${blink} 1s step-end infinite;
   color: ${({ theme }) => theme.colors.text.primary};
-  background: none;
-  margin-left: 0;
-  animation: blink 1s steps(1) infinite;
-  font-weight: bold;
-  font-size: 1em;
-  vertical-align: middle;
-  @keyframes blink {
-    0%, 50% { opacity: 1; }
-    50.01%, 100% { opacity: 0; }
+`;
+
+export const ResizerBar = styled.div`
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  cursor: ew-resize;
+  background: transparent;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background: ${({ theme }) => theme.colors.accent};
   }
+`;
+
+export const DirectoryTree = styled.div`
+  margin-top: ${({ theme }) => theme.spacing.md};
+`;
+
+export const DirectoryItem = styled.div<{ $isActive?: boolean }>`
+  display: flex;
+  align-items: center;
+  padding: ${({ theme }) => theme.spacing.xs};
+  cursor: pointer;
+  background-color: ${({ theme, $isActive }) => 
+    $isActive ? theme.colors.background.hover : 'transparent'
+  };
+  font-family: ${({ theme }) => theme.typography.fontFamily.monospace};
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  &:hover {
+    background-color: ${({ theme }) => theme.colors.background.hover};
+  }
+`;
+
+export const DirectoryIcon = styled.span`
+  margin-right: ${({ theme }) => theme.spacing.xs};
+  font-family: ${({ theme }) => theme.typography.fontFamily.monospace};
+`;
+
+export const DirectoryName = styled.span`
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: ${({ theme }) => theme.typography.fontFamily.monospace};
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+`;
+
+export const Title = styled.h1`
+  color: ${({ theme }) => theme.colors.command};
+  font-size: ${({ theme }) => theme.typography.fontSize.xl};
+  margin-bottom: ${({ theme }) => theme.spacing.md};
+  font-family: ${({ theme }) => theme.typography.fontFamily.monospace};
+`;
+
+export const Section = styled.div`
+  margin-bottom: ${({ theme }) => theme.spacing.lg};
+  font-family: ${({ theme }) => theme.typography.fontFamily.monospace};
+`;
+
+export const SectionTitle = styled.h2`
+  color: ${({ theme }) => theme.colors.accent};
+  font-size: ${({ theme }) => theme.typography.fontSize.lg};
+  margin-bottom: ${({ theme }) => theme.spacing.sm};
+  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
+  padding-bottom: ${({ theme }) => theme.spacing.sm};
+  font-family: ${({ theme }) => theme.typography.fontFamily.monospace};
+`;
+
+export const Description = styled.p`
+  margin-bottom: ${({ theme }) => theme.spacing.md};
+  line-height: 1.5;
+  font-family: ${({ theme }) => theme.typography.fontFamily.monospace};
+`;
+
+export const List = styled.ul`
+  list-style-type: none;
+  padding-left: ${({ theme }) => theme.spacing.md};
+  margin-bottom: ${({ theme }) => theme.spacing.md};
+  font-family: ${({ theme }) => theme.typography.fontFamily.monospace};
+`;
+
+export const ListItem = styled.li`
+  margin-bottom: ${({ theme }) => theme.spacing.sm};
+  font-family: ${({ theme }) => theme.typography.fontFamily.monospace};
+  &:before {
+    content: "•";
+    color: ${({ theme }) => theme.colors.command};
+    margin-right: ${({ theme }) => theme.spacing.sm};
+  }
+`;
+
+export const TechStack = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: ${({ theme }) => theme.spacing.md};
+  margin-bottom: ${({ theme }) => theme.spacing.md};
+  font-family: ${({ theme }) => theme.typography.fontFamily.monospace};
+`;
+
+export const TechItem = styled.div`
+  ${glassEffectLightMixin}
+  padding: ${({ theme }) => theme.spacing.sm};
+  font-family: ${({ theme }) => theme.typography.fontFamily.monospace};
+`;
+
+export const CloseButton = styled.button`
+  ${glassEffectLightMixin}
+  color: ${({ theme }) => theme.colors.text.primary};
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
+  cursor: pointer;
+  margin-top: ${({ theme }) => theme.spacing.md};
+  font-family: ${({ theme }) => theme.typography.fontFamily.monospace};
+  &:hover {
+    background: ${({ theme }) => theme.colors.background.hover};
+  }
+`;
+
+export const FileCodeBlock = styled.div`
+  flex: 1 1 auto;
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  ${glassEffectLightMixin}
+  padding: ${({ theme }) => theme.spacing.md};
+  font-family: ${({ theme }) => theme.typography.fontFamily.monospace};
+  font-size: ${({ theme }) => theme.typography.fontSize.sm};
+  line-height: 1.5;
+  white-space: pre-wrap;
+  color: ${({ theme }) => theme.colors.text.primary};
 `; 

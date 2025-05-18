@@ -2,19 +2,19 @@ import React from 'react';
 import styled from 'styled-components';
 
 const OptionsContainer = styled.div`
-  padding: 1rem;
+  padding: ${({ theme }) => theme.spacing.md};
   border-top: 1px solid ${({ theme }) => theme.colors.border};
   margin-top: auto;
 `;
 
 const OptionGroup = styled.div`
-  margin-bottom: 1rem;
+  margin-bottom: ${({ theme }) => theme.spacing.md};
 `;
 
 const OptionLabel = styled.div`
   color: ${({ theme }) => theme.colors.text.secondary};
-  font-size: 0.9rem;
-  margin-bottom: 0.5rem;
+  font-size: ${({ theme }) => theme.typography.fontSize.sm};
+  margin-bottom: ${({ theme }) => theme.spacing.sm};
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -23,7 +23,7 @@ const OptionLabel = styled.div`
 const VolumeControl = styled.div`
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: ${({ theme }) => theme.spacing.sm};
 `;
 
 const VolumeSlider = styled.input`
@@ -31,7 +31,7 @@ const VolumeSlider = styled.input`
   -webkit-appearance: none;
   height: 4px;
   background: ${({ theme }) => theme.colors.border};
-  border-radius: 2px;
+  border-radius: ${({ theme }) => theme.effects.borderRadius.sm};
   outline: none;
 
   &::-webkit-slider-thumb {
@@ -41,7 +41,7 @@ const VolumeSlider = styled.input`
     background: ${({ theme }) => theme.colors.accent};
     border-radius: 50%;
     cursor: pointer;
-    transition: background 0.2s;
+    transition: background ${({ theme }) => theme.effects.transition.fast};
 
     &:hover {
       background: ${({ theme }) => theme.colors.accent};
@@ -51,11 +51,11 @@ const VolumeSlider = styled.input`
 
 const VolumeIcon = styled.span`
   color: ${({ theme }) => theme.colors.text.secondary};
-  font-size: 1.2rem;
+  font-size: ${({ theme }) => theme.typography.fontSize.lg};
   width: 20px;
   text-align: center;
   cursor: pointer;
-  transition: color 0.2s;
+  transition: color ${({ theme }) => theme.effects.transition.fast};
 
   &:hover {
     color: ${({ theme }) => theme.colors.accent};
@@ -66,15 +66,15 @@ const AboutButton = styled.button`
   background: ${({ theme }) => theme.colors.button};
   color: ${({ theme }) => theme.colors.text.primary};
   border: 2px solid ${({ theme }) => theme.colors.button};
-  border-radius: 2px;
-  padding: 8px 18px;
-  font-weight: 700;
-  font-family: 'Fira Code', monospace;
-  font-size: 15px;
+  border-radius: ${({ theme }) => theme.effects.borderRadius.sm};
+  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.lg};
+  font-weight: ${({ theme }) => theme.typography.fontWeight.bold};
+  font-family: ${({ theme }) => theme.typography.fontFamily.monospace};
+  font-size: ${({ theme }) => theme.typography.fontSize.sm};
   cursor: pointer;
   box-shadow: 0 0 8px ${({ theme }) => theme.colors.button}55;
-  margin-top: 6px;
-  margin-bottom: 2px;
+  margin-top: ${({ theme }) => theme.spacing.sm};
+  margin-bottom: ${({ theme }) => theme.spacing.xs};
   width: 100%;
 `;
 
