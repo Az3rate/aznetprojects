@@ -6,14 +6,16 @@ import { Terminal } from './components/Terminal/Terminal';
 import { WelcomeModal, WelcomeModalRef } from './components/WelcomeModal';
 import { DirectoryProvider } from './context/DirectoryContext';
 import { UserPreferencesProvider, useUserPreferences } from './context/UserPreferencesContext';
+import { TerminalProvider } from './context/TerminalContext';
 import type { TerminalRef } from './components/Terminal/Terminal';
 import { Navigation } from './components/Navigation/Navigation';
 import { ApiPage } from './components/Pages/ApiPage';
 import { FeaturedProjectsPage } from './components/Pages/FeaturedProjectsPage';
+import PlaygroundPage from './components/Pages/PlaygroundPage';
 import { Footer } from './components/Navigation/Footer';
 import { PageLayout } from './components/Layout/PageLayout';
 
-type Page = 'terminal' | 'api' | 'featured';
+type Page = 'terminal' | 'api' | 'featured' | 'playground';
 
 const AppContent: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<Page>('terminal');
@@ -63,21 +65,25 @@ const AppContent: React.FC = () => {
   const renderPage = () => {
     switch (currentPage) {
       case 'terminal':
-  return (
-          <Terminal
-            ref={terminalRef}
-            onOpenWelcome={handleOpenWelcome}
-            onTourComplete={handleTourComplete}
-            volume={volume}
-            isMuted={isMuted}
-            onVolumeChange={handleVolumeChange}
-            onToggleMute={handleToggleMute}
-          />
+        return (
+          <TerminalProvider>
+            <Terminal
+              ref={terminalRef}
+              onOpenWelcome={handleOpenWelcome}
+              onTourComplete={handleTourComplete}
+              volume={volume}
+              isMuted={isMuted}
+              onVolumeChange={handleVolumeChange}
+              onToggleMute={handleToggleMute}
+            />
+          </TerminalProvider>
         );
       case 'api':
         return <ApiPage />;
       case 'featured':
         return <FeaturedProjectsPage />;
+      case 'playground':
+        return <PlaygroundPage />;
       default:
         return null;
     }

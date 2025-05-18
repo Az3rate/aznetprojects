@@ -192,18 +192,18 @@ export const SwirlBackground: React.FC = () => {
 				Swirl background is fixed and covers the viewport, always behind app content.
 				Ensure main app containers use zIndex > 0.
 			*/}
-			<canvas
-				ref={canvasBRef}
-				style={{
+<canvas
+	ref={canvasBRef}
+	style={{
 					position: 'fixed',
 					top: 0,
 					left: 0,
 					width: '100vw',
 					height: '100vh',
 					zIndex: 0,
-					pointerEvents: 'none',
-				}}
-			/>
+		pointerEvents: 'none',
+	}}
+/>
 
 			<canvas
 				ref={canvasARef}

@@ -1,5 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { useTerminal } from '../../hooks/useTerminal';
+import React, { useRef, useEffect, useCallback } from 'react';
 import { useTypingSound } from '../../hooks/useTypingSound';
 import { projects } from '../../data/projects';
 import { ProjectDetails } from './ProjectDetails';
@@ -37,6 +36,7 @@ import { useDirectory } from '../../context/DirectoryContext';
 import { SwirlBackground } from './SwirlBackground';
 import { useTheme } from 'styled-components';
 import { TerminalLayout } from './TerminalLayout';
+import { useTerminalContext } from '../../context/TerminalContext';
 import styled from 'styled-components';
 
 function formatPromptPath(path: string) {
@@ -91,8 +91,20 @@ const TerminalComponent: React.ForwardRefRenderFunction<TerminalRef, TerminalPro
     closeDetailsPanel,
     addCommandOnly,
     changeDirectory,
-    commandsRef
-  } = useTerminal(projects);
+    commandsRef,
+    input,
+    setInput,
+    suggestions,
+    setSuggestions,
+    selectedSuggestion,
+    setSelectedSuggestion,
+    tourOpen,
+    setTourOpen,
+    tourType,
+    setTourType,
+    detailsPanelWidth,
+    setDetailsPanelWidth
+  } = useTerminalContext();
 
   const {
     vfs,
@@ -103,61 +115,165 @@ const TerminalComponent: React.ForwardRefRenderFunction<TerminalRef, TerminalPro
   } = useDirectory();
 
   const playTypingSound = useTypingSound(volume);
-  const [input, setInput] = useState('');
-  const [suggestions, setSuggestions] = useState<string[]>([]);
-  const [selectedSuggestion, setSelectedSuggestion] = useState(-1);
-  const [isFirstTime, setIsFirstTime] = useState(() => {
-    const visited = localStorage.getItem('aznet_terminal_visited');
-    if (!visited) {
-      localStorage.setItem('aznet_terminal_visited', 'true');
-      return true;
-    }
-    return false;
-  });
   const inputRef = useRef<HTMLInputElement>(null);
   const endOfTerminalRef = useRef<HTMLDivElement>(null);
-  const [tourOpen, setTourOpen] = useState(false);
-  const [tourType, setTourType] = useState<'recruiter' | 'technical'>('recruiter');
-
-  const { toggleMute } = useBackgroundAudio(isMuted ? 0 : volume);
-
-  const theme = useTheme();
-
-  const [detailsPanelWidth, setDetailsPanelWidth] = useState(720);
   const resizerRef = useRef<HTMLDivElement>(null);
   const isResizing = useRef(false);
   const detailsPanelRef = useRef<HTMLDivElement>(null);
   const dragData = useRef<{right: number, startX: number, startWidth: number} | null>(null);
 
-  useEffect(() => {
-    localStorage.setItem('terminal_volume', volume.toString());
-  }, [volume]);
+  const { toggleMute } = useBackgroundAudio(isMuted ? 0 : volume);
+
+  const theme = useTheme();
+
+  const knownCommands = [
+    'help', 'clear', 'about', 'projects', 'contact', 'ls', 'cd', 'pwd', 'cat', 'echo', 'neofetch', 'exit'
+  ];
+  const lastStatus = state.history.length > 0 ? state.history[state.history.length - 1].type : 'default';
 
   useEffect(() => {
-    localStorage.setItem('terminal_background_muted', JSON.stringify(isMuted));
-  }, [isMuted]);
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+    if (endOfTerminalRef.current) {
+      endOfTerminalRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [state.history]);
 
-  useEffect(() => {
-    function handleMouseMove(e: MouseEvent) {
-      if (!isResizing.current || !dragData.current) return;
-      const min = 300;
-      const deltaX = dragData.current.startX - e.clientX;
-      const newWidth = Math.max(min, dragData.current.startWidth + deltaX);
-      setDetailsPanelWidth(newWidth);
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setInput(value);
+    playTypingSound();
+    if (value.trim()) {
+      const newSuggestions = getCommandSuggestions(value).map(s => s.command);
+      setSuggestions(newSuggestions);
+      setSelectedSuggestion(-1);
+    } else {
+      setSuggestions([]);
     }
-    
-    function handleMouseUp() {
-      isResizing.current = false;
-      dragData.current = null;
-      document.body.style.cursor = '';
+  };
+
+  const handleCommandClick = useCallback(async (command: string) => {
+    const trimmedCommand = command.trim();
+    if (trimmedCommand.startsWith('cat ')) {
+      const fileName = trimmedCommand.split(' ')[1];
+      const project = projects.find(p => p.name.toLowerCase() === fileName.toLowerCase());
+      if (project) {
+        openDetailsPanel(project);
+        addCommandOnly(trimmedCommand);
+        setInput('');
+        setSuggestions([]);
+        return;
+      }
+      try {
+        const result = await commandsRef.current.execute('cat', [fileName]);
+        if (result.type === 'success' && typeof result.output === 'string') {
+          openFileDetails({ fileName, content: result.output });
+          addCommandOnly(trimmedCommand);
+        } else {
+          await executeCommand(trimmedCommand);
+        }
+      } catch (error) {
+        await executeCommand(trimmedCommand);
+      }
+      setInput('');
+      setSuggestions([]);
+      return;
+    } else if (trimmedCommand.startsWith('cd ')) {
+      const dirPath = trimmedCommand.split(' ')[1];
+      try {
+        await changeDirectory(dirPath);
+        setInput('');
+        setSuggestions([]);
+      } catch (error) {
+        await executeCommand(trimmedCommand);
+        setInput('');
+        setSuggestions([]);
+      }
+      return;
     }
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleMouseUp);
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, []);
+    await executeCommand(trimmedCommand);
+    setInput('');
+    setSuggestions([]);
+  }, [openDetailsPanel, addCommandOnly, openFileDetails, executeCommand, changeDirectory, setInput, setSuggestions, projects, commandsRef]);
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    switch (e.key) {
+      case 'Enter':
+        if (selectedSuggestion >= 0 && selectedSuggestion < suggestions.length) {
+          const selectedCommand = suggestions[selectedSuggestion];
+          handleCommandClick(selectedCommand);
+        } else {
+          handleCommandClick(input);
+        }
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        if (suggestions.length > 0) {
+          setSelectedSuggestion((prev: number) =>
+            prev <= 0 ? suggestions.length - 1 : prev - 1
+          );
+        } else {
+          setInput(navigateHistory('up'));
+        }
+        break;
+      case 'ArrowDown':
+        e.preventDefault();
+        if (suggestions.length > 0) {
+          setSelectedSuggestion((prev: number) =>
+            prev >= suggestions.length - 1 ? 0 : prev + 1
+          );
+        } else {
+          setInput(navigateHistory('down'));
+        }
+        break;
+      case 'Tab':
+        e.preventDefault();
+        if (suggestions.length > 0) {
+          setInput(suggestions[0]);
+          setSuggestions([]);
+          setSelectedSuggestion(-1);
+        }
+        break;
+      case 'Escape':
+        setSuggestions([]);
+        setSelectedSuggestion(-1);
+        break;
+    }
+  };
+
+  const handleFileClick = useCallback((filePath: string) => {
+    handleCommandClick(`cat ${filePath.startsWith('/') ? filePath.slice(1) : filePath}`);
+  }, [handleCommandClick]);
+
+  const handleDirectoryClick = useCallback((dirPath: string) => {
+    setDirectory(dirPath);
+  }, [setDirectory]);
+
+  const getVisibleHistory = () => {
+    const lastClearIndex = state.history.map(h => h.type).lastIndexOf('clear');
+    return lastClearIndex >= 0 ? state.history.slice(lastClearIndex + 1) : state.history;
+  };
+
+  const handleTerminalClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const tag = (e.target as HTMLElement).tagName.toLowerCase();
+    if ([
+      'a', 'button', 'input', 'textarea', 'select', 'svg', 'path', 'pre', 'code'
+    ].includes(tag)) return;
+    if ((e.target as HTMLElement).getAttribute('tabindex')) return;
+    inputRef.current?.focus();
+  };
+
+  const handleToggleBackground = useCallback(() => {
+    onToggleMute();
+    toggleMute();
+  }, [onToggleMute, toggleMute]);
+
+  const handleVolumeChange = useCallback((v: number) => {
+    onVolumeChange(v);
+  }, [onVolumeChange]);
+
+  const featuredProjects = projects.filter(p => p.featured);
 
   const recruiterTourSteps: Step[] = [
     {
@@ -287,169 +403,6 @@ const TerminalComponent: React.ForwardRefRenderFunction<TerminalRef, TerminalPro
     },
   ];
 
-  const handleStartTour = (type: 'recruiter' | 'technical') => {
-    setTourType(type);
-    setTourOpen(true);
-  };
-
-  const knownCommands = [
-    'help', 'clear', 'about', 'projects', 'contact', 'ls', 'cd', 'pwd', 'cat', 'echo', 'neofetch', 'exit'
-  ];
-  const lastStatus = state.history.length > 0 ? state.history[state.history.length - 1].type : 'default';
-
-  useEffect(() => {
-    if (inputRef.current) {
-      inputRef.current.focus();
-    }
-    if (endOfTerminalRef.current) {
-      endOfTerminalRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [state.history]);
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setInput(value);
-    playTypingSound();
-    if (value.trim()) {
-      const newSuggestions = getCommandSuggestions(value).map(s => s.command);
-      setSuggestions(newSuggestions);
-      setSelectedSuggestion(-1);
-    } else {
-      setSuggestions([]);
-    }
-  };
-
-  const handleCommandClick = useCallback(async (command: string) => {
-    const trimmedCommand = command.trim();
-    if (trimmedCommand.startsWith('cat ')) {
-      const fileName = trimmedCommand.split(' ')[1];
-      const project = projects.find(p => p.name.toLowerCase() === fileName.toLowerCase());
-      if (project) {
-        openDetailsPanel(project);
-        addCommandOnly(trimmedCommand);
-        setInput('');
-        setSuggestions([]);
-        return;
-      }
-      try {
-        const result = await commandsRef.current.execute('cat', [fileName]);
-        if (result.type === 'success' && typeof result.output === 'string') {
-          openFileDetails({ fileName, content: result.output });
-          addCommandOnly(trimmedCommand);
-        } else {
-          await executeCommand(trimmedCommand);
-        }
-      } catch (error) {
-        await executeCommand(trimmedCommand);
-      }
-      setInput('');
-      setSuggestions([]);
-      return;
-    } else if (trimmedCommand.startsWith('cd ')) {
-      const dirPath = trimmedCommand.split(' ')[1];
-      try {
-        await changeDirectory(dirPath);
-        setInput('');
-        setSuggestions([]);
-      } catch (error) {
-        await executeCommand(trimmedCommand);
-        setInput('');
-        setSuggestions([]);
-      }
-      return;
-    }
-    await executeCommand(trimmedCommand);
-    setInput('');
-    setSuggestions([]);
-  }, [openDetailsPanel, addCommandOnly, openFileDetails, executeCommand, changeDirectory, setInput, setSuggestions, projects, commandsRef]);
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    switch (e.key) {
-      case 'Enter':
-        if (selectedSuggestion >= 0 && selectedSuggestion < suggestions.length) {
-          const selectedCommand = suggestions[selectedSuggestion];
-          handleCommandClick(selectedCommand);
-        } else {
-          handleCommandClick(input);
-        }
-        break;
-      case 'ArrowUp':
-        e.preventDefault();
-        if (suggestions.length > 0) {
-          setSelectedSuggestion(prev =>
-            prev <= 0 ? suggestions.length - 1 : prev - 1
-          );
-        } else {
-          setInput(navigateHistory('up'));
-        }
-        break;
-      case 'ArrowDown':
-        e.preventDefault();
-        if (suggestions.length > 0) {
-          setSelectedSuggestion(prev =>
-            prev >= suggestions.length - 1 ? 0 : prev + 1
-          );
-        } else {
-          setInput(navigateHistory('down'));
-        }
-        break;
-      case 'Tab':
-        e.preventDefault();
-        if (suggestions.length > 0) {
-          setInput(suggestions[0]);
-          setSuggestions([]);
-          setSelectedSuggestion(-1);
-        }
-        break;
-      case 'Escape':
-        setSuggestions([]);
-        setSelectedSuggestion(-1);
-        break;
-    }
-  };
-
-  const handleFileClick = useCallback((filePath: string) => {
-    handleCommandClick(`cat ${filePath.startsWith('/') ? filePath.slice(1) : filePath}`);
-  }, [handleCommandClick]);
-
-  const handleDirectoryClick = useCallback((dirPath: string) => {
-    setDirectory(dirPath);
-  }, [setDirectory]);
-
-  const getVisibleHistory = () => {
-    const lastClearIndex = state.history.map(h => h.type).lastIndexOf('clear');
-    return lastClearIndex >= 0 ? state.history.slice(lastClearIndex + 1) : state.history;
-  };
-
-  const handleTerminalClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    const tag = (e.target as HTMLElement).tagName.toLowerCase();
-    if ([
-      'a', 'button', 'input', 'textarea', 'select', 'svg', 'path', 'pre', 'code'
-    ].includes(tag)) return;
-    if ((e.target as HTMLElement).getAttribute('tabindex')) return;
-    inputRef.current?.focus();
-  };
-
-  const handleToggleBackground = useCallback(() => {
-    onToggleMute();
-    toggleMute();
-  }, [onToggleMute, toggleMute]);
-
-  const handleVolumeChange = useCallback((v: number) => {
-    onVolumeChange(v);
-  }, [onVolumeChange]);
-
-  const featuredProjects = projects.filter(p => p.featured);
-
-  const [featuredCollapsed, setFeaturedCollapsed] = useState(false);
-
-  React.useImperativeHandle(ref, () => ({
-    startTour: (type: 'recruiter' | 'technical') => {
-      setTourType(type);
-      setTourOpen(true);
-    }
-  }));
-
   const handleTourCallback = (data: any) => {
     const { status } = data;
     if (status === 'finished' || status === 'skipped') {
@@ -578,158 +531,158 @@ const TerminalComponent: React.ForwardRefRenderFunction<TerminalRef, TerminalPro
   return (
     <TerminalLayout
       sidebar={
-        <Sidebar data-tour="sidebar">
-          <FileExplorer 
-            onFileClick={handleFileClick} 
-            onDirectoryClick={handleDirectoryClick}
-            currentDirectory={currentDirectory}
-            volume={volume}
-            onVolumeChange={handleVolumeChange}
-            onToggleBackground={handleToggleBackground}
+      <Sidebar data-tour="sidebar">
+        <FileExplorer 
+          onFileClick={handleFileClick} 
+          onDirectoryClick={handleDirectoryClick}
+          currentDirectory={currentDirectory}
+          volume={volume}
+          onVolumeChange={handleVolumeChange}
+          onToggleBackground={handleToggleBackground}
             isBackgroundMuted={isMuted}
-            onOpenWelcome={onOpenWelcome}
-            fileTree={fileTree}
-          />
-        </Sidebar>
+          onOpenWelcome={onOpenWelcome}
+          fileTree={fileTree}
+        />
+      </Sidebar>
       }
       mainContent={
-        <TerminalContent onClick={handleTerminalClick}>
+      <TerminalContent onClick={handleTerminalClick}>
           <QuickMenuDiv data-tour="quick-menu" />
-          <Joyride
-            steps={tourType === 'recruiter' ? recruiterTourSteps : technicalTourSteps}
-            run={tourOpen}
-            continuous
+        <Joyride
+          steps={tourType === 'recruiter' ? recruiterTourSteps : technicalTourSteps}
+          run={tourOpen}
+          continuous
             showSkipButton
             callback={handleTourCallback}
-            styles={{
-              options: {
+          styles={{
+            options: {
                 primaryColor: theme.colors.accent,
-                backgroundColor: theme.colors.background.primary,
-                textColor: theme.colors.text.primary,
-                arrowColor: theme.colors.background.primary,
+              backgroundColor: theme.colors.background.primary,
+              textColor: theme.colors.text.primary,
+              arrowColor: theme.colors.background.primary,
               }
-            }}
-          />
-          {getVisibleHistory().map((item, index) => (
-            <React.Fragment key={index}>
-              <CommandLine>
-                <Prompt $status={item.type === 'success' ? 'success' : item.type === 'error' ? 'error' : 'default'}>
-                  user@aznet:{formatPromptPath(String(item.currentDirectory))}$
-                </Prompt>
-                {item.command}
-              </CommandLine>
-              {typeof item.output === 'object' && item.output !== null && 'projects' in item.output ? (
-                <Output type="info">
-                  {(item.output as { projects: Project[] }).projects.map((project: Project) => (
-                    <div key={project.name}>
+          }}
+        />
+        {getVisibleHistory().map((item, index) => (
+          <React.Fragment key={index}>
+            <CommandLine>
+              <Prompt $status={item.type === 'success' ? 'success' : item.type === 'error' ? 'error' : 'default'}>
+                user@aznet:{formatPromptPath(String(item.currentDirectory))}$
+              </Prompt>
+              {item.command}
+            </CommandLine>
+            {typeof item.output === 'object' && item.output !== null && 'projects' in item.output ? (
+              <Output type="info">
+                {(item.output as { projects: Project[] }).projects.map((project: Project) => (
+                  <div key={project.name}>
                       <ClickableProjectText
-                        onClick={() => handleCommandClick(`cat ${project.name.toLowerCase()}`)}
-                      >
-                        {project.name}
+                      onClick={() => handleCommandClick(`cat ${project.name.toLowerCase()}`)}
+                    >
+                      {project.name}
                       </ClickableProjectText>
-                      {': '}{project.description}
-                    </div>
-                  ))}
-                </Output>
-              ) : typeof item.output === 'string' ? (
-                <Output type={item.type === 'project-list' || item.type === 'welcome' || item.type === 'clear' ? 'info' : item.type as 'success' | 'error' | 'info'}>
-                  {item.command === 'ls' ? (
+                    {': '}{project.description}
+                  </div>
+                ))}
+              </Output>
+            ) : typeof item.output === 'string' ? (
+              <Output type={item.type === 'project-list' || item.type === 'welcome' || item.type === 'clear' ? 'info' : item.type as 'success' | 'error' | 'info'}>
+                {item.command === 'ls' ? (
                     <StyledPre>
-                      {item.output.split('\n').map((line, i) => {
-                        const match = line.match(/^([d-])\s+\d+\s+(.+)$/);
-                        if (match) {
-                          const [, type, name] = match;
-                          return (
+                    {item.output.split('\n').map((line, i) => {
+                      const match = line.match(/^([d-])\s+\d+\s+(.+)$/);
+                      if (match) {
+                        const [, type, name] = match;
+                        return (
                             <OutputRow key={i}>
                               <OutputTypeSpan>{type}</OutputTypeSpan>
                               <OutputNameSpan>{line.split(/\s+/)[1]}</OutputNameSpan>
-                              {type === 'd' ? <DirSpan>{name}</DirSpan> : <FileSpan>{name}</FileSpan>}
+                            {type === 'd' ? <DirSpan>{name}</DirSpan> : <FileSpan>{name}</FileSpan>}
                             </OutputRow>
-                          );
-                        }
-                        return <div key={i}>{line}</div>;
-                      })}
+                        );
+                      }
+                      return <div key={i}>{line}</div>;
+                    })}
                     </StyledPre>
-                  ) : (
+                ) : (
                     <StyledPre>{item.output}</StyledPre>
-                  )}
-                </Output>
-              ) : null}
-            </React.Fragment>
-          ))}
-          <CommandInput data-tour="terminal-input">
-            <Prompt $status="default">
-              user@aznet:{formatPromptPath(currentDirectory)}$
-            </Prompt>
-            <div style={{ position: 'relative', flex: 1, minWidth: 0 }}>
+                )}
+              </Output>
+            ) : null}
+          </React.Fragment>
+        ))}
+        <CommandInput data-tour="terminal-input">
+          <Prompt $status="default">
+            user@aznet:{formatPromptPath(currentDirectory)}$
+          </Prompt>
+          <div style={{ position: 'relative', flex: 1, minWidth: 0 }}>
               <HighlightInputSpan>
-                {highlightInput(input, knownCommands, lastStatus === 'error')}
+              {highlightInput(input, knownCommands, lastStatus === 'error')}
               </HighlightInputSpan>
               <InputOverlay
-                ref={inputRef}
-                value={input}
-                onChange={handleInputChange}
-                onKeyDown={handleKeyDown}
-                placeholder="Type a command..."
-                tabIndex={0}
-                autoFocus
-              />
-            </div>
-            {suggestions.length > 0 && (
-              <SuggestionBox role="list" aria-label="command suggestions">
-                {suggestions.map((suggestion, index) => (
-                  <SuggestionItem
-                    key={suggestion}
-                    $isSelected={index === selectedSuggestion}
-                    onClick={() => {
-                      setInput(suggestion);
-                      setSuggestions([]);
-                      setSelectedSuggestion(-1);
-                      inputRef.current?.focus();
-                    }}
-                    role="listitem"
-                    aria-label={suggestion}
-                  >
-                    {suggestion}
-                  </SuggestionItem>
-                ))}
-              </SuggestionBox>
-            )}
-          </CommandInput>
-          <div ref={endOfTerminalRef} />
-        </TerminalContent>
+              ref={inputRef}
+              value={input}
+              onChange={handleInputChange}
+              onKeyDown={handleKeyDown}
+              placeholder="Type a command..."
+              tabIndex={0}
+              autoFocus
+            />
+          </div>
+          {suggestions.length > 0 && (
+            <SuggestionBox role="list" aria-label="command suggestions">
+              {suggestions.map((suggestion, index) => (
+                <SuggestionItem
+                  key={suggestion}
+                  $isSelected={index === selectedSuggestion}
+                  onClick={() => {
+                    setInput(suggestion);
+                    setSuggestions([]);
+                    setSelectedSuggestion(-1);
+                    inputRef.current?.focus();
+                  }}
+                  role="listitem"
+                  aria-label={suggestion}
+                >
+                  {suggestion}
+                </SuggestionItem>
+              ))}
+            </SuggestionBox>
+          )}
+        </CommandInput>
+        <div ref={endOfTerminalRef} />
+      </TerminalContent>
       }
       detailsPanel={state.isDetailsPanelOpen ? (
         <>
-          <ResizerBar
-            ref={resizerRef}
-            onMouseDown={e => {
-              e.preventDefault();
-              isResizing.current = true;
-              if (detailsPanelRef.current) {
-                const rect = detailsPanelRef.current.getBoundingClientRect();
-                dragData.current = {
-                  right: rect.right,
-                  startX: e.clientX,
-                  startWidth: rect.width
-                };
-              }
-              document.body.style.cursor = 'ew-resize';
-            }}
+        <ResizerBar
+          ref={resizerRef}
+          onMouseDown={e => {
+            e.preventDefault();
+            isResizing.current = true;
+            if (detailsPanelRef.current) {
+              const rect = detailsPanelRef.current.getBoundingClientRect();
+              dragData.current = {
+                right: rect.right,
+                startX: e.clientX,
+                startWidth: rect.width
+              };
+            }
+            document.body.style.cursor = 'ew-resize';
+          }}
+        />
+        {state.selectedProject && (
+          <ProjectDetails
+            project={state.selectedProject}
+            onClose={closeDetailsPanel}
           />
-          {state.selectedProject && (
-            <ProjectDetails
-              project={state.selectedProject}
-              onClose={closeDetailsPanel}
-            />
-          )}
-          {state.selectedFile && (
-            <FileViewer
-              fileName={state.selectedFile.fileName}
-              content={state.selectedFile.content}
-              onClose={closeDetailsPanel}
-            />
-          )}
+        )}
+        {state.selectedFile && (
+          <FileViewer
+            fileName={state.selectedFile.fileName}
+            content={state.selectedFile.content}
+            onClose={closeDetailsPanel}
+          />
+        )}
         </>
       ) : null}
       isDetailsOpen={state.isDetailsPanelOpen}

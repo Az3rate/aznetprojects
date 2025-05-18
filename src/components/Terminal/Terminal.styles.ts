@@ -1,7 +1,7 @@
 import styled from 'styled-components';
+import type { DefaultTheme } from 'styled-components';
 import { glassEffect, glassEffectLight } from '../../styles/mixins/glass';
 import { blink } from '../../styles/mixins/animations';
-import type { Theme } from '../../styles/theme';
 
 // Common styles that can be reused
 const glassEffectMixin = glassEffect;

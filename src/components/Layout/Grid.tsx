@@ -1,8 +1,8 @@
 import React from 'react';
 import styled from 'styled-components';
-import type { Theme } from '../../styles/theme';
+import type { DefaultTheme } from 'styled-components';
 
-type SpacingKey = keyof Theme['spacing'];
+type SpacingKey = keyof DefaultTheme['spacing'];
 
 interface GridProps {
   columns?: number;
@@ -12,9 +12,9 @@ interface GridProps {
   background?: boolean;
 }
 
-const GridContainer = styled.div<{ 
-  $columns: number; 
-  $gap: SpacingKey; 
+const GridContainer = styled.div<{
+  $columns: number;
+  $gap: SpacingKey;
   $padding: SpacingKey;
   $background: boolean;
 }>`
@@ -30,19 +30,26 @@ const GridContainer = styled.div<{
     $background ? `blur(${theme.effects.blur.md})` : 'none'};
 `;
 
-export const Grid: React.FC<GridProps> = ({
-  columns = 1,
-  gap = 'md',
+const Grid: React.FC<GridProps> = ({ 
+  children, 
+  columns = 1, 
+  gap = 'md', 
   padding = 'md',
-  background = false,
-  children
+  background = false 
 }) => {
   return (
-    <GridContainer $columns={columns} $gap={gap} $padding={padding} $background={background}>
+    <GridContainer 
+      $columns={columns} 
+      $gap={gap} 
+      $padding={padding}
+      $background={background}
+    >
       {children}
     </GridContainer>
   );
 };
+
+export default Grid;
 
 // Responsive grid breakpoints
 export const GridBreakpoints = {
@@ -80,7 +87,12 @@ export const ResponsiveGrid: React.FC<ResponsiveGridProps> = ({
   children
 }) => {
   return (
-    <ResponsiveGridContainer $columns={4} $gap={gap} $padding={padding} $background={background}>
+    <ResponsiveGridContainer 
+      $columns={4} 
+      $gap={gap} 
+      $padding={padding} 
+      $background={background}
+    >
       {children}
     </ResponsiveGridContainer>
   );

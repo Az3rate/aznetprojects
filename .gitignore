@@ -33,3 +33,6 @@ yarn-error.log*
 *.sw? 
 
 RULESET.md
+
+AZNET_CHANGELOG.txt
+PLAYGROUND_PLAN.md
