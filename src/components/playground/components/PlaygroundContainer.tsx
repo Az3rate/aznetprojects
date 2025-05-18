@@ -7,6 +7,8 @@ import { glassEffect } from '../../../styles/mixins/glass';
 import MonacoEditor from '@monaco-editor/react';
 import { useProcessEvents } from './useProcessEvents';
 import ProcessEventDebugger from './ProcessEventDebugger';
+import { instrumentWithAcorn } from '../utils/instrumentWithAcorn';
+import { parseProcessesWithAcorn } from '../utils/parseProcessesWithAcorn';
 
 const Container = styled.div`
   display: grid;
@@ -158,27 +160,6 @@ const EXAMPLES = [
 
 const DEFAULT_EDITOR_WIDTH = 600;
 
-function parseProcessesFromCode(code: string) {
-  const processes: { id: string; name: string; type: string; async?: boolean }[] = [];
-  const fnRegex = /(?:async\s+)?function\s+([a-zA-Z0-9_]+)/g;
-  let match;
-  while ((match = fnRegex.exec(code))) {
-    processes.push({
-      id: `fn-${match[1]}`,
-      name: match[1],
-      type: code.substring(match.index, match.index + 5).includes('async') ? 'async function' : 'function',
-      async: code.substring(match.index, match.index + 5).includes('async'),
-    });
-  }
-  if (/setTimeout\s*\(/.test(code)) {
-    processes.push({ id: 'timer-setTimeout', name: 'setTimeout', type: 'timer' });
-  }
-  if (/setInterval\s*\(/.test(code)) {
-    processes.push({ id: 'timer-setInterval', name: 'setInterval', type: 'timer' });
-  }
-  return processes;
-}
-
 const SANDBOX_ORIGIN = 'null'; // for local iframe
 
 // Sanitize user code for safe script injection
@@ -190,42 +171,8 @@ function sanitizeForScript(code: string) {
 
 // Instrument user code to send process events
 function instrumentUserCode(code: string, processes: { id: string; name: string; type: string; async?: boolean }[]): string {
-  // Instrument all top-level functions robustly
-  let instrumented = code;
-  const fnRegex = /((?:async\s+)?function\s+([a-zA-Z0-9_]+)\s*\([^)]*\)\s*){([\s\S]*?)}(?!\s*catch)/g;
-  let match;
-  let offset = 0;
-  let result = '';
-  let lastIndex = 0;
-  while ((match = fnRegex.exec(code)) !== null) {
-    const [full, header, fnName, body] = match;
-    const proc = processes.find(p => p.name === fnName);
-    if (!proc) continue;
-    // Append code before this function
-    result += code.slice(lastIndex, match.index);
-    // Instrumented function
-    result += `${header}{\nparent.postMessage({ type: 'playground-process', payload: { id: '${proc.id}', name: '${proc.name}', type: '${proc.type}', status: 'start' } }, '*');\ntry {${body}} finally {\nparent.postMessage({ type: 'playground-process', payload: { id: '${proc.id}', name: '${proc.name}', type: '${proc.type}', status: 'end' } }, '*');\n}\n}`;
-    lastIndex = match.index + full.length;
-  }
-  // Append the rest of the code
-  result += code.slice(lastIndex);
-  instrumented = result;
-
-  // Instrument setTimeout/setInterval callbacks
-  ['setTimeout', 'setInterval'].forEach(timer => {
-    const timerProc = processes.find(p => p.name === timer);
-    if (!timerProc) return;
-    const arrowRegex = new RegExp(`${timer}\\s*\\(\\s*\\(\\)\\s*=>\\s*{([\\s\\S]*?)}\\s*,\\s*([^)]*)\\)`, 'g');
-    instrumented = instrumented.replace(arrowRegex, (match, body, delay) => {
-      return `${timer}(() => {\n        parent.postMessage({ type: 'playground-process', payload: { id: '${timerProc.id}', name: '${timer}', type: 'timer', status: 'start' } }, '*');\n        try {${body}} finally {\n          parent.postMessage({ type: 'playground-process', payload: { id: '${timerProc.id}', name: '${timer}', type: 'timer', status: 'end' } }, '*');\n        }\n      }, ${delay})`;
-    });
-    const fnRegex = new RegExp(`${timer}\\s*\\(\\s*function\\s*\\([^)]*\\)\\s*{([\\s\\S]*?)}\\s*,\\s*([^)]*)\\)`, 'g');
-    instrumented = instrumented.replace(fnRegex, (match, body, delay) => {
-      return `${timer}(function() {\n        parent.postMessage({ type: 'playground-process', payload: { id: '${timerProc.id}', name: '${timer}', type: 'timer', status: 'start' } }, '*');\n        try {${body}} finally {\n          parent.postMessage({ type: 'playground-process', payload: { id: '${timerProc.id}', name: '${timer}', type: 'timer', status: 'end' } }, '*');\n        }\n      }, ${delay})`;
-    });
-  });
-
-  return instrumented;
+  // Use Acorn-based instrumentation for all function types
+  return instrumentWithAcorn(code);
 }
 
 const SPEEDS = [
@@ -246,9 +193,11 @@ const PlaygroundContainer: React.FC<PlaygroundProps> = ({ mode }) => {
   const [iframeReady, setIframeReady] = useState(false);
   const [animationSpeed, setAnimationSpeed] = useState<number | 'step'>(300);
 
+  // Use Acorn-based process parser
+  const parsedProcesses = parseProcessesWithAcorn(state.codeEditor.content);
+
   // Use the custom hook for all process state and event logic
   const {
-    parsedProcesses,
     activeProcessIds,
     logBuffer,
     setLogBuffer,

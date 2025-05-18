@@ -62,6 +62,7 @@ export function useProcessEvents(
         setLogBuffer(prev => [...prev, msg]);
       }
       if (event.data && event.data.type === 'playground-process') {
+        console.log('[aznet-process-debug] playground-process event:', event.data.payload);
         processEventQueue.current.push(event.data.payload);
         if (fallbackTimeoutRef.current) {
           clearTimeout(fallbackTimeoutRef.current);

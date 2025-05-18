@@ -183,3 +183,97 @@ setTimeout(() => {
   - Use a web worker or service worker to buffer/process events and step through them at a controlled pace.
   - Use a custom event queue and timer/animation frame to drive the visualizer, not direct postMessage events.
   - Use a state machine (XState) or observable (RxJS) to manage process state transitions and UI updates. 
+
+# Playground Flow Audit (2024-Current, Terminal Output Issue)
+
+---
+
+## 1. PlaygroundContainer.tsx
+**Role:** Main orchestrator. Renders editor, visualizer, terminal, and wires up all hooks/utilities.
+**Key Logic:**
+- Handles code execution (`handleRunCode`), injects/instruments user code, sets up the sandbox iframe.
+- Uses `useProcessEvents` for process event state and log buffer.
+- Uses `parseProcessesWithAcorn` to extract all process nodes for the visualizer.
+- Passes `logBuffer` to the terminal output.
+**Findings:**
+- If terminal output is empty, either `logBuffer` is not being updated, or the sandbox is not sending logs.
+- The code that overrides `console.log` and sends logs to the parent is injected in the sandbox script in `handleRunCode`.
+- If the sandbox script is not running or not sending logs, terminal output will be empty.
+
+---
+
+## 2. useProcessEvents.ts
+**Role:** Handles process event queue, animation, and log buffer state.
+**Key Logic:**
+- Listens for `playground-process` and `playground-log` messages from the iframe.
+- Buffers process events, animates them, and updates `activeProcessIds` for the visualizer.
+- Updates `logBuffer` for terminal output when `playground-log` messages are received.
+**Findings:**
+- If no `playground-log` messages are received, `logBuffer` remains empty and terminal output is blank.
+- If only process events are received, the visualizer animates but terminal is empty.
+- Debug logs can confirm if any `playground-log` messages are received.
+
+---
+
+## 3. ProcessVisualizer.tsx
+**Role:** Pure presentational component for process nodes.
+**Key Logic:**
+- Receives `parsedProcesses` and `activeProcessIds`.
+- Animates nodes as they become active/inactive.
+**Findings:**
+- Not involved in terminal output. If nodes animate but terminal is empty, bug is elsewhere.
+
+---
+
+## 4. instrumentWithAcorn.ts
+**Role:** Instruments user code (arrow functions, class methods) with process event postMessages.
+**Key Logic:**
+- Parses code with Acorn, walks AST, injects start/end postMessages in try/finally blocks.
+- Does **not** instrument or override `console.log`.
+**Findings:**
+- If process events work but terminal is empty, this file is not the cause.
+- If arrow/class method nodes animate but terminal is empty, bug is elsewhere.
+
+---
+
+## 5. parseProcessesWithAcorn.ts
+**Role:** Parses user code to extract all process nodes for the visualizer.
+**Key Logic:**
+- Uses Acorn to find function declarations, arrow functions, class methods, timers.
+- Returns process node metadata for the visualizer.
+**Findings:**
+- Not involved in terminal output. Only affects which nodes are shown in the visualizer.
+
+---
+
+## 6. PlaygroundContext.tsx
+**Role:** Provides playground state (editor content, theme, etc) via React context.
+**Key Logic:**
+- Manages code editor state, theme, and dispatches updates.
+**Findings:**
+- Not directly involved in terminal output. If editor state is correct, bug is elsewhere.
+
+---
+
+## 7. types/index.ts
+**Role:** Type definitions for playground data and components.
+**Key Logic:**
+- Exports interfaces for Project, process nodes, etc.
+**Findings:**
+- Not involved in runtime logic or terminal output.
+
+---
+
+# Summary of Flow and Bug Location
+
+- **User code is instrumented and injected into a sandboxed iframe.**
+- **console.log** is overridden in the sandbox script to send logs to the parent via `postMessage` (`playground-log`).
+- **useProcessEvents** listens for these messages and updates `logBuffer`.
+- **PlaygroundContainer** displays `logBuffer` in the terminal output.
+
+**If terminal output is empty:**
+- The most likely cause is that the sandbox script is not running, or the `console.log` override is missing/broken, so no `playground-log` messages are sent.
+- If process events animate but terminal is empty, the bug is in the sandbox script injection or message delivery, not in the React/TS code.
+
+**Next step:**
+- Audit the sandbox script injected in `handleRunCode` in PlaygroundContainer.tsx. Confirm that `console.log` is overridden and that logs are sent to the parent. Add a debug postMessage at the top of the script to confirm it runs. 
