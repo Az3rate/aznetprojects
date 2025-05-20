@@ -3,10 +3,17 @@
 import React, { useEffect, useRef } from 'react';
 import { createNoise3D } from 'simplex-noise';
 
+function isFirefox() {
+	return typeof navigator !== 'undefined' && /firefox/i.test(navigator.userAgent);
+}
+
 export const SwirlBackground: React.FC = () => {
+	if (isFirefox()) return null;
+
 	const canvasARef = useRef<HTMLCanvasElement>(null);
 	const canvasBRef = useRef<HTMLCanvasElement>(null);
 	const animationRef = useRef<number>();
+	const skipFrameRef = useRef(false);
 
 	useEffect(() => {
 		const particleCount = 700;
@@ -26,6 +33,9 @@ export const SwirlBackground: React.FC = () => {
 		const yOff = 0.00125;
 		const zOff = 0.0005;
 		const backgroundColor = 'hsla(260,40%,5%,1)';
+		const blurLarge = 8;
+		const blurSmall = 4;
+		const isFF = isFirefox();
 
 		let tick = 0;
 		const noise3D = createNoise3D();
@@ -133,13 +143,13 @@ export const SwirlBackground: React.FC = () => {
 
 		function renderGlow(ctxA: CanvasRenderingContext2D, ctxB: CanvasRenderingContext2D) {
 			ctxB.save();
-			ctxB.filter = 'blur(8px) brightness(200%)';
+			ctxB.filter = `blur(${blurLarge}px) brightness(200%)`;
 			ctxB.globalCompositeOperation = 'lighter';
 			ctxB.drawImage(canvasARef.current!, 0, 0);
 			ctxB.restore();
 
 			ctxB.save();
-			ctxB.filter = 'blur(4px) brightness(200%)';
+			ctxB.filter = `blur(${blurSmall}px) brightness(200%)`;
 			ctxB.globalCompositeOperation = 'lighter';
 			ctxB.drawImage(canvasARef.current!, 0, 0);
 			ctxB.restore();
@@ -153,6 +163,14 @@ export const SwirlBackground: React.FC = () => {
 		}
 
 		function draw() {
+			// Frame skipping for Firefox
+			if (isFF) {
+				skipFrameRef.current = !skipFrameRef.current;
+				if (skipFrameRef.current) {
+					animationRef.current = requestAnimationFrame(draw);
+					return;
+				}
+			}
 			tick++;
 			const canvasA = canvasARef.current;
 			const canvasB = canvasBRef.current;
@@ -192,18 +210,18 @@ export const SwirlBackground: React.FC = () => {
 				Swirl background is fixed and covers the viewport, always behind app content.
 				Ensure main app containers use zIndex > 0.
 			*/}
-<canvas
-	ref={canvasBRef}
-	style={{
+			<canvas
+				ref={canvasBRef}
+				style={{
 					position: 'fixed',
 					top: 0,
 					left: 0,
 					width: '100vw',
 					height: '100vh',
 					zIndex: 0,
-		pointerEvents: 'none',
-	}}
-/>
+					pointerEvents: 'none',
+				}}
+			/>
 
 			<canvas
 				ref={canvasARef}

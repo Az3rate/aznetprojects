@@ -21,7 +21,7 @@ const MenuList = styled.ul`
   gap: ${({ theme }) => theme.spacing.xl};
 `;
 
-const MenuItem = styled.li<{ active?: boolean }>`
+const MenuItem = styled.li<{ $active?: boolean }>`
   position: relative;
   
   &::after {
@@ -29,7 +29,7 @@ const MenuItem = styled.li<{ active?: boolean }>`
     position: absolute;
     bottom: -2px;
     left: 0;
-    width: ${({ active }) => active ? '100%' : '0'};
+    width: ${({ $active }) => $active ? '100%' : '0'};
     height: 2px;
     background: ${({ theme }) => theme.colors.accent};
     transition: width ${({ theme }) => theme.effects.transition.normal};
@@ -73,17 +73,17 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPage, onPageChang
   return (
     <NavContainer>
       <MenuList>
-        <MenuItem active={currentPage === 'terminal'}>
+        <MenuItem $active={currentPage === 'terminal'}>
           <MenuLink onClick={() => onPageChange('terminal')}>Terminal</MenuLink>
         </MenuItem>
-        <MenuItem active={currentPage === 'api'}>
+        <MenuItem $active={currentPage === 'api'}>
           <MenuLink onClick={() => onPageChange('api')}>API</MenuLink>
         </MenuItem>
-        <MenuItem active={currentPage === 'featured'}>
-          <MenuLink onClick={() => onPageChange('featured')}>⭐ Featured</MenuLink>
+        <MenuItem $active={currentPage === 'featured'}>
+          <MenuLink onClick={() => onPageChange('featured')}>Featured</MenuLink>
         </MenuItem>
-        <MenuItem active={currentPage === 'playground'}>
-          <MenuLink onClick={() => onPageChange('playground')}>🎮 Playground</MenuLink>
+        <MenuItem $active={currentPage === 'playground'}>
+          <MenuLink onClick={() => onPageChange('playground')}>Playground</MenuLink>
         </MenuItem>
       </MenuList>
       <Spacer />

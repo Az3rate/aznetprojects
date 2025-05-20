@@ -4,16 +4,16 @@ let isDebugEnabled = true;
 export const debug = {
   enable: () => {
     isDebugEnabled = true;
-    console.log('Debug mode enabled');
+    //console.log('Debug mode enabled');
   },
   disable: () => {
     isDebugEnabled = false;
-    console.log('Debug mode disabled');
+    //console.log('Debug mode disabled');
   },
   isEnabled: () => isDebugEnabled,
   log: (message: string, data?: any) => {
     if (isDebugEnabled) {
-      console.log(`[DEBUG] ${message}`, data || '');
+      //console.log(`[DEBUG] ${message}`, data || '');
     }
   },
   error: (message: string, error?: any) => {

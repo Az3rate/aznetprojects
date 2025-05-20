@@ -311,4 +311,120 @@ export const FileCodeBlock = styled.div`
   line-height: 1.5;
   white-space: pre-wrap;
   color: ${({ theme }) => theme.colors.text.primary};
+`;
+
+export interface FeaturedHeaderProps {
+  $collapsed: boolean;
+}
+
+export const FeaturedHeader = styled.div<FeaturedHeaderProps>`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: ${({ $collapsed, theme }) => $collapsed ? 0 : theme.spacing.lg};
+  height: ${({ $collapsed }) => $collapsed ? '100%' : 'auto'};
+`;
+
+export const FeaturedTitle = styled.span`
+  font-weight: 700;
+  font-size: ${({ theme }) => theme.typography.fontSize.md};
+  color: ${({ theme }) => theme.colors.text.primary};
+  letter-spacing: -0.01em;
+`;
+
+export const CollapseButton = styled.button`
+  background: none;
+  border: none;
+  color: ${({ theme }) => theme.colors.text.primary};
+  cursor: pointer;
+  font-size: 18px;
+  transition: transform 0.2s;
+  margin-left: ${({ theme }) => theme.spacing.xs};
+  padding: 0;
+  line-height: 1;
+  align-self: center;
+`;
+
+export const ProjectCard = styled.div`
+  background: ${({ theme }) => theme.colors.background.primary}CC;
+  color: ${({ theme }) => theme.colors.text.primary};
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  margin-bottom: 18px;
+  padding: ${({ theme }) => `${theme.spacing.md} ${theme.spacing.sm}`};
+  cursor: pointer;
+  font-weight: 600;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  box-sizing: border-box;
+  overflow: hidden;
+`;
+
+export const ProjectName = styled.div`
+  font-size: ${({ theme }) => theme.typography.fontSize.md};
+  font-weight: 700;
+  margin-bottom: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+`;
+
+export const ProjectDescription = styled.div`
+  font-size: ${({ theme }) => theme.typography.fontSize.sm};
+  font-weight: 400;
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+`;
+
+export const QuickMenuDiv = styled.div`
+  width: 100%;
+`;
+
+export const StyledPre = styled.pre`
+  margin: 0;
+  font-family: inherit;
+  background: none;
+  color: inherit;
+  white-space: pre-wrap;
+`;
+
+export const OutputRow = styled.div`
+  display: flex;
+  align-items: center;
+`;
+
+export const OutputTypeSpan = styled.span`
+  min-width: 20px;
+`;
+
+export const OutputNameSpan = styled.span`
+  min-width: 40px;
+  text-align: right;
+  margin-right: 8px;
+`;
+
+export const ClickableProjectText = styled(ClickableText)`
+  cursor: pointer;
+  color: ${({ theme }) => theme.colors.accent};
+  font-weight: 600;
+`;
+
+export const InputOverlay = styled.input`
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: text;
+`;
+
+export const HighlightInputSpan = styled.span`
+  pointer-events: none;
+  min-width: 2px;
+  min-height: 1em;
+  display: inline-block;
 `; 

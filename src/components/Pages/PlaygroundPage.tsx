@@ -17,7 +17,7 @@ const PlaygroundPage: React.FC = () => {
   const theme = useTheme();
 
   const handleStateChange = (state: PlaygroundState) => {
-    console.log('Playground state changed:', state);
+    //console.log('Playground state changed:', state);
   };
 
   return (

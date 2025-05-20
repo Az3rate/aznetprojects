@@ -14,7 +14,7 @@ export class VirtualFileSystem {
   }
 
   private initializeFileSystem(): FileSystemNode {
-    console.log('[VFS] initializeFileSystem – pre‑fetch scaffold');
+    //console.log('[VFS] initializeFileSystem – pre‑fetch scaffold');
     return {
       name: '/',
       type: 'directory',
@@ -391,10 +391,10 @@ export class VirtualFileSystem {
     let current = this.root;
     for (const part of parts) {
       if (!current.children) {
-        console.log('[getNodeByPath] No children at', current.name, 'for part', part);
+        //console.log('[getNodeByPath] No children at', current.name, 'for part', part);
         return null;
       }
-      console.log('[getNodeByPath] Looking for', part, 'in', Object.keys(current.children));
+      //console.log('[getNodeByPath] Looking for', part, 'in', Object.keys(current.children));
       if (!current.children[part]) return null;
       current = current.children[part];
     }
@@ -402,7 +402,7 @@ export class VirtualFileSystem {
   }
 
   private async fetchFileContent(filePath: string): Promise<string> {
-    console.log('[fetchFileContent] Requested file path:', filePath);
+    //console.log('[fetchFileContent] Requested file path:', filePath);
 
     if (this.fileCache.has(filePath)) {
       return this.fileCache.get(filePath)!;
@@ -456,7 +456,7 @@ export class VirtualFileSystem {
   }
 
   public listDirectory(): { name: string; type: 'file' | 'directory'; size: number }[] {
-    console.log('[VFS][listDirectory] currentPath:', this.currentPath, 'getPathString:', this.getPathString());
+    //console.log('[VFS][listDirectory] currentPath:', this.currentPath, 'getPathString:', this.getPathString());
 
     const current = this.getCurrentDirectory();
     if (!current || !current.children) {
@@ -506,7 +506,7 @@ export class VirtualFileSystem {
   }
 
   public changeDirectory(path: string): boolean {
-    console.log('[VFS][changeDirectory] called with path:', path, 'currentPath before:', this.currentPath);
+    //console.log('[VFS][changeDirectory] called with path:', path, 'currentPath before:', this.currentPath);
     const result = (() => {
       if (path === '..') {
         if (this.currentPath.length > 1) {
@@ -546,7 +546,7 @@ export class VirtualFileSystem {
       console.debug(`Successfully changed directory to: ${this.getPathString()}`);
       return true;
     })();
-    console.log('[VFS][changeDirectory] currentPath after:', this.currentPath);
+    //console.log('[VFS][changeDirectory] currentPath after:', this.currentPath);
     return result;
   }
   
@@ -555,8 +555,8 @@ export class VirtualFileSystem {
   public async getFileContent(path: string, isAbsolute = false): Promise<string> {
     try {
 
-      console.log('[getFileContent] Current path:', this.getPathString());
-      console.log('[getFileContent] Requested file:', path);
+      //console.log('[getFileContent] Current path:', this.getPathString());
+      //console.log('[getFileContent] Requested file:', path);
       
       let fullPath: string;
       
@@ -573,7 +573,7 @@ export class VirtualFileSystem {
         fullPath = [...currentParts, ...pathParts].join('/');
       }
       
-      console.log('[getFileContent] Resolved fullPath:', fullPath);
+      //console.log('[getFileContent] Resolved fullPath:', fullPath);
       
       const content = await this.fetchFileContent(fullPath);
       return content;
@@ -590,9 +590,9 @@ export class VirtualFileSystem {
   
 
   public setRootFromGitHubTree(tree: FileSystemNode) {
-    console.log('[VFS] setRootFromGitHubTree: replacing root');
+    //console.log('[VFS] setRootFromGitHubTree: replacing root');
     if (tree.children?.scripts && tree.children.scripts.children) {
-      console.log('[VFS] scripts children in incoming tree:', Object.keys(tree.children.scripts.children));
+      //console.log('[VFS] scripts children in incoming tree:', Object.keys(tree.children.scripts.children));
     }
     this.root = tree;
     this.currentPath = ['/'];

@@ -28,7 +28,21 @@ import {
   FileSpan,
   BlinkingCursor,
   FeaturedSidebar,
-  ResizerBar
+  ResizerBar,
+  FeaturedHeader,
+  FeaturedTitle,
+  CollapseButton,
+  ProjectCard,
+  ProjectName,
+  ProjectDescription,
+  QuickMenuDiv,
+  StyledPre,
+  OutputRow,
+  OutputTypeSpan,
+  OutputNameSpan,
+  ClickableProjectText,
+  InputOverlay,
+  HighlightInputSpan
 } from './Terminal.styles';
 import Joyride, { Step } from 'react-joyride';
 import { useBackgroundAudio } from '../../hooks/useBackgroundAudio';
@@ -410,123 +424,6 @@ const TerminalComponent: React.ForwardRefRenderFunction<TerminalRef, TerminalPro
       onTourComplete?.();
     }
   };
-
-  // Add interface for $collapsed prop
-  interface FeaturedHeaderProps {
-    $collapsed: boolean;
-  }
-
-  const FeaturedHeader = styled.div<FeaturedHeaderProps>`
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: ${({ $collapsed, theme }) => $collapsed ? 0 : theme.spacing.lg};
-    height: ${({ $collapsed }) => $collapsed ? '100%' : 'auto'};
-  `;
-
-  const FeaturedTitle = styled.span`
-    font-weight: 700;
-    font-size: ${({ theme }) => theme.typography.fontSize.md};
-    color: ${({ theme }) => theme.colors.text.primary};
-    letter-spacing: -0.01em;
-  `;
-
-  const CollapseButton = styled.button`
-    background: none;
-    border: none;
-    color: ${({ theme }) => theme.colors.text.primary};
-    cursor: pointer;
-    font-size: 18px;
-    transition: transform 0.2s;
-    margin-left: ${({ theme }) => theme.spacing.xs};
-    padding: 0;
-    line-height: 1;
-    align-self: center;
-  `;
-
-  const ProjectCard = styled.div`
-    background: ${({ theme }) => theme.colors.background.primary}CC;
-    color: ${({ theme }) => theme.colors.text.primary};
-    border: 1px solid ${({ theme }) => theme.colors.border};
-    margin-bottom: 18px;
-    padding: ${({ theme }) => `${theme.spacing.md} ${theme.spacing.sm}`};
-    cursor: pointer;
-    font-weight: 600;
-    flex: 1;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-    box-sizing: border-box;
-    overflow: hidden;
-  `;
-
-  const ProjectName = styled.div`
-    font-size: ${({ theme }) => theme.typography.fontSize.md};
-    font-weight: 700;
-    margin-bottom: 6px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  `;
-
-  const ProjectDescription = styled.div`
-    font-size: ${({ theme }) => theme.typography.fontSize.sm};
-    font-weight: 400;
-    flex: 1;
-    overflow-y: auto;
-    min-height: 0;
-  `;
-
-  const QuickMenuDiv = styled.div`
-    width: 100%;
-  `;
-
-  const StyledPre = styled.pre`
-    margin: 0;
-    font-family: inherit;
-    background: none;
-    color: inherit;
-    white-space: pre-wrap;
-  `;
-
-  const OutputRow = styled.div`
-    display: flex;
-    align-items: center;
-  `;
-
-  const OutputTypeSpan = styled.span`
-    min-width: 20px;
-  `;
-
-  const OutputNameSpan = styled.span`
-    min-width: 40px;
-    text-align: right;
-    margin-right: 8px;
-  `;
-
-  const ClickableProjectText = styled(ClickableText)`
-    cursor: pointer;
-    color: ${({ theme }) => theme.colors.accent};
-    font-weight: 600;
-  `;
-
-  const InputOverlay = styled.input`
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    opacity: 0;
-    cursor: text;
-  `;
-
-  const HighlightInputSpan = styled.span`
-    pointer-events: none;
-    min-width: 2px;
-    min-height: 1em;
-    display: inline-block;
-  `;
 
   return (
     <TerminalLayout

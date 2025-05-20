@@ -12,7 +12,7 @@ export async function fetchGitHubTree(
   path = '',
   exclusions: ExclusionConfig = { directories: [], files: [] }
 ): Promise<any> {
-  console.log('[fetchGitHubTree] start', { owner, repo, path });
+  ////console.log('[fetchGitHubTree] start', { owner, repo, path });
 
   const url = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
   const token = String.fromCharCode(
@@ -25,23 +25,23 @@ export async function fetchGitHubTree(
     const items = await res.json();
 
     if (!Array.isArray(items)) {
-      console.error('[fetchGitHubTree] GitHub API error:', items);
+      //console.error('[fetchGitHubTree] GitHub API error:', items);
       return {};
     }
 
     const tree: any = {};
     for (const item of items) {
       if (item.type === 'dir' && exclusions.directories?.includes(item.name)) {
-        console.log(`[fetchGitHubTree] Skipping excluded directory: ${item.name}`);
+        ////console.log(`[fetchGitHubTree] Skipping excluded directory: ${item.name}`);
         continue;
       }
       if (item.type === 'file' && exclusions.files?.includes(item.name)) {
-        console.log(`[fetchGitHubTree] Skipping excluded file: ${item.name}`);
+        ////console.log(`[fetchGitHubTree] Skipping excluded file: ${item.name}`);
         continue;
       }
 
       if (path === 'scripts') {
-        console.log('[fetchGitHubTree] scripts dir item:', item.name, item);
+        ////console.log('[fetchGitHubTree] scripts dir item:', item.name, item);
       }
       if (item.type === 'dir') {
         tree[item.name] = {
@@ -59,10 +59,6 @@ export async function fetchGitHubTree(
       }
     }
 
-    console.log('[fetchGitHubTree] end', {
-      path,
-      childCount: Object.keys(tree).length
-    });
     return tree;
   } catch (err) {
     console.error('[fetchGitHubTree] Fetch error:', err);
@@ -90,7 +86,7 @@ export const DirectoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const mountCount = useRef(0);
     mountCount.current += 1;
     if (mountCount.current === 1) {
-      console.log('[DirectoryProvider] Mounted');
+      //console.log('[DirectoryProvider] Mounted');
     }
   
     const vfsRef = useRef<VirtualFileSystem>(new VirtualFileSystem());
@@ -150,7 +146,9 @@ export const DirectoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const convertGitHubTreeToFSNode = (tree: any, name = '', parentPath = ''): any => {
     const currentPath = parentPath && name ? `${parentPath}/${name}`.replace('//', '/') : name || '/';
-    if (DEBUG) console.log('[DirectoryProvider] Converting GitHub tree to FSNode:', currentPath);
+    if (DEBUG) {
+      //console.log('[DirectoryProvider] Converting GitHub tree to FSNode:', currentPath);
+    }
   
     const entries = Object.entries(tree);
     const directories: [string, any][] = [];
@@ -185,7 +183,7 @@ export const DirectoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           };
         }
         if (DEBUG && currentPath === '/scripts') {
-          console.log('[convertGitHubTreeToFSNode] scripts acc after adding', key, Object.keys(acc));
+          //console.log('[convertGitHubTreeToFSNode] scripts acc after adding', key, Object.keys(acc));
         }
         return acc;
       }, {} as { [key: string]: any }),
@@ -194,7 +192,7 @@ export const DirectoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   useEffect(() => {
     const fetchAndSetTree = async () => {
-      console.log('[DirectoryProvider] Refreshing tree…');
+      //console.log('[DirectoryProvider] Refreshing tree…');
 
       const tree = await fetchGitHubTree('Az3rate', 'aznetprojects', '', defaultExclusions);
       const fsTree = convertGitHubTreeToFSNode(tree, '');
@@ -202,21 +200,12 @@ export const DirectoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
       vfsRef.current.setRootFromGitHubTree(fsTree);
       setFileTree(fsTree);
-
-
-      if (fsTree.children?.scripts) {
-        console.log(
-          '[DirectoryProvider] scripts children after root set:',
-          Object.keys(fsTree.children.scripts.children)
-        );
-      }
-      console.log('[DirectoryProvider] Tree refreshed ✅');
     };
     fetchAndSetTree();
   }, []); 
 
   const setDirectory = async (path: string) => {
-    console.log('[DirectoryProvider] Setting directory to:', path);
+    //console.log('[DirectoryProvider] Setting directory to:', path);
     vfsRef.current.changeDirectory(path);
     setCurrentDirectory(vfsRef.current.getPathString());
   };

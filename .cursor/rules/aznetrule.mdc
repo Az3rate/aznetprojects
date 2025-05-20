@@ -3,4 +3,4 @@ description:
 globs: 
 alwaysApply: true
 ---
-When we encounter an error, you will alway attach console.log for to fix that command, and then, once i confirm with you that it's solved, you will remove any console.log trace for that command. 
+When we encounter an error, you will alway attach //console.log for to fix that command, and then, once i confirm with you that it's solved, you will remove any //console.log trace for that command. 

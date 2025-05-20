@@ -1,6 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import styled, { useTheme } from 'styled-components';
-import ProcessVisualizer from './ProcessVisualizer';
 import { usePlayground } from '../context/PlaygroundContext';
 import type { PlaygroundProps } from '../types';
 import { glassEffect } from '../../../styles/mixins/glass';
@@ -8,18 +7,62 @@ import MonacoEditor from '@monaco-editor/react';
 import { useProcessEvents } from './useProcessEvents';
 import ProcessEventDebugger from './ProcessEventDebugger';
 import { instrumentWithAcorn } from '../utils/instrumentWithAcorn';
-import { parseProcessesWithAcorn } from '../utils/parseProcessesWithAcorn';
+import { parseProcessTreeWithAcorn } from '../utils/parseProcessesWithAcorn';
+import ProcessFlowVisualizer from './ProcessFlowVisualizer';
+import { useProcessStore } from '../../../store/processStore';
+import { v4 as uuidv4 } from 'uuid';
 
-const Container = styled.div`
+const PlaygroundGrid = styled.div`
   display: grid;
-  grid-template-columns: auto 8px 1fr;
-  grid-template-rows: 1fr auto;
-  gap: ${({ theme }) => theme.spacing.md};
+  grid-template-columns: minmax(480px, 1fr) 420px 420px;
+  gap: ${({ theme }) => theme.spacing.lg};
   height: 100%;
-  padding: ${({ theme }) => theme.spacing.md};
-  background: ${({ theme }) => theme.colors.background.primary};
-  color: ${({ theme }) => theme.colors.text.primary};
-  font-family: ${({ theme }) => theme.typography.fontFamily.monospace};
+  min-height: 0;
+  width: 100%;
+  background: transparent;
+  z-index: 1;
+  transition: grid-template-columns 0.3s ease;
+`;
+
+const PlaygroundSidebar = styled.section`
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  border-right: 1px solid ${({ theme }) => theme.colors.border};
+  backdrop-filter: blur(${({ theme }) => theme.effects.blur.md});
+  flex-shrink: 0;
+  padding: ${({ theme }) => theme.spacing.xl};
+  border-radius: 0;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+`;
+
+const PlaygroundMain = styled.section`
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  padding: ${({ theme }) => theme.spacing.xl};
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  backdrop-filter: blur(${({ theme }) => theme.effects.blur.md});
+  gap: ${({ theme }) => theme.spacing.xs};
+  border-radius: 0;
+  border-right: 1px solid ${({ theme }) => theme.colors.border};
+`;
+
+const PlaygroundDetails = styled.section`
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  border-left: 1px solid ${({ theme }) => theme.colors.border};
+  backdrop-filter: blur(${({ theme }) => theme.effects.blur.md});
+  padding: ${({ theme }) => theme.spacing.xl};
+  border-radius: 0;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
 `;
 
 const PanelHeader = styled.div`
@@ -28,73 +71,6 @@ const PanelHeader = styled.div`
   color: ${({ theme }) => theme.colors.accent};
   padding: ${({ theme }) => theme.spacing.xs} 0;
   letter-spacing: 1px;
-`;
-
-const EditorSection = styled.section<{ $width: number }>`
-  grid-column: 1;
-  grid-row: 1;
-  width: ${({ $width }) => $width}px;
-  min-width: 320px;
-  max-width: 100vw;
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  min-height: 0;
-  ${glassEffect}
-  border-radius: ${({ theme }) => theme.effects.borderRadius};
-  box-shadow: ${({ theme }) => theme.effects.boxShadow};
-  transition: all 0.3s ease;
-`;
-
-const Resizer = styled.div`
-  grid-column: 2;
-  grid-row: 1;
-  width: 8px;
-  cursor: col-resize;
-  background: ${({ theme }) => theme.colors.background.glassLight};
-  border-radius: ${({ theme }) => theme.effects.borderRadius};
-  transition: background 0.2s;
-  &:hover, &:focus {
-    background: ${({ theme }) => theme.colors.accent};
-    outline: 2px solid ${({ theme }) => theme.colors.accent};
-  }
-`;
-
-const VisualizerSection = styled.section`
-  grid-column: 3;
-  grid-row: 1;
-  min-width: 320px;
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  min-height: 0;
-  ${glassEffect}
-  border-radius: ${({ theme }) => theme.effects.borderRadius};
-  box-shadow: ${({ theme }) => theme.effects.boxShadow};
-  transition: all 0.3s ease;
-`;
-
-const TerminalSection = styled.section`
-  grid-column: 1 / -1;
-  grid-row: 2;
-  ${glassEffect}
-  border-radius: ${({ theme }) => theme.effects.borderRadius};
-  box-shadow: ${({ theme }) => theme.effects.boxShadow};
-  transition: all 0.3s ease;
-  min-height: 48px;
-  display: flex;
-  align-items: flex-end;
-`;
-
-const EditorWrapper = styled.div`
-  flex: 1;
-  min-height: 0;
-  min-width: 0;
-  .monaco-editor {
-    background: ${({ theme }) => theme.colors.background.glass};
-    font-family: ${({ theme }) => theme.typography.fontFamily.monospace};
-    border-radius: ${({ theme }) => theme.effects.borderRadius};
-  }
 `;
 
 const Controls = styled.div`
@@ -139,6 +115,18 @@ const Output = styled.pre`
   white-space: pre-wrap;
 `;
 
+const EditorWrapper = styled.div`
+  flex: 1 1 0;
+  min-height: 0;
+  min-width: 0;
+  height: 100%;
+  .monaco-editor {
+    background: ${({ theme }) => theme.colors.background.glass};
+    font-family: ${({ theme }) => theme.typography.fontFamily.monospace};
+    border-radius: ${({ theme }) => theme.effects.borderRadius};
+  }
+`;
+
 const EXAMPLES = [
   {
     label: 'Hello World',
@@ -155,6 +143,19 @@ const EXAMPLES = [
   {
     label: 'Timer Example',
     code: `// Timer\nsetTimeout(() => {\n  console.log('Timeout!');\n}, 1000);`
+  },
+  {
+    label: 'Complex Process Tree',
+    code: `// Top-level function\nfunction main() {\n  // Nested function\n  function nestedA() {\n    setTimeout(() => {\n      console.log('Timer in nestedA');\n      arrowInTimer();\n    }, 500);\n  }\n\n  // Arrow function assigned to variable\n  const arrowInMain = () => {\n    console.log('Arrow in main');\n    // Removed classTest(); as it was undefined\n  };\n\n  // Class with method\n  class MyClass {\n    method() {\n      setTimeout(function timerInMethod() {\n        console.log('Timer in class method');\n      }, 300);\n    }\n  }\n\n  // Arrow function inside timer\n  const arrowInTimer = () => {\n    console.log('Arrow in timer');\n  };\n\n  // Async function\n  async function asyncFunc() {\n    await new Promise(resolve => setTimeout(resolve, 200));\n    console.log('Async done');\n  }\n\n  // Call everything\n  nestedA();\n  arrowInMain();\n  new MyClass().method();\n  asyncFunc();\n}\n\nmain();`
+  },
+  {
+    label: 'Really Complex Process Tree',
+    code: `// Really Complex Process Tree\nfunction main() {\n  function nestedA() {\n    setTimeout(() => {\n      console.log('Timer in nestedA');\n      arrowInTimer();\n      recursiveFn(2);\n    }, 500);\n  }\n\n  const arrowInMain = () => {\n    setTimeout(() => {\n      console.log('Timer in arrowInMain');\n      deepArrow();\n    }, 100);\n    console.log('Arrow in main');\n  };\n\n  class MyClass {\n    method() {\n      setTimeout(function timerInMethod() {\n        console.log('Timer in class method');\n        nestedClassMethod();\n      }, 300);\n    }\n  }\n\n  function nestedClassMethod() {\n    setTimeout(() => {\n      console.log('Timer in nestedClassMethod');\n    }, 150);\n  }\n\n  const arrowInTimer = () => {\n    setTimeout(() => {\n      console.log('Timer in arrowInTimer');\n    }, 50);\n    console.log('Arrow in timer');\n  };\n\n  const deepArrow = () => {\n    setTimeout(() => {\n      console.log('Timer in deepArrow');\n      asyncDeep();\n    }, 75);\n  };\n\n  async function asyncFunc() {\n    await new Promise(resolve => setTimeout(resolve, 200));\n    console.log('Async done');
+    await asyncDeep();\n  }\n\n  async function asyncDeep() {\n    await new Promise(resolve => setTimeout(resolve, 80));\n    console.log('Async deep done');\n  }\n\n  function recursiveFn(n) {\n    if (n <= 0) return;\n    setTimeout(() => {\n      console.log('Timer in recursiveFn', n);\n      recursiveFn(n - 1);\n    }, 60 * n);\n  }\n\n  // Call everything\n  nestedA();\n  arrowInMain();\n  new MyClass().method();\n  asyncFunc();\n}\n\nmain();`
+  },
+  {
+    label: 'Visualizer Sync Test',
+    code: `// Visualizer Sync Test\nasync function stepOne() {\n  await new Promise(r => setTimeout(r, 500));\n  console.log('Step One Complete');\n}\nfunction stepTwo() {\n  setTimeout(() => {\n    console.log('Step Two Complete');\n  }, 500);\n}\nfunction stepThree() {\n  console.log('Step Three Complete');\n}\nasync function main() {\n  await stepOne();\n  stepTwo();\n  stepThree();\n}\nmain();`
   }
 ];
 
@@ -182,9 +183,14 @@ const SPEEDS = [
   { label: 'Step', value: 'step' },
 ];
 
-const PlaygroundContainer: React.FC<PlaygroundProps> = ({ mode }) => {
+interface PlaygroundContainerProps {
+  mode: 'node' | 'browser';
+  theme: any;
+  onStateChange?: (state: any) => void;
+}
+
+const PlaygroundContainer: React.FC<PlaygroundContainerProps> = ({ mode, theme, onStateChange }) => {
   const { state, dispatch } = usePlayground();
-  const theme = useTheme();
   const [output, setOutput] = useState('');
   const [selectedExample, setSelectedExample] = useState(0);
   const [editorWidth, setEditorWidth] = useState(DEFAULT_EDITOR_WIDTH);
@@ -192,35 +198,59 @@ const PlaygroundContainer: React.FC<PlaygroundProps> = ({ mode }) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [iframeReady, setIframeReady] = useState(false);
   const [animationSpeed, setAnimationSpeed] = useState<number | 'step'>(300);
+  const [done, setDone] = useState(false);
+  const { reset, addProcess } = useProcessStore();
+  const [runId, setRunId] = useState<string>('');
 
-  // Use Acorn-based process parser
-  const parsedProcesses = parseProcessesWithAcorn(state.codeEditor.content);
+  // Remove useMemo for processTree, use a ref instead
+  const processTreeRef = useRef<any[]>([]);
 
   // Use the custom hook for all process state and event logic
   const {
+    processes,
     activeProcessIds,
     logBuffer,
     setLogBuffer,
     startNewRun,
-    runId,
+    runId: processRunId,
     tick,
-    done,
-    isStepPaused,
+    done: processDone,
+    isPaused,
     currentStep,
     totalSteps,
     nextStep,
-  } = useProcessEvents(state.codeEditor.content, iframeRef, iframeReady, animationSpeed);
+    togglePause
+  } = useProcessEvents(state.codeEditor.content, iframeRef, iframeReady, animationSpeed, runId);
 
   useEffect(() => {
-    if (done) {
-      console.log('[PlaygroundContainer] done state changed, updating output');
-      console.log('[PlaygroundContainer] logBuffer:', logBuffer);
+    //console.log('[debug] processDone:', processDone, 'logBuffer:', logBuffer);
+    if (processDone) {
       const outputText = logBuffer.length > 0 
         ? logBuffer.join('\n')
         : 'Process completed with no output';
       setOutput(outputText);
     }
-  }, [done, logBuffer]);
+  }, [processDone, logBuffer]);
+
+  useEffect(() => {
+    reset();
+    const added = new Set<string>();
+    function addAllProcesses(nodes: any[]) {
+      for (const node of nodes) {
+        if (added.has(node.id)) continue;
+        added.add(node.id);
+        addProcess({
+          id: node.id,
+          name: node.name,
+          status: 'stopped'
+        });
+        if (node.children && node.children.length) {
+          addAllProcesses(node.children);
+        }
+      }
+    }
+    addAllProcesses(processTreeRef.current);
+  }, [state.codeEditor.content, reset, addProcess]);
 
   const handleEditorChange = (value: string | undefined) => {
     startNewRun();
@@ -232,18 +262,28 @@ const PlaygroundContainer: React.FC<PlaygroundProps> = ({ mode }) => {
   };
 
   const handleRunCode = () => {
+    const newRunId = uuidv4();
+    setRunId(newRunId);
     setOutput('Running…');
     setLogBuffer([]);
     startNewRun();
-    const processes = parsedProcesses;
-    const userCode = sanitizeForScript(instrumentUserCode(state.codeEditor.content, processes));
+    const processTree = parseProcessTreeWithAcorn(state.codeEditor.content);
+    processTreeRef.current = processTree;
+    const userCode = sanitizeForScript(instrumentUserCode(state.codeEditor.content, processTree));
+    // DEBUG: Print the final instrumented code
+    // eslint-disable-next-line no-console
+    console.log('[DEBUG_HIGHLIGHT_INJECT] Final instrumented user code:', userCode);
     // Clean sandbox script: no debug logs, only user output and process events
     const sandboxScript = `
+      window.__AZNET_RUN_ID = '${newRunId}';
       (function() {
+        var runId = '${newRunId}';
         var logs = [];
         function sendLogs() {
-          try { parent.postMessage({ type: 'playground-log', payload: logs.join('\\n') }, '*'); } catch (e) { }
-          logs = [];
+          if (logs.length > 0) {
+            try { parent.postMessage({ source: 'aznet-playground', version: 1, runId: runId, type: 'playground-log', payload: logs.join('\\n') }, '*'); } catch (e) { }
+            logs = [];
+          }
         }
         var originalLog = console.log;
         console.log = function() {
@@ -252,6 +292,12 @@ const PlaygroundContainer: React.FC<PlaygroundProps> = ({ mode }) => {
           try { originalLog.apply(console, arguments); } catch (e) {}
           sendLogs();
         };
+        function sendDone() {
+          try { parent.postMessage({ source: 'aznet-playground', version: 1, runId: runId, type: 'playground-done' }, '*'); } catch (e) { }
+        }
+        function sendProcessEvent(payload) {
+          try { parent.postMessage({ source: 'aznet-playground', version: 1, runId: runId, type: 'playground-process', payload }, '*'); } catch (e) { }
+        }
         try {
           (async function() {
             try {
@@ -264,6 +310,7 @@ const PlaygroundContainer: React.FC<PlaygroundProps> = ({ mode }) => {
               }
             } finally {
               sendLogs();
+              sendDone();
             }
           })();
         } catch (e) {
@@ -273,6 +320,7 @@ const PlaygroundContainer: React.FC<PlaygroundProps> = ({ mode }) => {
             console.log(e && e.stack ? e.stack : e);
           }
           sendLogs();
+          sendDone();
         }
         setTimeout(function() {
           sendLogs();
@@ -291,6 +339,8 @@ const PlaygroundContainer: React.FC<PlaygroundProps> = ({ mode }) => {
     const idx = Number(e.target.value);
     setSelectedExample(idx);
     dispatch({ type: 'UPDATE_EDITOR', payload: { content: EXAMPLES[idx].code } });
+    const processTree = parseProcessTreeWithAcorn(EXAMPLES[idx].code);
+    processTreeRef.current = processTree;
   };
 
   // Resizer logic
@@ -315,9 +365,8 @@ const PlaygroundContainer: React.FC<PlaygroundProps> = ({ mode }) => {
   });
 
   return (
-    <Container>
-      <ProcessEventDebugger key={tick} activeProcessIds={activeProcessIds} parsedProcesses={parsedProcesses} />
-      <EditorSection $width={editorWidth}>
+    <PlaygroundGrid theme={theme}>
+      <PlaygroundSidebar>
         <PanelHeader>Code Editor</PanelHeader>
         <Controls>
           <RunButton onClick={handleRunCode}>Run Code</RunButton>
@@ -330,7 +379,7 @@ const PlaygroundContainer: React.FC<PlaygroundProps> = ({ mode }) => {
             <span>Speed:</span>
             <select
               value={animationSpeed}
-              onChange={e => setAnimationSpeed(e.target.value === 'step' ? 'step' : Number(e.target.value))}
+              onChange={e => setAnimationSpeed(Number(e.target.value) as number | 'step')}
               aria-label="Animation speed"
             >
               {SPEEDS.map(s => (
@@ -340,7 +389,7 @@ const PlaygroundContainer: React.FC<PlaygroundProps> = ({ mode }) => {
           </label>
           <button
             onClick={nextStep}
-            disabled={animationSpeed !== 'step' || !isStepPaused}
+            disabled={animationSpeed !== 'step' || !isPaused}
             style={{ marginLeft: 8 }}
           >
             Next Step
@@ -351,48 +400,24 @@ const PlaygroundContainer: React.FC<PlaygroundProps> = ({ mode }) => {
             </span>
           )}
         </Controls>
-        <EditorWrapper>
+        <EditorWrapper theme={theme}>
           <MonacoEditor
             height="100%"
-            width="100%"
             language={state.codeEditor.language}
-            theme={state.codeEditor.theme}
             value={state.codeEditor.content}
-            options={{
-              fontFamily: theme.typography.fontFamily.monospace,
-              fontSize: 16,
-              minimap: { enabled: false },
-              wordWrap: 'on',
-              scrollBeyondLastLine: false,
-              automaticLayout: true,
-            }}
             onChange={handleEditorChange}
+            theme={state.codeEditor.theme}
+            options={{ fontSize: 14, minimap: { enabled: false } }}
           />
         </EditorWrapper>
-      </EditorSection>
-      <Resizer
-        tabIndex={0}
-        role="separator"
-        aria-orientation="vertical"
-        aria-label="Resize editor and visualizer panels"
-        onMouseDown={handleMouseDown}
-        onKeyDown={e => {
-          if (e.key === 'ArrowLeft') setEditorWidth(w => Math.max(320, w - 20));
-          if (e.key === 'ArrowRight') setEditorWidth(w => Math.min(window.innerWidth - 400, w + 20));
-        }}
-      />
-      <VisualizerSection>
-        <PanelHeader>Process Visualizer</PanelHeader>
-        <ProcessVisualizer
-          key={tick}
-          parsedProcesses={parsedProcesses}
-          activeProcessIds={activeProcessIds}
-        />
-      </VisualizerSection>
-      <TerminalSection>
+      </PlaygroundSidebar>
+      <PlaygroundMain>
+        <ProcessFlowVisualizer processTree={processTreeRef.current} activeProcessIds={activeProcessIds} />
+      </PlaygroundMain>
+      <PlaygroundDetails>
         <PanelHeader>Terminal Output</PanelHeader>
         <Output>{output || 'No output yet'}</Output>
-      </TerminalSection>
+      </PlaygroundDetails>
       {/* Hidden sandbox iframe for code execution */}
       <iframe
         ref={iframeRef}
@@ -401,15 +426,8 @@ const PlaygroundContainer: React.FC<PlaygroundProps> = ({ mode }) => {
         style={{ position: 'absolute', left: '-9999px', width: 0, height: 0, border: 0 }}
         onLoad={handleIframeLoad}
       />
-    </Container>
+    </PlaygroundGrid>
   );
 };
-
-// aznetrule: global debug log for all window messages
-if (typeof window !== 'undefined') {
-  window.addEventListener('message', (event) => {
-    console.log('[GLOBAL window message]', event.data);
-  });
-}
 
 export default PlaygroundContainer; 

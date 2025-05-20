@@ -96,8 +96,8 @@ export const FileExplorer: React.FC<FileExplorerProps> = React.memo(({
   onProjectClick,
   fileTree
 }) => {
-  console.log('[FileExplorer] Re-rendered');
-  console.log('[FileExplorer] fileTree prop:', fileTree);
+  //console.log('[FileExplorer] Re-rendered');
+  //console.log('[FileExplorer] fileTree prop:', fileTree);
   const [expanded, setExpanded] = useState<{ [key: string]: boolean }>({});
   const lastProcessedDir = useRef<string>('');
 
@@ -159,7 +159,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = React.memo(({
       const isExpanded = expanded[cleanNodePath] || false;
 
 
-      console.log('[FileExplorer][renderTree]', { path: cleanNodePath, isExpanded });
+      //console.log('[FileExplorer][renderTree]', { path: cleanNodePath, isExpanded });
 
       if (isDir) {
         return (
@@ -220,14 +220,14 @@ export const FileExplorer: React.FC<FileExplorerProps> = React.memo(({
   
     if (fileTree === null) {
       if (!debugWindow.__fileTreeNullLogged) {
-        console.log('[FileExplorer] fileTree is null – loading…');
+        //console.log('[FileExplorer] fileTree is null – loading…');
         debugWindow.__fileTreeNullLogged = true;
       }
       return <div>Loading file tree…</div>;
     }
   
     if (fileTree === undefined) {
-      console.log('[FileExplorer] Error UI rendered');
+      //console.log('[FileExplorer] Error UI rendered');
       return (
         <div>
           Error loading file tree.&nbsp;
@@ -237,11 +237,11 @@ export const FileExplorer: React.FC<FileExplorerProps> = React.memo(({
     }
   
     if (!fileTree?.children || Object.keys(fileTree.children).length === 0) {
-      console.log('[FileExplorer] Empty state rendered');
+      //console.log('[FileExplorer] Empty state rendered');
       return <div>No files found.</div>;
     }
   
-    console.log('[FileExplorer] renderRootLevelItems children:', fileTree.children);
+    //console.log('[FileExplorer] renderRootLevelItems children:', fileTree.children);
     return Object.entries(fileTree.children).map(([name, node]) =>
       renderTree(node as FileNode, `/${name}`)
     );

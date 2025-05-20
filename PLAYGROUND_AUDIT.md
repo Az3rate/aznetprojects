@@ -1,13 +1,13 @@
 # Playground Async Code Execution Audit
 
 ## Issue Summary
-- **Problem:** When running async code (e.g., with `setTimeout` or `async/await`) in the Playground, the terminal output does not display the expected user code output (e.g., from `console.log`).
+- **Problem:** When running async code (e.g., with `setTimeout` or `async/await`) in the Playground, the terminal output does not display the expected user code output (e.g., from `//console.log`).
 - **Observed Behavior:**
   - The debug log `[playground-debug] handleRunCode: about to run userAsyncFn` appears in the terminal output.
   - No user code output (e.g., `Fetched!`) is shown, even after the async code completes.
   - The Playground visualizer updates as expected, but the terminal output does not reflect user code logs.
 - **Expected Behavior:**
-  - When running async code, the terminal output should display all `console.log` output from user code, including delayed or async logs.
+  - When running async code, the terminal output should display all `//console.log` output from user code, including delayed or async logs.
 
 ## Debug Output
 ```
@@ -18,7 +18,7 @@ about:srcdoc:7 Uncaught SyntaxError: Invalid or unexpected token (at about:srcdo
 ```
 
 ## Steps Taken
-1. Refactored code execution to use the `Function` constructor for async code, ensuring the overridden `console.log` is respected.
+1. Refactored code execution to use the `Function` constructor for async code, ensuring the overridden `//console.log` is respected.
 2. Added `[playground-debug]` logs to trace execution and output capture.
 3. Performed a hard reset and verified the latest code is running.
 4. Switched to iframe sandboxing with code injection via `srcdoc`.
