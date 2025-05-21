@@ -86,4 +86,36 @@ export type PlaygroundAction =
   | { type: 'REMOVE_CONNECTION'; payload: string }
   | { type: 'UPDATE_METRICS'; payload: ProcessMetrics }
   | { type: 'UPDATE_EDITOR'; payload: Partial<EditorState> }
-  | { type: 'TOGGLE_VISUALIZATION'; payload: keyof VisualizationState }; 
+  | { type: 'TOGGLE_VISUALIZATION'; payload: keyof VisualizationState };
+
+export interface CallStackEntry {
+  id: string;
+  functionName: string;
+  callId: string;
+  startTime: number;
+  endTime?: number;
+  status: 'running' | 'completed';
+  parentId?: string;
+}
+
+export interface ProcessNodeState {
+  isActive: boolean;
+  isCompleted: boolean;
+  callStackDepth: number;
+  relatedCalls: string[];
+  duration?: number;
+}
+
+export interface TimelineEntry {
+  timestamp: number;
+  type: 'start' | 'end';
+  nodeId: string;
+  callId: string;
+}
+
+export interface ProcessFlowState {
+  callStack: CallStackEntry[];
+  timeline: TimelineEntry[];
+  activePath: string[];
+  nodeStates: Record<string, ProcessNodeState>;
+} 

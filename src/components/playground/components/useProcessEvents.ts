@@ -42,6 +42,7 @@ export function useProcessEvents(
   const animationDebounceRef = useRef<NodeJS.Timeout | null>(null);
   const processesRef = useRef(processes);
   const updateProcessRef = useRef(updateProcess);
+  const processStartTimes = useRef<Record<string, number>>({});
 
   useEffect(() => {
     processesRef.current = processes;
@@ -52,7 +53,7 @@ export function useProcessEvents(
   function debugLog(...args: any[]) {
     if (typeof window !== 'undefined' && (window as any).__AZNET_PROCESS_DEBUG) {
       // eslint-disable-next-line no-console
-      console.log('%c[AZNET_PROCESS_DEBUG]', 'color: #f0f; font-weight: bold', ...args);
+      console.log('%c[DEBUG_PROCESS]', 'color: #f0f; font-weight: bold', ...args);
     }
   }
 
@@ -82,31 +83,46 @@ export function useProcessEvents(
     if (!iframeReady || !iframeRef.current) return;
 
     function handleMessage(event: MessageEvent) {
-      // DEBUG: Log every raw event received
-      // eslint-disable-next-line no-console
-      console.log('[DEBUG_HIGHLIGHT_MAIN] handleMessage raw event:', event);
       const data = event.data;
-      if (!data || data.source !== 'aznet-playground' || data.version !== 1 || (runId && data.runId !== runId) || !['playground-process', 'playground-done', 'playground-log'].includes(data.type)) {
+      if (!data || data.source !== 'aznet-playground' || data.version !== 1 || (runId && data.runId !== runId)) {
         return;
       }
-      debugLog('handleMessage called:', data);
+
+      // Only log process events
       if (data.type === 'playground-process' && data.payload) {
-        const { id, status } = data.payload;
-        debugLog('Received process event:', { id, status });
+        const { id, name, type, status } = data.payload;
+        debugLog('Event received:', { id, name, type, status });
+        // Unique debug log for audit
+        // eslint-disable-next-line no-console
+        console.log('[AZNET_AUDIT] PROCESS_EVENT_HANDLER', { id, status, activeProcessIds });
+        
         if (typeof updateProcessRef.current === 'function') {
           const newStatus = status === 'start' ? 'running' : 
                           status === 'end' ? 'stopped' : 
                           status === 'error' ? 'error' : 'stopped';
           updateProcessRef.current(id, { status: newStatus });
+          
           // Update active processes list
           if (status === 'start') {
+            processStartTimes.current[id] = Date.now();
             const newActive = [...activeProcessIds, id];
             setActiveProcesses(newActive);
-            debugLog('Added to activeProcessIds:', id, 'New list:', newActive);
+            debugLog('Process started:', { id, activeProcesses: newActive });
           } else if (status === 'end' || status === 'error') {
-            const newActive = activeProcessIds.filter(pid => pid !== id);
-            setActiveProcesses(newActive);
-            debugLog('Removed from activeProcessIds:', id, 'New list:', newActive);
+            const start = processStartTimes.current[id] || Date.now();
+            const elapsed = Date.now() - start;
+            const MIN_DURATION = 300;
+            const remove = () => {
+              const newActive = activeProcessIds.filter(pid => pid !== id);
+              setActiveProcesses(newActive);
+              debugLog('Process ended:', { id, activeProcesses: newActive });
+              delete processStartTimes.current[id];
+            };
+            if (elapsed < MIN_DURATION) {
+              setTimeout(remove, MIN_DURATION - elapsed);
+            } else {
+              remove();
+            }
           }
           setTick(t => t + 1);
         }
@@ -127,6 +143,26 @@ export function useProcessEvents(
       debugLog('Event listener removed for message events.');
     };
   }, [iframeReady, iframeRef.current]);
+
+  const handleProcessEvent = useCallback((event: MessageEvent) => {
+    if (event.data?.type === 'playground-process') {
+      const { id, status } = event.data.payload;
+      console.log('[DEBUG_PROCESS] Event received:', event.data.payload);
+
+      if (status === 'start') {
+        const newIds = [...activeProcessIds, id];
+        setActiveProcesses(newIds);
+        console.log('[DEBUG_PROCESS] Process started:', { id, activeProcesses: newIds });
+      } else if (status === 'end') {
+        // Add a small delay before removing the process ID to make highlights visible
+        setTimeout(() => {
+          const newIds = activeProcessIds.filter(pid => pid !== id);
+          setActiveProcesses(newIds);
+          console.log('[DEBUG_PROCESS] Process ended:', { id, activeProcesses: newIds });
+        }, 300); // 300ms delay
+      }
+    }
+  }, [activeProcessIds, setActiveProcesses]);
 
   return {
     processes,

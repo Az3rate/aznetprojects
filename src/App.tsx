@@ -14,8 +14,9 @@ import { FeaturedProjectsPage } from './components/Pages/FeaturedProjectsPage';
 import PlaygroundPage from './components/Pages/PlaygroundPage';
 import { Footer } from './components/Navigation/Footer';
 import { PageLayout } from './components/Layout/PageLayout';
+import RuntimePlaygroundPage from './components/Pages/RuntimePlaygroundPage';
 
-type Page = 'terminal' | 'api' | 'featured' | 'playground';
+type Page = 'terminal' | 'api' | 'featured' | 'playground' | 'runtime-playground';
 
 const AppContent: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<Page>('terminal');
@@ -84,6 +85,8 @@ const AppContent: React.FC = () => {
         return <FeaturedProjectsPage />;
       case 'playground':
         return <PlaygroundPage />;
+      case 'runtime-playground':
+        return <RuntimePlaygroundPage />;
       default:
         return null;
     }

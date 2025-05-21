@@ -1,103 +1,176 @@
-import React, { useMemo } from 'react';
-import ReactFlow, { MiniMap, Controls, Background, Node, Edge } from 'react-flow-renderer';
-import dagre from 'dagre';
+import React, { useState, useEffect, useMemo } from 'react';
+import styled from 'styled-components';
+import { useTheme } from 'styled-components';
+import { CallStackPanel } from './CallStackPanel';
+import { ExecutionTimeline } from './ExecutionTimeline';
+import type { ProcessFlowState, CallStackEntry, TimelineEntry, ProcessNodeState } from '../types';
 import type { ProcessTreeNode } from '../utils/parseProcessesWithAcorn';
+import { FaCode, FaStackOverflow } from 'react-icons/fa';
+
+const Container = styled.div`
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+`;
+
+const GraphContainer = styled.div`
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+`;
+
+const Node = styled.div<{
+  isActive: boolean;
+  isCompleted: boolean;
+  callStackDepth: number;
+  isCallNode: boolean;
+  isStackActive: boolean;
+}>`
+  position: absolute;
+  padding: ${({ theme }) => theme.spacing.sm};
+  border-radius: ${({ theme }) => theme.effects.borderRadius};
+  background: ${({ theme, isActive, isCallNode, isStackActive }) =>
+    isActive
+      ? theme.colors.primary
+      : isCallNode && isStackActive
+        ? theme.colors.accent
+        : isCallNode
+          ? theme.colors.background
+          : theme.colors.secondary};
+  border: ${({ theme, isCallNode, isStackActive }) =>
+    isCallNode
+      ? `2px dashed ${isStackActive ? theme.colors.primary : theme.colors.accent}`
+      : `2px solid ${theme.colors.primary}`};
+  color: ${({ theme }) => theme.colors.text};
+  transition: all 0.3s ease;
+  transform: translateY(${({ callStackDepth }) => callStackDepth * 20}px);
+  opacity: ${({ isCompleted }) => (isCompleted ? 0.7 : 1)};
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: ${({ theme }) => theme.spacing.sm};
+  font-size: ${({ theme }) => theme.typography.fontSize.base};
+  box-shadow: ${({ theme, isStackActive }) =>
+    isStackActive ? theme.effects.boxShadow : 'none'};
+
+  &:hover {
+    box-shadow: ${({ theme }) => theme.effects.boxShadow};
+    transform: translateY(${({ callStackDepth }) => callStackDepth * 20}px) scale(1.05);
+  }
+`;
 
 interface ProcessFlowVisualizerProps {
-  processTree: ProcessTreeNode[];
-  activeProcessIds: string[];
+  // New props
+  state?: ProcessFlowState;
+  onNodeClick?: (nodeId: string) => void;
+  // Legacy props
+  processTree?: ProcessTreeNode[];
+  activeProcessIds?: string[];
 }
 
-// Helper to flatten the process tree and build edges
-function flattenTree(node: ProcessTreeNode, nodes: ProcessTreeNode[] = [], edges: Edge[] = []): { nodes: ProcessTreeNode[]; edges: Edge[] } {
-  nodes.push(node);
-  if (node.children && node.children.length) {
-    for (const child of node.children) {
-      edges.push({ id: `${node.id}->${child.id}`, source: node.id, target: child.id } as Edge);
-      flattenTree(child, nodes, edges);
+const NODE_VERTICAL_SPACING = 80;
+const NODE_HORIZONTAL_OFFSET = 40;
+
+const ProcessFlowVisualizer: React.FC<ProcessFlowVisualizerProps> = ({
+  state,
+  onNodeClick,
+  processTree,
+  activeProcessIds = [],
+}) => {
+  const theme = useTheme();
+  const [currentTime, setCurrentTime] = useState(0);
+
+  // Convert legacy props to new state format if needed
+  const processState = useMemo(() => {
+    if (state) return state;
+
+    // Convert legacy format to new format
+    const nodeStates: Record<string, ProcessNodeState> = {};
+    const callStack: CallStackEntry[] = [];
+    const timeline: TimelineEntry[] = [];
+    const activePath: string[] = [];
+
+    if (processTree) {
+      processTree.forEach(node => {
+        nodeStates[node.id] = {
+          isActive: activeProcessIds.includes(node.id),
+          isCompleted: false,
+          callStackDepth: 0,
+          relatedCalls: [],
+        };
+      });
     }
-  }
-  return { nodes, edges };
-}
 
-function buildNodesAndEdges(processTree: ProcessTreeNode[]): { nodes: Node[]; edges: Edge[] } {
-  if (!processTree || processTree.length === 0) return { nodes: [], edges: [] };
-  // If processTree is an array of roots, flatten all
-  let allNodes: ProcessTreeNode[] = [], allEdges: Edge[] = [];
-  // Defensive: check if input has children property
-  if (!('children' in processTree[0])) {
-    console.warn('ProcessFlowVisualizer: input does not have children property, skipping tree layout.');
-    return { nodes: [], edges: [] };
-  }
-  for (const root of processTree) {
-    const { nodes, edges } = flattenTree(root);
-    allNodes.push(...nodes);
-    allEdges.push(...edges);
-  }
-
-  // Use dagre for layout
-  const g = new dagre.graphlib.Graph();
-  g.setDefaultEdgeLabel(() => ({}));
-  g.setGraph({ rankdir: 'TB' });
-  allNodes.forEach(proc => {
-    g.setNode(proc.id, { label: proc.name, width: 150, height: 40 });
-  });
-  allEdges.forEach(edge => {
-    g.setEdge(edge.source, edge.target);
-  });
-  dagre.layout(g);
-  const nodes: Node[] = allNodes.map(proc => {
-    const nodeWithPos = g.node(proc.id);
     return {
-      id: proc.id,
-      data: { label: proc.name },
-      position: { x: nodeWithPos.x, y: nodeWithPos.y },
-      style: {},
+      callStack,
+      timeline,
+      activePath,
+      nodeStates,
     };
-  });
-  // Debug logs
-  console.log('%c[ProcessFlow] Flattened nodes:', 'color: #00c', allNodes);
-  console.log('%c[ProcessFlow] Flattened edges:', 'color: #00c', allEdges);
-  return { nodes, edges: allEdges };
-}
+  }, [state, processTree, activeProcessIds]);
 
-const ProcessFlowVisualizer: React.FC<ProcessFlowVisualizerProps> = ({ processTree, activeProcessIds }) => {
-  // Memoize nodes/edges for performance
-  const { nodes, edges } = useMemo(() => buildNodesAndEdges(processTree), [processTree]);
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(prev => prev + 100);
+    }, 100);
 
-  // Highlight active nodes
-  const highlightedNodes = nodes.map(node =>
-    activeProcessIds.includes(node.id)
-      ? { ...node, style: { border: '2px solid #FFD600', boxShadow: '0 0 10px #FFD600', background: '#FFFDE7' } }
-      : node
-  );
+    return () => clearInterval(timer);
+  }, []);
 
-  // Debug logs for highlight
-  const highlightedIds = nodes.filter(node => activeProcessIds.includes(node.id)).map(n => n.id);
-  // eslint-disable-next-line no-console
-  console.log('[DEBUG_HIGHLIGHT_VIS] activeProcessIds:', activeProcessIds);
-  // eslint-disable-next-line no-console
-  console.log('[DEBUG_HIGHLIGHT_VIS] all node IDs:', nodes.map(n => n.id));
-  // eslint-disable-next-line no-console
-  console.log('[DEBUG_HIGHLIGHT_VIS] highlighted node IDs:', highlightedIds);
+  const handleCallStackEntryClick = (entry: CallStackEntry) => {
+    onNodeClick?.(entry.id);
+  };
 
-  // Debug logs for layout
-  console.log('%c[ProcessFlow] ReactFlow nodes:', 'color: #09f', highlightedNodes);
-  console.log('%c[ProcessFlow] ReactFlow edges:', 'color: #09f', edges);
+  const handleTimelineMarkerClick = (entry: TimelineEntry) => {
+    setCurrentTime(entry.timestamp);
+    onNodeClick?.(entry.nodeId);
+  };
+
+  // Determine the current call stack (active path)
+  const currentCallStackIds = processState.callStack
+    .filter(e => e.status === 'running')
+    .map(e => e.id);
 
   return (
-    <div style={{ width: '100%', height: 500 }}>
-      {/* Debug logs for layout */}
-      {/*
-      {JSON.stringify(highlightedNodes, null, 2)}
-      {JSON.stringify(edges, null, 2)}
-      */}
-      <ReactFlow nodes={highlightedNodes} edges={edges} fitView>
-        <MiniMap />
-        <Controls />
-        <Background />
-      </ReactFlow>
-    </div>
+    <Container>
+      <GraphContainer>
+        {Object.entries(processState.nodeStates).map(([nodeId, nodeState], idx) => {
+          const isCallNode = nodeId.startsWith('call-');
+          const isStackActive = isCallNode && currentCallStackIds.includes(nodeId);
+          return (
+            <Node
+              key={nodeId}
+              isActive={nodeState.isActive}
+              isCompleted={nodeState.isCompleted}
+              callStackDepth={nodeState.callStackDepth}
+              isCallNode={isCallNode}
+              isStackActive={isStackActive}
+              style={{
+                top: NODE_VERTICAL_SPACING * idx + NODE_HORIZONTAL_OFFSET,
+                left: NODE_HORIZONTAL_OFFSET + nodeState.callStackDepth * 60,
+              }}
+              onClick={() => onNodeClick?.(nodeId)}
+            >
+              {isCallNode ? <FaStackOverflow size={18} /> : <FaCode size={18} />}
+              <span>{nodeId}</span>
+            </Node>
+          );
+        })}
+      </GraphContainer>
+      
+      <CallStackPanel 
+        entries={processState.callStack}
+        onEntryClick={handleCallStackEntryClick}
+      />
+      
+      <ExecutionTimeline
+        entries={processState.timeline}
+        currentTime={currentTime}
+        onMarkerClick={handleTimelineMarkerClick}
+      />
+    </Container>
   );
 };
 

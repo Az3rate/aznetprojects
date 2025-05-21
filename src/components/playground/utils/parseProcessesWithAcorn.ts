@@ -14,6 +14,7 @@ export interface ProcessTreeNode {
   async?: boolean;
   children: ProcessTreeNode[];
   parentId?: string;
+  start: number;
 }
 
 export function parseProcessTreeWithAcorn(code: string): ProcessTreeNode[] {
@@ -76,7 +77,8 @@ export function parseProcessTreeWithAcorn(code: string): ProcessTreeNode[] {
         type: node.async ? 'async function' : 'function',
         async: node.async,
         children: [],
-        parentId
+        parentId,
+        start: node.start
       };
       functionMap[fnName] = processNode;
       rootNodes.push(processNode);
@@ -90,7 +92,8 @@ export function parseProcessTreeWithAcorn(code: string): ProcessTreeNode[] {
         type: 'arrow function',
         async: node.init.async,
         children: [],
-        parentId
+        parentId,
+        start: node.start
       };
       functionMap[varName] = processNode;
       rootNodes.push(processNode);
@@ -104,7 +107,8 @@ export function parseProcessTreeWithAcorn(code: string): ProcessTreeNode[] {
         type: 'class method',
         async: node.value.async,
         children: [],
-        parentId
+        parentId,
+        start: node.start
       };
       functionMap[methodName] = processNode;
       rootNodes.push(processNode);
@@ -124,26 +128,61 @@ export function parseProcessTreeWithAcorn(code: string): ProcessTreeNode[] {
     }
   }
 
-  // Second pass: link called functions as children
+  // Second pass: link called functions as children and add call nodes
+  let callCounter = 0;
   function linkCalledFunctions(node: any, parentProcess: ProcessTreeNode | null) {
     if (!node) return;
-    // Only process function bodies
+    
+    // Process function bodies
     if (node.type === 'FunctionDeclaration' && node.body && node.body.body) {
       for (const stmt of node.body.body) {
         linkCalledFunctions(stmt, functionMap[node.id?.name]);
       }
     }
-    // Look for direct function calls
-    if (node.type === 'ExpressionStatement' && node.expression && node.expression.type === 'CallExpression') {
-      const callee = node.expression.callee;
-      if (callee && callee.type === 'Identifier' && functionMap[callee.name] && parentProcess) {
-        // Add the called function as a child if not already present
-        const child = functionMap[callee.name];
-        if (!parentProcess.children.some(c => c.id === child.id)) {
-          parentProcess.children.push(child);
+    
+    // Look for function calls in any expression
+    if (node.type === 'CallExpression') {
+      const callee = node.callee;
+      if (callee && callee.type === 'Identifier' && functionMap[callee.name]) {
+        // Add a call node for this invocation
+        const callId = `call-${callee.name}-${node.start}`;
+        const callNode: ProcessTreeNode = {
+          id: callId,
+          name: `${callee.name}() call`,
+          type: 'function call',
+          children: [functionMap[callee.name]],
+          parentId: parentProcess ? parentProcess.id : undefined,
+          start: node.start
+        };
+        if (parentProcess) {
+          parentProcess.children.push(callNode);
+        } else {
+          rootNodes.push(callNode);
         }
+        // Always recurse into arguments and callee for nested calls
+        for (const key in node) {
+          if (node.hasOwnProperty(key)) {
+            const child = node[key];
+            if (Array.isArray(child)) {
+              for (const n of child) {
+                linkCalledFunctions(n, callNode);
+              }
+            } else if (typeof child === 'object' && child && child.type) {
+              linkCalledFunctions(child, callNode);
+            }
+          }
+        }
+        return;
       }
     }
+    
+    // Process arrow function bodies
+    if (node.type === 'ArrowFunctionExpression' && node.body && node.body.body) {
+      for (const stmt of node.body.body) {
+        linkCalledFunctions(stmt, parentProcess);
+      }
+    }
+    
     // Recurse for all child nodes
     for (const key in node) {
       if (node.hasOwnProperty(key)) {
@@ -175,14 +214,17 @@ export function parseProcessTreeWithAcorn(code: string): ProcessTreeNode[] {
       collectFunctions(stmt, []);
     }
     for (const stmt of ast.body) {
-      if (stmt.type === 'FunctionDeclaration' && stmt.id?.name) {
-        linkCalledFunctions(stmt, functionMap[stmt.id.name]);
-      }
+      linkCalledFunctions(stmt, null);
     }
     // Set parentId for all nodes in the tree
     for (const root of rootNodes) {
       setParentIds(root, undefined);
     }
+  }
+  // Unique debug log for process tree
+  if (typeof window !== 'undefined') {
+    // eslint-disable-next-line no-console
+    console.log('[AZNET_AUDIT] PROCESS_TREE_DEBUG', JSON.stringify(rootNodes, null, 2));
   }
 
   // If there is a function named 'main', return only that as the root

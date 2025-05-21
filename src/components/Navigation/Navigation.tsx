@@ -58,7 +58,7 @@ const Spacer = styled.div`
   flex: 1;
 `;
 
-type Page = 'terminal' | 'api' | 'featured' | 'playground';
+type Page = 'terminal' | 'api' | 'featured' | 'playground' | 'runtime-playground';
 
 interface NavigationProps {
   currentPage: Page;
@@ -84,6 +84,9 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPage, onPageChang
         </MenuItem>
         <MenuItem $active={currentPage === 'playground'}>
           <MenuLink onClick={() => onPageChange('playground')}>Playground</MenuLink>
+        </MenuItem>
+        <MenuItem $active={currentPage === 'runtime-playground'}>
+          <MenuLink onClick={() => onPageChange('runtime-playground')}>Runtime Playground</MenuLink>
         </MenuItem>
       </MenuList>
       <Spacer />
