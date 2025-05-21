@@ -38,10 +38,13 @@ function emitProcessEvent(id: string, name: string, type: string, status: 'start
 
 // Use Babel to parse, traverse, and generate JavaScript code
 function instrumentCode(code: string): string {
+  console.log('[DB1] Instrumenting code:', code);
+
   // The parent tracking code to prepend to the user code
   const parentTrackingCode = `
 // Add a global stack for tracking parent functions
 const parentStack = [];
+const executionContexts = new Map();
 
 function getParentId() {
   return parentStack.length > 0 ? parentStack[parentStack.length - 1] : null;
@@ -69,16 +72,68 @@ function emitProcessEvent(id, name, type, status) {
   });
   console.log('[DEBUG_EVENT_EMISSION]', JSON.stringify(event));
 }
+
+// Override setTimeout to track callbacks
+const originalSetTimeout = setTimeout;
+self.setTimeout = function(callback, delay, ...args) {
+  // If we're in an execution context, wrap the callback to maintain parent-child relationship
+  const parentId = getParentId();
+  const wrappedCallback = function() {
+    // Restore parent context if we had one
+    if (parentId) {
+      parentStack.push(parentId);
+    }
+    
+    // If this is a named function, track it
+    let callbackName = callback.name || 'anonymous_callback';
+    const callbackId = 'callback-' + Math.random().toString(36).substr(2, 9);
+    
+    // Emit start event for the callback
+    emitProcessEvent(callbackId, callbackName, 'callback', 'start');
+    
+    try {
+      // Execute the original callback
+      return callback.apply(this, args);
+    } finally {
+      // Emit end event
+      emitProcessEvent(callbackId, callbackName, 'callback', 'end');
+      
+      // Remove parent context if we added it
+      if (parentId) {
+        parentStack.pop();
+      }
+    }
+  };
+  
+  // Call the original setTimeout with our wrapped callback
+  return originalSetTimeout.call(this, wrappedCallback, delay);
+};
+
+// Special handling for tracking named callbacks
+function trackCallback(fn, name) {
+  return function wrappedCallback(...args) {
+    const callbackId = 'fn-' + name;
+    emitProcessEvent(callbackId, name, 'function', 'start');
+    try {
+      return fn.apply(this, args);
+    } finally {
+      emitProcessEvent(callbackId, name, 'function', 'end');
+    }
+  };
+}
 `;
 
   // Parse the code into an AST using Acorn
   const ast = acorn.parse(code, { ecmaVersion: 2020, sourceType: 'module' });
+  console.log('[DB1] Code parsed into AST');
 
   // Traverse the AST to add instrumentation for function declarations
   walk(ast, {
     FunctionDeclaration(node) {
       if (node.id && node.id.name) { // Check for null or undefined
         const fnName = node.id.name;
+        console.log(`[DB1] Instrumenting function declaration: ${fnName}`);
+        
         const startLog = `emitProcessEvent('fn-${fnName}', '${fnName}', 'function', 'start');`;
         const endLog = `emitProcessEvent('fn-${fnName}', '${fnName}', 'function', 'end');`;
 
@@ -106,12 +161,13 @@ function emitProcessEvent(id, name, type, status) {
 
   // Generate the modified code from the AST using astring
   const output = astring.generate(ast);
-  console.log('[DEBUG_TRANSFORMED_CODE]', output);
+  console.log('[DB1] AST transformed back to code');
 
   // Add tracking for arrow functions with regexp since the AST approach has linting issues
   const outputWithArrowFns = output.replace(
     /const\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*=\s*\(([^)]*)\)\s*=>\s*{([^}]*)}/g,
     (match, name, params, body) => {
+      console.log(`[DB1] Instrumenting arrow function: ${name}`);
       return `const ${name} = (${params}) => {
   emitProcessEvent('fn-${name}', '${name}', 'function', 'start');
   ${body}
@@ -119,9 +175,60 @@ function emitProcessEvent(id, name, type, status) {
 }`;
     }
   );
+  
+  // Process the code to handle common callback patterns
+  let processedCode = outputWithArrowFns;
+  
+  // Handle callback functions in setTimeout
+  processedCode = processedCode.replace(
+    /setTimeout\(\s*(\w+)\s*,\s*(\d+)\)/g, 
+    (match, callbackName, delay) => {
+      // Check if the callback is a known function
+      if (code.includes(`function ${callbackName}(`) || 
+          code.includes(`const ${callbackName} =`)) {
+        console.log(`[DB1] Instrumenting setTimeout callback: ${callbackName}`);
+        return `setTimeout(trackCallback(${callbackName}, "${callbackName}"), ${delay})`;
+      }
+      return match;
+    }
+  );
+  
+  // Handle callback functions in function calls like fetchData(processResult)
+  processedCode = processedCode.replace(
+    /(\w+)\((\w+)\)/g, 
+    (match, fn, callback) => {
+      // Don't replace standard function calls or constructor calls
+      if (['setTimeout', 'setInterval', 'console', 'Promise', 'Math', 'Date', 'JSON', 
+           'Object', 'Array', 'String', 'Number', 'Boolean'].includes(fn)) {
+        return match;
+      }
+      
+      // Don't replace common methods
+      if (['log', 'error', 'warn', 'info', 'debug', 'map', 'filter', 'reduce', 
+           'push', 'pop', 'join', 'split', 'resolve', 'reject'].includes(fn)) {
+        return match;
+      }
+      
+      // Check if callback is likely a function name in the code
+      const isLikelyCallback = 
+        code.includes(`function ${callback}(`) || 
+        code.includes(`const ${callback} =`) ||
+        code.includes(`let ${callback} =`) ||
+        code.includes(`var ${callback} =`);
+      
+      if (isLikelyCallback) {
+        console.log('[DB1] Found callback usage:', match);
+        return `${fn}(trackCallback(${callback}, "${callback}"))`;
+      }
+      
+      return match;
+    }
+  );
 
-  // Prepend the parent tracking code
-  return parentTrackingCode + '\n' + outputWithArrowFns;
+  // Create the final instrumented code
+  const finalCode = parentTrackingCode + '\n' + processedCode;
+  console.log('[DB1] Final instrumented code generated');
+  return finalCode;
 }
 
 // Use a simpler approach that resembles the working simple wrapper
@@ -129,24 +236,84 @@ function instrumentCodeOld(code: string): string {
   // Start with the basic wrapper code
   let instrumentedCode = `
 // Runtime instrumentation setup
+// Create a global tracking stack for parent-child relationships
+const parentStack = [];
+
+function getParentId() {
+  return parentStack.length > 0 ? parentStack[parentStack.length - 1] : null;
+}
+
 function emitProcessEvent(id, name, type, status) {
   console.log('[DEBUG_EVENT_EMISSION] Emitting event:', { id, name, type, status });
-  console.log('[RUNTIME_EVENT]', { id, name, type, status });
+  
+  // Get the current parent ID
+  const parentId = getParentId();
+  
+  // For clear debugging
+  console.log('[RUNTIME_EVENT]', { id, name, type, status, parentId });
+  
+  // Track parent-child relationships using the stack
+  if (status === 'start') {
+    parentStack.push(id);
+  } else if (status === 'end') {
+    parentStack.pop();
+  }
+  
   try {
-    window.parent.postMessage({
+    // Send event to main thread via postMessage
+    self.postMessage({
       type: 'runtime-process-event',
       event: {
         id,
         name,
         type,
         status,
+        parentId,
         timestamp: Date.now()
       }
-    }, '*');
+    });
   } catch (e) {
     console.error('[RUNTIME_ERROR] Failed to emit event:', e);
   }
 }
+
+// Override setTimeout to track callbacks
+const originalSetTimeout = setTimeout;
+self.setTimeout = function(callback, delay, ...args) {
+  // Get the current parent ID for context tracking
+  const parentId = getParentId();
+  
+  // Create a wrapper function that maintains the execution context
+  const wrappedCallback = function() {
+    // Restore parent context
+    if (parentId) {
+      parentStack.push(parentId);
+    }
+    
+    // Generate an ID for this callback
+    const callbackName = callback.name || 'anonymous_callback';
+    const callbackId = 'callback-' + callbackName + '-' + Date.now();
+    
+    // Track callback start
+    emitProcessEvent(callbackId, callbackName, 'callback', 'start');
+    
+    try {
+      // Execute original callback
+      return callback.apply(this, args);
+    } finally {
+      // Track callback end
+      emitProcessEvent(callbackId, callbackName, 'callback', 'end');
+      
+      // Remove parent context
+      if (parentId) {
+        parentStack.pop();
+      }
+    }
+  };
+  
+  // Call original setTimeout with our wrapped callback
+  return originalSetTimeout.call(this, wrappedCallback, delay);
+};
 
 // Wrap functions to track execution
 function trackFunction(fn, name) {
@@ -201,10 +368,17 @@ function transformCode(code: string): string {
     }
   );
 
-  // Correctly handle setTimeout calls
-  transformed = transformed.replace(/setTimeout\(\(\) => {([^}]*)},\s*(\d+)\);/g, (match, body, delay) => {
-    return `setTimeout(() => {${body}}, ${delay});`;
-  });
+  // Handle setTimeout callbacks - specially wrap any callback passed to setTimeout
+  transformed = transformed.replace(
+    /setTimeout\((\w+),\s*(\d+)\);/g, 
+    (match, callbackName, delay) => {
+      if (transformed.includes(`function ${callbackName}`) || 
+          transformed.includes(`const ${callbackName} =`)) {
+        return `setTimeout(trackFunction(${callbackName}, '${callbackName}'), ${delay});`;
+      }
+      return match;
+    }
+  );
   
   // Debugging: Log the transformed code
   console.log('[DEBUG_TRANSFORMED_CODE]', transformed);

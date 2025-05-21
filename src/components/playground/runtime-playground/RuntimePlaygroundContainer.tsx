@@ -7,6 +7,7 @@ import type { RuntimeProcessEvent } from './types';
 import * as Comlink from 'comlink';
 import MermaidDiagram from '../components/MermaidDiagram';
 import codeExamples from './codeExamples';
+import { VisualizationExplainer } from './VisualizationExplainer';
 
 const Container = styled.div`
   display: flex;
@@ -217,7 +218,7 @@ export const RuntimePlaygroundContainer: React.FC = () => {
   const [runCount, setRunCount] = useState(0);
   const [useSimpleWrapper, setUseSimpleWrapper] = useState(false);
   const [selectedExample, setSelectedExample] = useState<string>('');
-  const { root, handleEvent } = useRuntimeProcessEvents();
+  const { root, handleEvent, setRoot, setNodeMap } = useRuntimeProcessEvents();
 
   // Load code example when selected
   useEffect(() => {
@@ -250,25 +251,47 @@ export const RuntimePlaygroundContainer: React.FC = () => {
       if (e.data?.type === 'runtime-process-event') {
         const event = e.data.event as RuntimeProcessEvent;
         setDebug(d => d + `[DEBUG_RECEIVED_EVENT] ${JSON.stringify(event)}\n`);
-        setDebug(d => d + `[EVENT] ${event.status} ${event.type} ${event.name}\n`);
+        setDebug(d => d + `[EVENT] ${event.status} ${event.type} ${event.name} (Parent: ${event.parentId || 'none'})\n`);
         console.log('[DEBUG_PROCESS_EVENT]', event);
+        
+        // Ensure we're handling events in the correct order
+        if (event.status === 'end' && !root) {
+          console.log('[DB1] Received end event before tree was constructed, handling immediately');
+        }
+        
+        // Make sure parentId is properly set
+        if (event.status === 'start' && event.name === 'main') {
+          // Main function has no parent
+          event.parentId = undefined;
+        }
+        
+        // Detailed logging for debugging parent-child relationships
+        console.log(`[DB1] Event: ${event.status} ${event.name} (Parent: ${event.parentId || 'none'})`);
+        
         handleEvent(event);
+        
+        // Force a re-render to ensure visualization updates
+        setTimeout(() => {
+          console.log('[DB1] Checking tree state after event:', root);
+        }, 0);
       }
     }
     window.addEventListener('message', onMessage);
     return () => window.removeEventListener('message', onMessage);
-  }, [handleEvent]);
+  }, [handleEvent, root]);
 
   function runCode() {
     setRunCount(c => c + 1);
     setDebug(`Run #${runCount + 1} started\n`);
     setOutput('');
+    setRoot(null); // Reset the process tree
+    setNodeMap({}); // Reset node map
 
     setDebug(d => d + 'Successfully got iframe document, setting up Web Worker with Comlink...\n');
 
     // Instrument the user code
     const instrumentedCode = instrumentCode(code);
-    console.log('[DEBUG_TRANSFORMED_CODE]', instrumentedCode);
+    console.log('[DB1] Transformed code:', instrumentedCode);
 
     // Create a new Web Worker using Comlink
     const workerBlob = new Blob([
@@ -332,13 +355,23 @@ export const RuntimePlaygroundContainer: React.FC = () => {
 
     // Listen for messages from the worker
     worker.onmessage = function(event) {
-      console.log('[DEBUG_WORKER_MESSAGE]', event.data);
+      console.log('[DB1] Worker message received:', event.data);
       
       if (event.data?.type === 'runtime-process-event') {
         const processEvent = event.data.event as RuntimeProcessEvent;
-        console.log('[DEBUG_PROCESS_EVENT_RECEIVED]', processEvent);
+        console.log('[DB1] Process event from worker:', processEvent);
+        
+        // Make sure parentId is properly set
+        if (processEvent.status === 'start' && processEvent.name === 'main') {
+          // Main function has no parent
+          processEvent.parentId = undefined;
+        }
+        
+        // Detailed logging for debugging parent-child relationships
+        console.log(`[DB1] Event: ${processEvent.status} ${processEvent.name} (Parent: ${processEvent.parentId || 'none'})`);
+        
         handleEvent(processEvent);
-        setDebug(d => d + `[EVENT] ${processEvent.status} ${processEvent.type} ${processEvent.name}\n`);
+        setDebug(d => d + `[EVENT] ${processEvent.status} ${processEvent.type} ${processEvent.name} (Parent: ${processEvent.parentId || 'none'})\n`);
       } else if (event.data?.type) {
         const { type, message } = event.data;
         setDebug(d => d + `[WORKER ${type.toUpperCase()}] ${message}\n`);
@@ -443,6 +476,9 @@ export const RuntimePlaygroundContainer: React.FC = () => {
         <OutputArea data-testid="output-area">{output}</OutputArea>
       </EditorSection>
       <VisualizerSection>
+        {currentExample && currentExample.visualizationHint && (
+          <VisualizationExplainer hint={currentExample.visualizationHint} />
+        )}
         <RuntimeProcessVisualizer root={root} />
       </VisualizerSection>
     </Container>
