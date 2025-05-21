@@ -1,178 +1,292 @@
 import React from 'react';
+import styled, { keyframes, css } from 'styled-components';
 import type { RuntimeProcessNode } from './types';
-import styled from 'styled-components';
+
+// Animation keyframes
+const slideIn = keyframes`
+  from { transform: translateX(-20px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+`;
+
+const growWidth = keyframes`
+  from { width: 0; }
+  to { width: 100%; }
+`;
+
+const pulseHighlight = keyframes`
+  0% { background-color: rgba(255, 255, 200, 0.3); }
+  50% { background-color: rgba(255, 255, 200, 0.7); }
+  100% { background-color: rgba(255, 255, 200, 0.3); }
+`;
 
 const TimelineContainer = styled.div`
+  margin-top: ${({ theme }) => theme.spacing.lg};
   padding: ${({ theme }) => theme.spacing.md};
-  margin-top: ${({ theme }) => theme.spacing.md};
   background: ${({ theme }) => theme.colors.background.secondary};
   border-radius: ${({ theme }) => theme.effects.borderRadius.md};
+  box-shadow: ${({ theme }) => theme.effects.boxShadow.sm};
+  animation: ${slideIn} 0.5s ease-out;
 `;
 
 const TimelineTitle = styled.h3`
   font-size: ${({ theme }) => theme.typography.fontSize.lg};
   margin-bottom: ${({ theme }) => theme.spacing.md};
   color: ${({ theme }) => theme.colors.text.primary};
-  display: flex;
-  align-items: center;
+`;
+
+const TimelineTable = styled.table`
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: ${({ theme }) => theme.spacing.md};
+  font-size: ${({ theme }) => theme.typography.fontSize.sm};
+`;
+
+const TableHead = styled.thead`
+  background: ${({ theme }) => theme.colors.background.primary};
+  color: ${({ theme }) => theme.colors.text.secondary};
   
-  &:before {
-    content: '';
-    display: inline-block;
-    width: 12px;
-    height: 12px;
-    background-color: #2196F3;
-    border-radius: 50%;
-    margin-right: ${({ theme }) => theme.spacing.sm};
+  th {
+    padding: ${({ theme }) => theme.spacing.sm};
+    text-align: left;
+    border-bottom: 2px solid ${({ theme }) => theme.colors.border};
+    font-weight: ${({ theme }) => theme.typography.fontWeight.medium};
   }
 `;
 
-const Timeline = styled.div`
+const TableRow = styled.tr<{ isCallback?: boolean; highlighted?: boolean }>`
+  &:nth-child(even) {
+    background: ${({ theme }) => theme.colors.background.glass};
+  }
+  
+  ${({ isCallback }) => isCallback && css`
+    background: rgba(240, 240, 255, 0.3) !important;
+    font-style: italic;
+  `}
+  
+  ${({ highlighted }) => highlighted && css`
+    animation: ${pulseHighlight} 2s infinite;
+  `}
+
+  animation: ${slideIn} 0.5s ease-out;
+  animation-fill-mode: both;
+  animation-delay: ${props => props.style?.animationDelay || '0s'};
+`;
+
+const TableCell = styled.td`
+  padding: ${({ theme }) => theme.spacing.sm};
+  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
+`;
+
+const TimeBar = styled.div<{ percentage: number; status: string }>`
+  height: 20px;
+  background: ${({ status }) => status === 'completed' ? 
+    'linear-gradient(to right, #4CAF50, #8BC34A)' : 
+    'linear-gradient(to right, #FFC107, #FFEB3B)'};
+  border-radius: ${({ theme }) => theme.effects.borderRadius.sm};
+  width: ${({ percentage }) => `${percentage}%`};
   position: relative;
-  height: 80px;
-  margin: ${({ theme }) => theme.spacing.md} 0;
+  overflow: hidden;
+  animation: ${growWidth} 1s ease-out;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  
+  &:after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    background: linear-gradient(
+      to right,
+      rgba(255, 255, 255, 0.2),
+      rgba(255, 255, 255, 0.3),
+      rgba(255, 255, 255, 0.1)
+    );
+    ${({ status }) => status === 'running' && css`
+      animation: ${pulseHighlight} 2s infinite;
+    `}
+  }
+`;
+
+const TimelineBarContainer = styled.div`
+  width: 100%;
   background: ${({ theme }) => theme.colors.background.glass};
-  border-radius: ${({ theme }) => theme.effects.borderRadius.md};
-  padding: ${({ theme }) => theme.spacing.md};
-  display: flex;
-  align-items: center;
+  border-radius: ${({ theme }) => theme.effects.borderRadius.sm};
+  overflow: hidden;
 `;
 
-const TimeLine = styled.div`
-  position: absolute;
-  height: 3px;
-  left: 0;
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  background: ${({ theme }) => theme.colors.border};
-`;
-
-const TimePoint = styled.div<{left: string}>`
-  position: absolute;
-  left: ${props => props.left};
-  top: 50%;
-  transform: translateY(-50%);
-  width: 12px;
-  height: 12px;
-  background: #4CAF50;
-  border-radius: 50%;
-  z-index: 1;
-`;
-
-const TimeLabel = styled.div<{left: string, position: 'top' | 'bottom'}>`
-  position: absolute;
-  left: ${props => props.left};
-  ${props => props.position === 'top' ? 'top: 10px;' : 'bottom: 10px;'}
-  transform: translateX(-50%);
-  font-size: 12px;
-  color: ${({ theme }) => theme.colors.text.secondary};
+const TimingBadge = styled.span<{ status: string }>`
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-size: 0.8em;
+  color: white;
+  background: ${({ status }) => status === 'completed' ? '#4CAF50' : '#FFC107'};
+  margin-left: ${({ theme }) => theme.spacing.xs};
   white-space: nowrap;
 `;
 
-const EventContainer = styled.div<{left: string}>`
-  position: absolute;
-  left: ${props => props.left};
-  top: 0;
-  bottom: 0;
+const TimelineLegend = styled.div`
   display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  transform: translateX(-50%);
-`;
-
-const EventPoint = styled.div<{type: 'start' | 'end'}>`
-  width: 16px;
-  height: 16px;
-  background: ${props => props.type === 'start' ? '#4CAF50' : '#F44336'};
-  border-radius: 50%;
-  margin-bottom: 4px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-`;
-
-const EventLabel = styled.div`
-  font-size: 12px;
-  color: ${({ theme }) => theme.colors.text.primary};
-  font-weight: ${({ theme }) => theme.typography.fontWeight.medium};
-`;
-
-const ExecutionStats = styled.div`
+  gap: ${({ theme }) => theme.spacing.md};
   margin-top: ${({ theme }) => theme.spacing.md};
-  padding: ${({ theme }) => theme.spacing.md};
-  background: ${({ theme }) => theme.colors.background.glass};
-  border-radius: ${({ theme }) => theme.effects.borderRadius.md};
-  display: flex;
-  justify-content: space-around;
-`;
-
-const StatItem = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-`;
-
-const StatValue = styled.div`
-  font-size: ${({ theme }) => theme.typography.fontSize.lg};
-  font-weight: ${({ theme }) => theme.typography.fontWeight.bold};
-  color: ${({ theme }) => theme.colors.text.primary};
-`;
-
-const StatLabel = styled.div`
   font-size: ${({ theme }) => theme.typography.fontSize.sm};
   color: ${({ theme }) => theme.colors.text.secondary};
-  margin-top: ${({ theme }) => theme.spacing.xs};
 `;
 
-interface RuntimeTimelineProps {
-  node: RuntimeProcessNode;
+const LegendItem = styled.div`
+  display: flex;
+  align-items: center;
+  gap: ${({ theme }) => theme.spacing.xs};
+`;
+
+const LegendColor = styled.span<{ color: string }>`
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  background: ${({ color }) => color};
+  border-radius: 50%;
+`;
+
+// Helper to format time in ms to readable format
+const formatTime = (ms: number): string => {
+  if (ms < 1000) return `${ms}ms`;
+  return `${(ms / 1000).toFixed(2)}s`;
+};
+
+// Function to flatten the node tree into a list
+const flattenNodes = (node: RuntimeProcessNode): RuntimeProcessNode[] => {
+  if (!node) return [];
+  const result: RuntimeProcessNode[] = [node];
+  
+  if (node.children?.length) {
+    node.children.forEach(child => {
+      result.push(...flattenNodes(child));
+    });
+  }
+  
+  return result;
+};
+
+// Calculate the timeline scale
+const calculateTimeRange = (nodes: RuntimeProcessNode[]): { min: number; max: number } => {
+  if (!nodes.length) return { min: 0, max: 1000 };
+  
+  let min = Infinity;
+  let max = -Infinity;
+  
+  nodes.forEach(node => {
+    if (node.startTime < min) min = node.startTime;
+    if (node.endTime && node.endTime > max) max = node.endTime;
+    if (!node.endTime && node.startTime > max) max = node.startTime + 1000; // Estimate for running functions
+  });
+  
+  // Add some padding
+  const padding = (max - min) * 0.1;
+  return { min: min - padding, max: max + padding };
+};
+
+interface TimelineProps {
+  root: RuntimeProcessNode | null;
 }
 
-export const RuntimeTimeline: React.FC<RuntimeTimelineProps> = ({ node }) => {
-  // Calculate execution time in ms
-  const executionTime = node.endTime && node.startTime 
-    ? node.endTime - node.startTime 
-    : 0;
+export const RuntimeTimeline: React.FC<TimelineProps> = ({ root }) => {
+  if (!root) {
+    return null;
+  }
   
-  // For a single event, we'll place start at 20% and end at 80%
-  const startPosition = "20%";
-  const endPosition = "80%";
+  const nodes = flattenNodes(root);
+  const timeRange = calculateTimeRange(nodes);
+  
+  // Sort nodes by start time
+  nodes.sort((a, b) => a.startTime - b.startTime);
+  
+  const totalTimespan = timeRange.max - timeRange.min;
   
   return (
     <TimelineContainer>
       <TimelineTitle>Execution Timeline</TimelineTitle>
-      <Timeline>
-        <TimeLine />
-        <EventContainer left={startPosition}>
-          <EventPoint type="start" />
-          <EventLabel>Start</EventLabel>
-        </EventContainer>
-        <EventContainer left={endPosition}>
-          <EventPoint type="end" />
-          <EventLabel>End</EventLabel>
-        </EventContainer>
-        <TimeLabel left={startPosition} position="bottom">
-          {node.startTime ? new Date(node.startTime).toLocaleTimeString() : "--:--:--"}
-        </TimeLabel>
-        <TimeLabel left={endPosition} position="bottom">
-          {node.endTime ? new Date(node.endTime).toLocaleTimeString() : "--:--:--"}
-        </TimeLabel>
-      </Timeline>
       
-      <ExecutionStats>
-        <StatItem>
-          <StatValue>{node.name}()</StatValue>
-          <StatLabel>Function Name</StatLabel>
-        </StatItem>
-        <StatItem>
-          <StatValue>{executionTime} ms</StatValue>
-          <StatLabel>Execution Time</StatLabel>
-        </StatItem>
-        <StatItem>
-          <StatValue>{node.status}</StatValue>
-          <StatLabel>Status</StatLabel>
-        </StatItem>
-      </ExecutionStats>
+      <TimelineTable>
+        <TableHead>
+          <tr>
+            <th>Function</th>
+            <th>Started At</th>
+            <th>Duration</th>
+            <th>Timeline</th>
+          </tr>
+        </TableHead>
+        <tbody>
+          {nodes.map((node, index) => {
+            const isCallback = node.name.includes('callback') || 
+                               node.name === 'setTimeout' || 
+                               node.name === 'fetchData' ||
+                               node.name.includes('fetch');
+                               
+            const startOffset = node.startTime - timeRange.min;
+            const startPercentage = (startOffset / totalTimespan) * 100;
+            
+            const duration = node.endTime 
+              ? node.endTime - node.startTime 
+              : totalTimespan * 0.1; // Placeholder for running functions
+              
+            const durationPercentage = Math.min((duration / totalTimespan) * 100, 100 - startPercentage);
+            
+            // Check if this is a long-running function
+            const isLongRunning = duration > totalTimespan * 0.3;
+            
+            return (
+              <TableRow 
+                key={node.id} 
+                isCallback={isCallback}
+                highlighted={isLongRunning && node.status === 'running'}
+                style={{ animationDelay: `${index * 0.05}s` }}
+              >
+                <TableCell>
+                  {node.name}
+                  <TimingBadge status={node.status}>
+                    {node.status}
+                  </TimingBadge>
+                </TableCell>
+                <TableCell>
+                  {new Date(node.startTime).toLocaleTimeString([], { hour12: false, 
+                                                                 hour: '2-digit', 
+                                                                 minute: '2-digit', 
+                                                                 second: '2-digit',
+                                                                 fractionalSecondDigits: 3 })}
+                </TableCell>
+                <TableCell>
+                  {node.endTime 
+                    ? formatTime(node.endTime - node.startTime)
+                    : 'Running...'}
+                </TableCell>
+                <TableCell style={{ width: '40%' }}>
+                  <TimelineBarContainer style={{ paddingLeft: `${startPercentage}%` }}>
+                    <TimeBar 
+                      percentage={durationPercentage} 
+                      status={node.status}
+                    />
+                  </TimelineBarContainer>
+                </TableCell>
+              </TableRow>
+            );
+          })}
+        </tbody>
+      </TimelineTable>
+      
+      <TimelineLegend>
+        <LegendItem>
+          <LegendColor color="#4CAF50" />
+          Completed
+        </LegendItem>
+        <LegendItem>
+          <LegendColor color="#FFC107" />
+          Running
+        </LegendItem>
+        <LegendItem>
+          <LegendColor color="rgba(240, 240, 255, 0.3)" />
+          Async Callback
+        </LegendItem>
+      </TimelineLegend>
     </TimelineContainer>
   );
 }; 

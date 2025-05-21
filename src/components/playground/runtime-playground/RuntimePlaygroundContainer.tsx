@@ -8,6 +8,7 @@ import * as Comlink from 'comlink';
 import MermaidDiagram from '../components/MermaidDiagram';
 import codeExamples from './codeExamples';
 import { VisualizationExplainer } from './VisualizationExplainer';
+import { RuntimeProvider } from './context/RuntimeContext';
 
 const Container = styled.div`
   display: flex;
@@ -121,27 +122,28 @@ const ComplexityBadge = styled.span<{ complexity: string }>`
   }};
 `;
 
-const DEFAULT_CODE = `// Example with async/await and callbacks
-async function main() {
-  console.log('Starting...');
-  
-  function nested() {
-    setTimeout(() => {
-      console.log('Timeout in nested');
-    }, 500);
-  }
-  
-  const arrow = () => {
-    console.log('Arrow function');
-  };
-  
-  await new Promise(r => setTimeout(r, 1000));
-  nested();
-  arrow();
-  console.log('Done!');
+const DEFAULT_CODE = `// Nested function call example
+function first() {
+  console.log("First function starting");
+  console.log("First function calling second");
+  second();
+  console.log("First function completed");
 }
 
-main();`;
+function second() {
+  console.log("Second function starting");
+  console.log("Second function calling third");
+  third();
+  console.log("Second function completed");
+}
+
+function third() {
+  console.log("Third function starting");
+  console.log("Third function completed");
+}
+
+// Call the first function to start the chain
+first();`;
 
 const SIMPLE_WRAPPER = `
 // Event emitter setup
@@ -218,7 +220,7 @@ export const RuntimePlaygroundContainer: React.FC = () => {
   const [runCount, setRunCount] = useState(0);
   const [useSimpleWrapper, setUseSimpleWrapper] = useState(false);
   const [selectedExample, setSelectedExample] = useState<string>('');
-  const { root, handleEvent, setRoot, setNodeMap } = useRuntimeProcessEvents();
+  const { root, handleEvent, setRoot, setNodeMap, syncVisualization } = useRuntimeProcessEvents();
 
   // Load code example when selected
   useEffect(() => {
@@ -248,6 +250,22 @@ export const RuntimePlaygroundContainer: React.FC = () => {
       setDebug(d => d + `Message received: ${JSON.stringify(e.data)}\n`);
       console.log('[DEBUG_RECEIVED_MESSAGE]', e.data);
       
+      // Handle special runtime-complete event to force sync
+      if (e.data?.type === 'runtime-complete') {
+        console.log('[DEBUG_RUNTIME_COMPLETE] Runtime execution complete, triggering sync');
+        setDebug(d => d + `[RUNTIME_COMPLETE] Execution completed at ${new Date().toISOString()}\n`);
+        
+        // Trigger sync after a small delay to ensure all events are processed
+        setTimeout(() => {
+          if (syncVisualization) {
+            console.log('[DEBUG_RUNTIME_COMPLETE] Syncing visualization after completion');
+            syncVisualization();
+          }
+        }, 500);
+        
+        return;
+      }
+      
       if (e.data?.type === 'runtime-process-event') {
         const event = e.data.event as RuntimeProcessEvent;
         setDebug(d => d + `[DEBUG_RECEIVED_EVENT] ${JSON.stringify(event)}\n`);
@@ -270,6 +288,17 @@ export const RuntimePlaygroundContainer: React.FC = () => {
         
         handleEvent(event);
         
+        // Check if this is a completion event for the main function
+        if (event.status === 'end' && event.name === 'main') {
+          console.log('[DEBUG_MAIN_COMPLETE] Main function completed, triggering sync in 1s');
+          // Trigger sync after a delay to ensure visualization is updated
+          setTimeout(() => {
+            if (syncVisualization) {
+              syncVisualization();
+            }
+          }, 1000);
+        }
+        
         // Force a re-render to ensure visualization updates
         setTimeout(() => {
           console.log('[DB1] Checking tree state after event:', root);
@@ -278,7 +307,7 @@ export const RuntimePlaygroundContainer: React.FC = () => {
     }
     window.addEventListener('message', onMessage);
     return () => window.removeEventListener('message', onMessage);
-  }, [handleEvent, root]);
+  }, [handleEvent, root, syncVisualization]);
 
   function runCode() {
     setRunCount(c => c + 1);
@@ -350,6 +379,14 @@ export const RuntimePlaygroundContainer: React.FC = () => {
     // Use Comlink to call the worker's executeCode function
     (async () => {
       await workerAPI.executeCode(instrumentedCode);
+      console.log('[DEBUG] Code execution completed, syncing visualization');
+      // Add a slight delay before syncing to ensure all events are processed
+      setTimeout(() => {
+        if (syncVisualization) {
+          console.log('[DEBUG] Forcing visualization sync after code execution');
+          syncVisualization();
+        }
+      }, 500);
       worker.terminate();
     })();
 
@@ -370,13 +407,41 @@ export const RuntimePlaygroundContainer: React.FC = () => {
         // Detailed logging for debugging parent-child relationships
         console.log(`[DB1] Event: ${processEvent.status} ${processEvent.name} (Parent: ${processEvent.parentId || 'none'})`);
         
+        // Handle the event to update visualization
         handleEvent(processEvent);
         setDebug(d => d + `[EVENT] ${processEvent.status} ${processEvent.type} ${processEvent.name} (Parent: ${processEvent.parentId || 'none'})\n`);
+        
+        // Force sync if this is the end of the main function
+        if (processEvent.status === 'end' && processEvent.name === 'main') {
+          console.log('[DEBUG] Main function ended, syncing visualization');
+          setTimeout(() => {
+            if (syncVisualization) {
+              syncVisualization();
+            }
+          }, 100);
+        }
+      } else if (event.data?.type === 'runtime-complete') {
+        console.log('[DEBUG] Runtime complete event received, syncing visualization');
+        setTimeout(() => {
+          if (syncVisualization) {
+            syncVisualization();
+          }
+        }, 100);
       } else if (event.data?.type) {
         const { type, message } = event.data;
         setDebug(d => d + `[WORKER ${type.toUpperCase()}] ${message}\n`);
         if (type === 'log' || type === 'error') {
           setOutput(o => o + message + '\n');
+          
+          // Check if the message contains DEBUG_EVENT_EMISSION 
+          if (message.includes('DEBUG_EVENT_EMISSION')) {
+            console.log('[DEBUG] Found event emission in log:', message);
+          }
+          
+          // Check for function completion to help sync
+          if (message.includes('completed') && root) {
+            console.log('[DEBUG] Detected completion message, checking sync');
+          }
         }
       } else {
         setDebug(d => d + `[WORKER RAW] ${JSON.stringify(event.data)}\n`);
@@ -462,6 +527,7 @@ export const RuntimePlaygroundContainer: React.FC = () => {
         />
         <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
           <RunButton onClick={runCode}>Run Code</RunButton>
+          <button onClick={syncVisualization}>Sync Visualization</button>
           <button onClick={downloadDebugInfo}>Download Debug Info</button>
           <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
             <input 
@@ -479,7 +545,9 @@ export const RuntimePlaygroundContainer: React.FC = () => {
         {currentExample && currentExample.visualizationHint && (
           <VisualizationExplainer hint={currentExample.visualizationHint} />
         )}
-        <RuntimeProcessVisualizer root={root} />
+        <RuntimeProvider root={root} syncVisualization={syncVisualization}>
+          <RuntimeProcessVisualizer root={root} />
+        </RuntimeProvider>
       </VisualizerSection>
     </Container>
   );
