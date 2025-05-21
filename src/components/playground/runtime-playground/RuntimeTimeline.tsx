@@ -4,19 +4,19 @@ import type { RuntimeProcessNode } from './types';
 
 // Animation keyframes
 const slideIn = keyframes`
-  from { transform: translateX(-20px); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
+  from { opacity: 0.9; }
+  to { opacity: 1; }
 `;
 
 const growWidth = keyframes`
-  from { width: 0; }
+  from { width: 10%; }
   to { width: 100%; }
 `;
 
 const pulseHighlight = keyframes`
-  0% { background-color: rgba(255, 255, 200, 0.3); }
-  50% { background-color: rgba(255, 255, 200, 0.7); }
-  100% { background-color: rgba(255, 255, 200, 0.3); }
+  0% { background-color: rgba(255, 255, 200, 0.2); }
+  50% { background-color: rgba(255, 255, 200, 0.5); }
+  100% { background-color: rgba(255, 255, 200, 0.2); }
 `;
 
 const TimelineContainer = styled.div`
@@ -25,7 +25,7 @@ const TimelineContainer = styled.div`
   background: ${({ theme }) => theme.colors.background.secondary};
   border-radius: ${({ theme }) => theme.effects.borderRadius.md};
   box-shadow: ${({ theme }) => theme.effects.boxShadow.sm};
-  animation: ${slideIn} 0.5s ease-out;
+  min-height: 200px;
 `;
 
 const TimelineTitle = styled.h3`
@@ -64,12 +64,8 @@ const TableRow = styled.tr<{ isCallback?: boolean; highlighted?: boolean }>`
   `}
   
   ${({ highlighted }) => highlighted && css`
-    animation: ${pulseHighlight} 2s infinite;
+    background-color: rgba(255, 255, 200, 0.3);
   `}
-
-  animation: ${slideIn} 0.5s ease-out;
-  animation-fill-mode: both;
-  animation-delay: ${props => props.style?.animationDelay || '0s'};
 `;
 
 const TableCell = styled.td`
@@ -86,7 +82,7 @@ const TimeBar = styled.div<{ percentage: number; status: string }>`
   width: ${({ percentage }) => `${percentage}%`};
   position: relative;
   overflow: hidden;
-  animation: ${growWidth} 1s ease-out;
+  transition: width 0.5s ease-out;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   
   &:after {
@@ -102,9 +98,6 @@ const TimeBar = styled.div<{ percentage: number; status: string }>`
       rgba(255, 255, 255, 0.3),
       rgba(255, 255, 255, 0.1)
     );
-    ${({ status }) => status === 'running' && css`
-      animation: ${pulseHighlight} 2s infinite;
-    `}
   }
 `;
 
@@ -239,7 +232,6 @@ export const RuntimeTimeline: React.FC<TimelineProps> = ({ root }) => {
                 key={node.id} 
                 isCallback={isCallback}
                 highlighted={isLongRunning && node.status === 'running'}
-                style={{ animationDelay: `${index * 0.05}s` }}
               >
                 <TableCell>
                   {node.name}

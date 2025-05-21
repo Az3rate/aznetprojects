@@ -242,55 +242,54 @@ function trackFunction(fn, name) {
     }
   };
 }
+
+// Track calls to artificialDelay function
+function artificialDelay(ms = 150) { 
+  const functionId = 'fn-artificialDelay';
+  const parentId = getParentId();
+  
+  // Emit start event
+  emitProcessEvent(functionId, 'artificialDelay', 'function', 'start');
+  console.log('artificialDelay starting with ' + ms + 'ms');
+  
+  const start = Date.now(); 
+  while (Date.now() - start < ms) {}
+  const actualTime = Date.now() - start;
+  
+  // Emit end event
+  console.log('artificialDelay completed after ' + actualTime + 'ms');
+  emitProcessEvent(functionId, 'artificialDelay', 'function', 'end');
+  
+  return ms;
+}
 `;
 
-  // Parse the code using acorn and add instrumentation
   try {
-    // Create a simpler, more reliable tracking approach
+    // Create a wrapper that executes the user's code with our instrumentation
     let transformedCode = `
 ${parentTrackingCode}
 
 // User code wrapped with instrumentation
 try {
-  // Execute the user code within a tracking wrapper
+  // Execute the user code with tracking
   (function trackedExecution() {
-    // Define a custom function wrapper that will ensure all functions are tracked
+    // Define function wrappers and other setup
     function registerFunction(fn, name) {
       return trackFunction(fn, name);
     }
     
-    // Main execution wrapper
-    const main = registerFunction(function main() {
-      
-      // User functions with tracking wrappers
-      const first = registerFunction(function first() {
-        console.log("First function starting");
-        console.log("First function calling second");
-        second();
-        console.log("First function completed");
-      }, "first");
-      
-      const second = registerFunction(function second() {
-        console.log("Second function starting");
-        console.log("Second function calling third");
-        third();
-        console.log("Second function completed");
-      }, "second");
-      
-      const third = registerFunction(function third() {
-        console.log("Third function starting");
-        console.log("Third function completed");
-      }, "third");
-      
-      // Execute the code
-      console.log("Main function starting");
-      first();
-      console.log("Main function completed");
+    // Start execution
+    console.log('[DEBUG_EVENT_EMISSION] Starting instrumented execution');
+    
+    // Run the user's code inside a tracked main function
+    const main = trackFunction(function main() {
+      // USER CODE BEGINS HERE
+      ${code}
+      // USER CODE ENDS HERE
     }, "main");
     
-    // Explicitly call the main function
-    console.log('[DEBUG_EVENT_EMISSION] Starting instrumented execution');
     main();
+    
     console.log('[DEBUG_EVENT_EMISSION] Finished instrumented execution');
   })();
 } catch (error) {
@@ -298,50 +297,25 @@ try {
 }
 `;
 
-    console.log('[DB1] Using predetermined function structure');
+    console.log('[DB1] Using user provided code with instrumentation wrapper');
     return transformedCode;
   } catch (error) {
     console.error('[DB1] Error transforming code:', error);
-    // Return a basic fallback version with manual instrumentation
     return `
 ${parentTrackingCode}
 
-// Error during code transformation, using simpler approach
+// Failed to instrument code, using simple wrapper
 try {
-  // Main wrapper
-  const mainFunction = trackFunction(function main() {
-    console.log("Main function starting");
-    
-    // Add manual tracking for key functions
-    const first = trackFunction(function first() {
-      console.log("First function starting");
-      console.log("First function calling second");
-      second();
-      console.log("First function completed");
-    }, "first");
-    
-    const second = trackFunction(function second() {
-      console.log("Second function starting");
-      console.log("Second function calling third"); 
-      third();
-      console.log("Second function completed");
-    }, "second");
-    
-    const third = trackFunction(function third() {
-      console.log("Third function starting");
-      console.log("Third function completed");
-    }, "third");
-    
-    // Execute the user's original code intention
-    first();
-    
-    console.log("Main function completed");
+  console.log('[DEBUG_EVENT_EMISSION] Starting instrumented execution');
+  
+  // Run the original code
+  const main = trackFunction(function main() {
+    ${code}
   }, "main");
   
-  // Execute with tracking
-  console.log('[DEBUG_EVENT_EMISSION] Starting basic instrumented execution');
-  mainFunction();
-  console.log('[DEBUG_EVENT_EMISSION] Finished basic instrumented execution');
+  main();
+  
+  console.log('[DEBUG_EVENT_EMISSION] Finished instrumented execution');
 } catch (error) {
   console.error('[RUNTIME_ERROR]', error);
 }

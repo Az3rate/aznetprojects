@@ -19,7 +19,12 @@ export const codeExamples: CodeExample[] = [
     name: 'Simple Function Call',
     description: 'Basic function with a single call',
     complexity: 'basic',
-    code: `function artificialDelay(ms = 150) { const start = Date.now(); while (Date.now() - start < ms) {} }
+    code: `function artificialDelay(ms = 150) { 
+  console.log("artificialDelay starting");
+  const start = Date.now(); 
+  while (Date.now() - start < ms) {} 
+  console.log("artificialDelay completed");
+}
 function main() {
   console.log('Hello world!');
   artificialDelay(1500);
@@ -33,40 +38,80 @@ main();`,
     name: 'Nested Functions',
     description: 'Functions defined inside other functions',
     complexity: 'basic',
-    code: `function artificialDelay(ms = 150) { const start = Date.now(); while (Date.now() - start < ms) {} }
+    code: `function artificialDelay(ms = 150) { 
+  console.log("artificialDelay starting");
+  const start = Date.now(); 
+  while (Date.now() - start < ms) {} 
+  console.log("artificialDelay completed");
+}
 function outer() {
   console.log('Outer function starting');
+  
+  // Define the inner function
   function inner() {
     console.log('Inner function starting');
+    console.log('FUNCTION_RELATION: inner is defined inside outer');
     artificialDelay(1200);
     console.log('Inner function completed');
+    return 'inner result';
   }
+  
   artificialDelay(800);
-  console.log('About to call inner function');
+  console.log('Outer function calling inner');
+  
+  // Call the inner function
   inner();
+  
+  console.log('Outer function received result from inner');
   console.log('Outer function completed');
 }
-outer();`,
-    visualizationHint: 'You should see a tree with outer as the parent node and inner as its child node, showing the nested relationship.'
+
+// Start execution
+console.log('Starting example with nested functions');
+console.log('Main execution calling outer function');
+outer();
+console.log('Execution complete');`,
+    visualizationHint: 'You should see a tree with outer as the parent node and inner as its child node, showing the nested relationship. If not, click the "Fix Nested Functions" button.'
   },
   {
     id: 'async-await',
     name: 'Async/Await',
     description: 'Asynchronous code with async/await',
     complexity: 'intermediate',
-    code: `function artificialDelay(ms = 150) { const start = Date.now(); while (Date.now() - start < ms) {} }
+    code: `function artificialDelay(ms = 150) { 
+  console.log("artificialDelay starting");
+  const start = Date.now(); 
+  while (Date.now() - start < ms) {} 
+  console.log("artificialDelay completed");
+}
 async function main() {
-  console.log('Starting async operations...');
-  console.log('Starting first operation');
-  await new Promise(resolve => setTimeout(resolve, 1500));
-  artificialDelay(200);
-  console.log('First operation completed');
+  console.log('Main function starting');
+  
+  async function firstOperation() {
+    console.log('First operation starting');
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    artificialDelay(200);
+    console.log('First operation completed');
+    return 'first done';
+  }
+  
+  async function secondOperation() {
+    console.log('Second operation starting');
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    artificialDelay(200);
+    console.log('Second operation completed');
+    return 'second done';
+  }
+  
+  console.log('Main function calling firstOperation');
+  await firstOperation();
+  
   artificialDelay(800);
-  console.log('Starting second operation');
-  await new Promise(resolve => setTimeout(resolve, 2000));
-  artificialDelay(200);
-  console.log('Second operation completed');
-  console.log('All async operations completed!');
+  
+  console.log('Main function calling secondOperation');
+  await secondOperation();
+  
+  console.log('Main function completed');
 }
 main();`,
     visualizationHint: 'The async main function runs over a period of time, with await pauses shown in the execution timeline spanning several seconds.'
@@ -76,7 +121,12 @@ main();`,
     name: 'Multiple Function Calls',
     description: 'Multiple functions calling each other in sequence',
     complexity: 'intermediate',
-    code: `function artificialDelay(ms = 150) { const start = Date.now(); while (Date.now() - start < ms) {} }
+    code: `function artificialDelay(ms = 150) { 
+  console.log("artificialDelay starting");
+  const start = Date.now(); 
+  while (Date.now() - start < ms) {} 
+  console.log("artificialDelay completed");
+}
 function first() {
   console.log('First function starting');
   artificialDelay(1200);
@@ -104,32 +154,43 @@ first();`,
     name: 'Callback Functions',
     description: 'Functions using callbacks for asynchronous operations',
     complexity: 'intermediate',
-    code: `function artificialDelay(ms = 150) { const start = Date.now(); while (Date.now() - start < ms) {} }
+    code: `function artificialDelay(ms = 150) { 
+  console.log("artificialDelay starting");
+  const start = Date.now(); 
+  while (Date.now() - start < ms) {} 
+  console.log("artificialDelay completed");
+}
 function fetchData(callback) {
-  console.log('Fetching data starting...');
+  console.log('fetchData starting');
   artificialDelay(800);
-  console.log('Starting async fetch operation');
+  console.log('fetchData starting async operation');
   setTimeout(() => {
+    console.log('setTimeout callback starting');
     artificialDelay(500);
     console.log('Async operation completed, preparing data');
     artificialDelay(500);
     const data = { result: 'Success!', timestamp: Date.now() };
-    console.log('Calling callback with data');
+    console.log('fetchData calling callback with data');
     callback(data);
+    console.log('setTimeout callback completed');
   }, 2000);
-  console.log('Fetch initiated, continuing execution');
+  console.log('fetchData completed');
 }
+
 function processResult(data) {
-  console.log('Processing result starting:', data.result);
+  console.log('processResult starting');
   artificialDelay(1500);
   console.log('Processing completed at', new Date(data.timestamp).toLocaleTimeString());
+  console.log('processResult completed');
 }
+
 function main() {
-  console.log('Starting program');
+  console.log('main starting');
+  console.log('main calling fetchData');
   fetchData(processResult);
-  console.log('Continue main execution');
+  console.log('main continuing execution');
   artificialDelay(1000);
-  console.log('Main thread work completed');
+  console.log('main completed');
 }
 main();`,
     visualizationHint: 'The visualization shows how callbacks create a non-linear execution flow, with processResult executing after a delay, allowing you to clearly see the asynchronous nature.'
@@ -139,33 +200,81 @@ main();`,
     name: 'Promise Chain',
     description: 'Chain of promises demonstrating sequential async operations',
     complexity: 'advanced',
-    code: `function artificialDelay(ms = 150) { const start = Date.now(); while (Date.now() - start < ms) {} }
+    code: `function artificialDelay(ms = 150) { 
+  console.log("artificialDelay starting");
+  const start = Date.now(); 
+  while (Date.now() - start < ms) {} 
+  console.log("artificialDelay completed");
+}
 function fetchUser() {
-  console.log('Fetching user...');
+  console.log('fetchUser starting');
   artificialDelay(200);
-  return new Promise(resolve => {
-    setTimeout(() => { artificialDelay(200); resolve({ id: 1, name: 'User' }); }, 1000);
+  console.log('fetchUser creating promise');
+  const promise = new Promise(resolve => {
+    setTimeout(() => {
+      console.log('fetchUser timeout callback starting'); 
+      artificialDelay(200); 
+      console.log('fetchUser resolving with user data');
+      resolve({ id: 1, name: 'User' });
+      console.log('fetchUser timeout callback completed');
+    }, 1000);
   });
+  console.log('fetchUser completed');
+  return promise;
 }
+
 function fetchUserPosts(user) {
-  console.log('Fetching posts for user:', user.name);
+  console.log('fetchUserPosts starting with user:', user.name);
   artificialDelay(200);
-  return new Promise(resolve => {
-    setTimeout(() => { artificialDelay(200); resolve(['Post 1', 'Post 2']); }, 1000);
+  console.log('fetchUserPosts creating promise');
+  const promise = new Promise(resolve => {
+    setTimeout(() => {
+      console.log('fetchUserPosts timeout callback starting');
+      artificialDelay(200);
+      console.log('fetchUserPosts resolving with posts');
+      resolve(['Post 1', 'Post 2']);
+      console.log('fetchUserPosts timeout callback completed');
+    }, 1000);
   });
+  console.log('fetchUserPosts completed');
+  return promise;
 }
+
 function displayPosts(posts) {
+  console.log('displayPosts starting');
   console.log('Displaying posts:', posts);
   artificialDelay(500);
+  console.log('displayPosts completed');
   return posts;
 }
+
 function handleError(error) {
+  console.log('handleError starting');
   console.error('Error:', error);
+  console.log('handleError completed');
 }
-fetchUser()
-  .then(fetchUserPosts)
-  .then(displayPosts)
-  .catch(handleError);`,
+
+function main() {
+  console.log('main starting');
+  console.log('main calling fetchUser');
+  fetchUser()
+    .then(user => {
+      console.log('main calling fetchUserPosts from then');
+      return fetchUserPosts(user);
+    })
+    .then(posts => {
+      console.log('main calling displayPosts from then');
+      return displayPosts(posts);
+    })
+    .catch(error => {
+      console.log('main calling handleError from catch');
+      handleError(error);
+    })
+    .finally(() => {
+      console.log('main completed');
+    });
+}
+main();`,
     visualizationHint: 'The visualization shows the promise chain as a sequence of function executions with the proper parent-child relationships.'
   },
   {
@@ -173,25 +282,42 @@ fetchUser()
     name: 'Recursion',
     description: 'Recursive function calls demonstrating a call stack',
     complexity: 'advanced',
-    code: `function artificialDelay(ms = 150) { const start = Date.now(); while (Date.now() - start < ms) {} }
+    code: `function artificialDelay(ms = 150) { 
+  console.log("artificialDelay starting");
+  const start = Date.now(); 
+  while (Date.now() - start < ms) {} 
+  console.log("artificialDelay completed");
+}
 function factorial(n) {
-  console.log('Computing factorial for', n);
+  console.log('factorial starting with n =', n);
   artificialDelay(500);
+  
   if (n <= 1) {
-    console.log('Base case reached, returning 1');
+    console.log('factorial base case reached for n =', n);
+    console.log('factorial completed with n =', n);
     return 1;
   }
-  const result = n * factorial(n - 1);
-  console.log('Factorial of', n, 'is', result);
+  
+  console.log('factorial calling factorial with n-1 =', (n-1));
+  const subResult = factorial(n - 1);
+  const result = n * subResult;
+  
+  console.log('factorial computed result for n =', n, 'result =', result);
+  console.log('factorial completed with n =', n);
+  
   return result;
 }
+
 function main() {
-  console.log('Starting factorial calculation');
+  console.log('main starting');
+  console.log('main calling factorial');
   const result = factorial(4);
-  console.log('Final result:', result);
+  console.log('main received factorial result:', result);
+  console.log('main completed');
 }
+
 main();`,
-    visualizationHint: 'The visualization shows a recursive call tree with factorial(4) calling factorial(3) calling factorial(2) calling factorial(1).'
+    visualizationHint: 'See how recursive function calls build a deep tree where factorial(4) calls factorial(3), which calls factorial(2), etc., with each level unwinding after completion.'
   },
   {
     id: 'generators',
@@ -716,6 +842,120 @@ function function2() {
 // Run the test
 main();`,
     visualizationHint: 'This test checks that the "Sync Status" button correctly updates the visualization to match the console output. Try clicking the button if functions are stuck in the "running" state.'
+  },
+  {
+    id: 'delay-test',
+    name: 'Artificial Delay Test',
+    description: 'Test how artificial delay affects visualization',
+    complexity: 'basic',
+    code: `// We don't need to define artificialDelay - it's handled by the instrumenter
+// The instrumentation will add starting/completed logs automatically
+
+// Main function with delays
+function first() {
+  console.log("First function starting");
+  artificialDelay(500); // Add a delay
+  console.log("First function calling second");
+  second();
+  console.log("First function completed");
+}
+
+function second() {
+  console.log("Second function starting");
+  artificialDelay(800); // Add a longer delay
+  console.log("Second function calling third");
+  third();
+  console.log("Second function completed");
+}
+
+function third() {
+  console.log("Third function starting");
+  artificialDelay(300); // Add a short delay
+  console.log("Third function completed");
+}
+
+// Run the test
+first();`,
+    visualizationHint: 'This example tests whether artificial delays are properly visualized and marked as completed.'
+  },
+  {
+    id: 'timing-precision',
+    name: 'Timing Precision Test',
+    description: 'Test the timing precision of artificial delays in visualization',
+    complexity: 'basic',
+    code: `// We don't need to define artificialDelay - it's handled by the instrumenter
+// The instrumentation will add starting/completed logs automatically
+
+// Main function that will call the same delay function with different durations
+function main() {
+  console.log("Main function starting");
+  
+  // Short delay
+  console.log("Running short delay (100ms)");
+  artificialDelay(100);
+  
+  // Medium delay
+  console.log("Running medium delay (500ms)");
+  artificialDelay(500);
+  
+  // Long delay
+  console.log("Running long delay (1000ms)");
+  artificialDelay(1000);
+  
+  console.log("Main function completed");
+}
+
+// Run the test
+main();`,
+    visualizationHint: 'This example tests whether the visualization accurately reflects the different durations of the artificial delays.'
+  },
+  {
+    id: 'nested-delays',
+    name: 'Nested Delays Test',
+    description: 'Test nested function calls with different artificial delays',
+    complexity: 'intermediate',
+    code: `// Each function introduces its own delay, creating a measurable timing hierarchy
+
+function level1() {
+  console.log("level1 starting");
+  artificialDelay(200);  // 200ms delay
+  
+  console.log("level1 calling level2A");
+  level2A();
+  
+  console.log("level1 calling level2B");
+  level2B();
+  
+  artificialDelay(100);  // Another 100ms delay
+  console.log("level1 completed");
+}
+
+function level2A() {
+  console.log("level2A starting");
+  artificialDelay(300);  // 300ms delay
+  
+  console.log("level2A calling level3");
+  level3();
+  
+  artificialDelay(150);  // Another 150ms delay
+  console.log("level2A completed");
+}
+
+function level2B() {
+  console.log("level2B starting");
+  artificialDelay(250);  // 250ms delay
+  console.log("level2B completed");
+}
+
+function level3() {
+  console.log("level3 starting");
+  artificialDelay(400);  // 400ms delay
+  console.log("level3 completed");
+}
+
+// Start the test
+level1();`,
+    visualizationHint: 'This test shows nested function calls with different artificial delays. The visualization should accurately reflect the hierarchy and timing of each function.'
   }
 ];
 

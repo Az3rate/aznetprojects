@@ -52,6 +52,16 @@ const RunButton = styled.button`
   }
 `;
 
+const SyncButton = styled(RunButton)`
+  background: ${({ theme }) => theme.colors.primary};
+  margin-left: ${({ theme }) => theme.spacing.sm};
+`;
+
+const ButtonGroup = styled.div`
+  display: flex;
+  margin-bottom: ${({ theme }) => theme.spacing.md};
+`;
+
 const OutputArea = styled.pre`
   background: ${({ theme }) => theme.colors.background.secondary};
   color: ${({ theme }) => theme.colors.text.primary};
@@ -67,6 +77,8 @@ const OutputArea = styled.pre`
 const VisualizerSection = styled.div`
   flex: 1;
   overflow: auto;
+  min-height: 800px;
+  position: relative;
 `;
 
 const DebugOutput = styled.pre`
@@ -212,6 +224,36 @@ main();`;
 interface WorkerAPI {
   executeCode: (code: string) => Promise<void>;
 }
+
+// Create a more prominent SyncButton
+const PromptSyncButton = styled.button`
+  position: absolute;
+  top: ${({ theme }) => theme.spacing.md};
+  right: ${({ theme }) => theme.spacing.md};
+  background: ${({ theme }) => theme.colors.accent};
+  color: white;
+  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
+  border: none;
+  border-radius: ${({ theme }) => theme.effects.borderRadius.sm};
+  font-weight: ${({ theme }) => theme.typography.fontWeight.bold};
+  font-size: ${({ theme }) => theme.typography.fontSize.md};
+  cursor: pointer;
+  z-index: 10;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  display: flex;
+  align-items: center;
+  gap: ${({ theme }) => theme.spacing.xs};
+  
+  &:hover {
+    opacity: 0.9;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
+`;
 
 export const RuntimePlaygroundContainer: React.FC = () => {
   const [code, setCode] = useState(DEFAULT_CODE);
@@ -380,13 +422,13 @@ export const RuntimePlaygroundContainer: React.FC = () => {
     (async () => {
       await workerAPI.executeCode(instrumentedCode);
       console.log('[DEBUG] Code execution completed, syncing visualization');
-      // Add a slight delay before syncing to ensure all events are processed
+      // Add a longer delay before syncing to ensure all events are processed
       setTimeout(() => {
         if (syncVisualization) {
           console.log('[DEBUG] Forcing visualization sync after code execution');
           syncVisualization();
         }
-      }, 500);
+      }, 2000); // Increased timeout to ensure console output is fully available
       worker.terminate();
     })();
 
@@ -418,7 +460,7 @@ export const RuntimePlaygroundContainer: React.FC = () => {
             if (syncVisualization) {
               syncVisualization();
             }
-          }, 100);
+          }, 500); // Increased timeout to ensure console output is available
         }
       } else if (event.data?.type === 'runtime-complete') {
         console.log('[DEBUG] Runtime complete event received, syncing visualization');
@@ -426,7 +468,7 @@ export const RuntimePlaygroundContainer: React.FC = () => {
           if (syncVisualization) {
             syncVisualization();
           }
-        }, 100);
+        }, 500); // Increased timeout to ensure console output is available
       } else if (event.data?.type) {
         const { type, message } = event.data;
         setDebug(d => d + `[WORKER ${type.toUpperCase()}] ${message}\n`);
@@ -439,8 +481,8 @@ export const RuntimePlaygroundContainer: React.FC = () => {
           }
           
           // Check for function completion to help sync
-          if (message.includes('completed') && root) {
-            console.log('[DEBUG] Detected completion message, checking sync');
+          if (message.includes('completed') && message.includes('function')) {
+            console.log('[DEBUG] Detected completion message, may need to sync visualization');
           }
         }
       } else {
@@ -526,8 +568,12 @@ export const RuntimePlaygroundContainer: React.FC = () => {
           spellCheck={false}
         />
         <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
-          <RunButton onClick={runCode}>Run Code</RunButton>
-          <button onClick={syncVisualization}>Sync Visualization</button>
+          <ButtonGroup>
+            <RunButton onClick={runCode}>Run Code</RunButton>
+            <SyncButton onClick={() => syncVisualization && syncVisualization()}>
+              Sync Visualization
+            </SyncButton>
+          </ButtonGroup>
           <button onClick={downloadDebugInfo}>Download Debug Info</button>
           <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
             <input 
@@ -545,6 +591,9 @@ export const RuntimePlaygroundContainer: React.FC = () => {
         {currentExample && currentExample.visualizationHint && (
           <VisualizationExplainer hint={currentExample.visualizationHint} />
         )}
+        <PromptSyncButton onClick={() => syncVisualization && syncVisualization()}>
+          <span>↻</span> Sync Visualization with Console Output
+        </PromptSyncButton>
         <RuntimeProvider root={root} syncVisualization={syncVisualization}>
           <RuntimeProcessVisualizer root={root} />
         </RuntimeProvider>
