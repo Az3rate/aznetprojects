@@ -1,258 +1,455 @@
 import React, { useState } from 'react';
-import styled, { useTheme } from 'styled-components';
+import styled from 'styled-components';
 import { projects } from '../../data/projects';
+import { AiFillStar } from 'react-icons/ai';
 
-const PageContainer = styled.div`
-  min-height: 94vh;
+// Weighted & Anchored Design System - Runtime Playground Style
+// Following the same design principles as Terminal and Runtime Playground
+
+// Base weighted container pattern
+const WeightedContainer = styled.div<{ gridArea?: string }>`
+  position: relative;
+  background: #0a0c10;
+  border: 4px solid #1c2128;
+  box-shadow: 
+    0 0 0 1px #21262d,
+    0 8px 24px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  overflow: hidden;
+  grid-area: ${({ gridArea }) => gridArea || 'auto'};
+`;
+
+// Main page container
+const Container = styled.div`
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: auto 1fr;
+  grid-template-areas:
+    "header"
+    "projects";
+  gap: 24px;
+  padding: 24px;
+  padding-top: 88px; /* Account for floating navigation + optimal breathing room */
+  height: 100vh;
+  max-width: 100vw;
+  overflow: hidden;
+  background: #010409;
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+  box-sizing: border-box;
+`;
+
+// Header Section
+const HeaderSection = styled(WeightedContainer)`
+  grid-area: header;
+  padding: 24px 32px;
+  text-align: center;
+  background: linear-gradient(135deg, #0a0c10, #0d1117);
+`;
+
+const SectionTitle = styled.h1`
+  font-size: 28px;
+  font-weight: 800;
+  color: #e6edf3;
+  font-family: 'SF Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin: 0 0 12px 0;
+  text-shadow: 0 0 20px rgba(88, 166, 255, 0.4);
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: ${({ theme }) => theme.spacing.xl} 0;
-  position: relative;
-  z-index: 1;
+  gap: 16px;
+  
+  svg {
+    width: 28px;
+    height: 28px;
+    color: #ffd700;
+    filter: drop-shadow(0 0 12px rgba(255, 215, 0, 0.6));
+  }
 `;
 
-const Hero = styled.section`
-  width: 100%;
-  max-width: 900px;
-  margin: 0 auto;
-  padding-bottom: ${({ theme }) => theme.spacing.xl};
-  text-align: center;
+const SectionSubtitle = styled.p`
+  font-size: 16px;
+  color: #7d8590;
+  font-family: 'SF Mono', monospace;
+  margin: 0;
+  line-height: 1.5;
+  font-weight: 400;
 `;
 
-const HeroTitle = styled.h1`
-  color: ${({ theme }) => theme.colors.accent};
-  font-size: ${({ theme }) => theme.typography.fontSize.xxl};
-  font-family: ${({ theme }) => theme.typography.fontFamily.monospace};
-  margin-bottom: ${({ theme }) => theme.spacing.md};
-`;
-
-const HeroSubtitle = styled.p`
-  color: ${({ theme }) => theme.colors.text.secondary};
-  font-size: ${({ theme }) => theme.typography.fontSize.lg};
-  margin-bottom: 0;
+// Projects Section
+const ProjectsSection = styled(WeightedContainer)`
+  grid-area: projects;
+  padding: 32px;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
 `;
 
 const ProjectsGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: ${({ theme }) => theme.spacing.xl};
-  width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  gap: 24px;
+  padding: 0;
+  margin: 0;
 `;
 
-const ProjectCard = styled.div`
-  background: ${({ theme }) => theme.colors.background.glass};
-  border: 1.5px solid ${({ theme }) => theme.colors.accent};
-  border-radius: ${({ theme }) => theme.effects.borderRadius.sm};
-  box-shadow: 0 2px 16px 0 ${({ theme }) => theme.colors.background.glassLight};
-  padding: ${({ theme }) => theme.spacing.lg};
+// Project Card using weighted design
+const ProjectCard = styled(WeightedContainer)`
+  padding: 24px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: linear-gradient(135deg, #0a0c10, #0d1117);
+  border: 4px solid #1c2128;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  transition: box-shadow 0.2s, border 0.2s, transform 0.2s;
-  cursor: pointer;
-  min-height: 220px;
+  min-height: 280px;
+  
   &:hover {
-    box-shadow: 0 4px 32px 0 ${({ theme }) => theme.colors.accent}33;
-    border: 2px solid ${({ theme }) => theme.colors.accent};
-    transform: translateY(-4px) scale(1.03);
+    border-color: #238636;
+    transform: translateY(-4px);
+    box-shadow: 
+      0 0 0 1px #21262d,
+      0 12px 32px rgba(0, 0, 0, 0.6),
+      0 0 30px rgba(35, 134, 54, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+  
+  &:active {
+    transform: translateY(-2px);
   }
 `;
 
 const ProjectImage = styled.img`
   width: 100%;
-  max-width: 320px;
-  max-height: 160px;
-  object-fit: contain;
-  border-radius: ${({ theme }) => theme.effects.borderRadius.sm};
-  box-shadow: 0 2px 12px 0 ${({ theme }) => theme.colors.accent}22;
-  margin-bottom: ${({ theme }) => theme.spacing.md};
-  background: ${({ theme }) => theme.colors.background.primary};
+  height: 120px;
+  object-fit: cover;
+  border-radius: 4px;
+  margin-bottom: 16px;
+  border: 2px solid #21262d;
+  background: #0d1117;
+  box-shadow: 
+    0 4px 12px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.02);
 `;
 
 const ProjectName = styled.h2`
-  color: ${({ theme }) => theme.colors.accent};
-  font-size: ${({ theme }) => theme.typography.fontSize.xl};
-  font-family: ${({ theme }) => theme.typography.fontFamily.monospace};
-  margin-bottom: ${({ theme }) => theme.spacing.sm};
+  font-size: 18px;
+  font-weight: 800;
+  color: #58a6ff;
+  font-family: 'SF Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin: 0 0 12px 0;
+  text-shadow: 0 0 10px rgba(88, 166, 255, 0.3);
 `;
 
 const ProjectDescription = styled.p`
-  color: ${({ theme }) => theme.colors.text.primary};
-  font-size: ${({ theme }) => theme.typography.fontSize.base};
-  margin-bottom: ${({ theme }) => theme.spacing.md};
+  font-size: 14px;
+  color: #e6edf3;
+  font-family: 'SF Mono', monospace;
+  line-height: 1.5;
+  margin: 0 0 16px 0;
+  flex: 1;
+  font-weight: 400;
 `;
 
 const ViewButton = styled.button`
-  background: ${({ theme }) => theme.colors.accent};
-  color: #fff;
-  border: none;
-  border-radius: ${({ theme }) => theme.effects.borderRadius.sm};
-  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.lg};
-  font-family: ${({ theme }) => theme.typography.fontFamily.monospace};
-  font-size: ${({ theme }) => theme.typography.fontSize.sm};
-  font-weight: 600;
+  background: linear-gradient(135deg, #238636, #2ea043);
+  color: #ffffff;
+  border: 2px solid #238636;
+  border-radius: 6px;
+  padding: 12px 20px;
   cursor: pointer;
-  transition: background 0.2s;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: 'SF Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: all 0.2s ease;
   margin-top: auto;
+  box-shadow: 
+    0 0 0 1px rgba(0, 0, 0, 0.8),
+    0 2px 4px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    
   &:hover {
-    background: ${({ theme }) => theme.colors.primary};
+    background: linear-gradient(135deg, #2ea043, #34d058);
+    transform: translateY(-1px);
+    box-shadow: 
+      0 0 0 1px rgba(0, 0, 0, 0.8),
+      0 4px 8px rgba(0, 0, 0, 0.4),
+      inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  }
+  
+  &:active {
+    transform: translateY(0);
   }
 `;
 
+// Modal using weighted design
 const ModalOverlay = styled.div`
   position: fixed;
   top: 0;
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(0,0,0,0.7);
+  background: rgba(1, 4, 9, 0.85);
+  backdrop-filter: blur(8px);
   z-index: 10000;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 24px;
+  box-sizing: border-box;
 `;
 
-const ModalContent = styled.div`
-  background: ${({ theme }) => theme.colors.background.glass};
-  border: 2px solid ${({ theme }) => theme.colors.accent};
-  border-radius: ${({ theme }) => theme.effects.borderRadius.md};
-  box-shadow: 0 8px 48px 0 ${({ theme }) => theme.colors.accent}33;
-  padding: ${({ theme }) => theme.spacing.xl};
-  max-width: 700px;
-  width: 90vw;
-  color: ${({ theme }) => theme.colors.text.primary};
-  position: relative;
-  max-height: 80vh;
+const ModalContent = styled(WeightedContainer)`
+  background: linear-gradient(135deg, #0a0c10, #0d1117);
+  padding: 32px;
+  max-width: 800px;
+  width: 100%;
+  max-height: 90vh;
   overflow-y: auto;
+  position: relative;
+  border: 4px solid #238636;
+  box-shadow: 
+    0 0 0 1px #21262d,
+    0 16px 48px rgba(0, 0, 0, 0.7),
+    0 0 40px rgba(35, 134, 54, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
 `;
 
 const CloseButton = styled.button`
   position: absolute;
-  top: ${({ theme }) => theme.spacing.md};
-  right: ${({ theme }) => theme.spacing.md};
-  background: none;
-  border: none;
-  color: ${({ theme }) => theme.colors.text.secondary};
-  font-size: 2rem;
+  top: 16px;
+  right: 16px;
+  background: linear-gradient(135deg, #f85149, #da3633);
+  color: #ffffff;
+  border: 2px solid #da3633;
+  border-radius: 6px;
+  width: 40px;
+  height: 40px;
   cursor: pointer;
+  font-size: 18px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  box-shadow: 
+    0 0 0 1px rgba(0, 0, 0, 0.8),
+    0 2px 4px rgba(0, 0, 0, 0.3);
+    
   &:hover {
-    color: ${({ theme }) => theme.colors.accent};
+    background: linear-gradient(135deg, #ff6b6b, #f85149);
+    transform: translateY(-1px);
+    box-shadow: 
+      0 0 0 1px rgba(0, 0, 0, 0.8),
+      0 4px 8px rgba(0, 0, 0, 0.4);
+  }
+  
+  &:active {
+    transform: translateY(0);
   }
 `;
 
 const ModalTitle = styled.h2`
-  color: ${({ theme }) => theme.colors.accent};
-  font-size: ${({ theme }) => theme.typography.fontSize.xl};
-  font-family: ${({ theme }) => theme.typography.fontFamily.monospace};
-  margin-bottom: ${({ theme }) => theme.spacing.sm};
+  font-size: 24px;
+  font-weight: 800;
+  color: #58a6ff;
+  font-family: 'SF Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin: 0 0 20px 0;
+  text-shadow: 0 0 15px rgba(88, 166, 255, 0.4);
 `;
 
 const ModalSection = styled.div`
-  margin-bottom: ${({ theme }) => theme.spacing.md};
+  margin-bottom: 24px;
+  
+  h3 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #e6edf3;
+    font-family: 'SF Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 0 0 12px 0;
+  }
+  
+  p {
+    font-size: 14px;
+    color: #7d8590;
+    font-family: 'SF Mono', monospace;
+    line-height: 1.6;
+    margin: 0;
+  }
 `;
 
 const ModalList = styled.ul`
-  margin: 0 0 ${({ theme }) => theme.spacing.md} 0;
-  padding-left: 1.2em;
-  color: ${({ theme }) => theme.colors.text.primary};
-`;
-
-const ModalListItem = styled.li`
-  margin-bottom: ${({ theme }) => theme.spacing.xs};
+  margin: 0;
+  padding-left: 20px;
+  
+  li {
+    font-size: 14px;
+    color: #7d8590;
+    font-family: 'SF Mono', monospace;
+    line-height: 1.5;
+    margin-bottom: 8px;
+    
+    &::marker {
+      color: #238636;
+    }
+  }
 `;
 
 const ModalImage = styled.img`
   width: 100%;
-  max-width: 400px;
-  max-height: 220px;
-  object-fit: contain;
-  border-radius: ${({ theme }) => theme.effects.borderRadius.md};
-  box-shadow: 0 4px 24px 0 ${({ theme }) => theme.colors.accent}33;
-  margin-bottom: ${({ theme }) => theme.spacing.lg};
-  background: ${({ theme }) => theme.colors.background.primary};
-  display: block;
-  margin-left: auto;
-  margin-right: auto;
+  max-height: 200px;
+  object-fit: cover;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  border: 2px solid #21262d;
+  background: #0d1117;
+  box-shadow: 
+    0 4px 16px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.02);
+`;
+
+const ExternalLink = styled.a`
+  color: #58a6ff;
+  text-decoration: none;
+  font-family: 'SF Mono', monospace;
+  font-weight: 600;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  
+  &:hover {
+    color: #79c0ff;
+    text-decoration: underline;
+    text-shadow: 0 0 8px rgba(88, 166, 255, 0.4);
+  }
 `;
 
 export const FeaturedProjectsPage: React.FC = () => {
-  const theme = useTheme();
   const featured = projects.filter(p => p.featured);
-  const [selected, setSelected] = useState(null as null | typeof featured[0]);
+  const [selected, setSelected] = useState<typeof featured[0] | null>(null);
 
   return (
-    <PageContainer>
-      <Hero>
-        <HeroTitle>Featured Projects</HeroTitle>
-        <HeroSubtitle>Explore a curated selection of impactful, real-world projects.</HeroSubtitle>
-      </Hero>
-      <ProjectsGrid>
-        {featured.map(project => (
-          <ProjectCard key={project.name}>
-            {project.image && project.image.trim() !== '' && (
-              <ProjectImage src={`/images/${project.image}`} alt={project.name + ' screenshot'} />
-            )}
-            <ProjectName>{project.name}</ProjectName>
-            <ProjectDescription>{project.description}</ProjectDescription>
-            <ViewButton onClick={() => setSelected(project)}>View Details</ViewButton>
-          </ProjectCard>
-        ))}
-      </ProjectsGrid>
+    <Container>
+      <HeaderSection>
+        <SectionTitle>
+          <AiFillStar />
+          Featured Projects
+        </SectionTitle>
+        <SectionSubtitle>
+          Explore a curated selection of impactful, real-world projects showcasing 
+          cutting-edge development practices and innovative solutions.
+        </SectionSubtitle>
+      </HeaderSection>
+
+      <ProjectsSection>
+        <ProjectsGrid>
+          {featured.map(project => (
+            <ProjectCard key={project.name} onClick={() => setSelected(project)}>
+              {project.image && project.image.trim() !== '' && (
+                <ProjectImage 
+                  src={`/images/${project.image}`} 
+                  alt={`${project.name} screenshot`} 
+                />
+              )}
+              <ProjectName>{project.name}</ProjectName>
+              <ProjectDescription>{project.description}</ProjectDescription>
+              <ViewButton>View Details</ViewButton>
+            </ProjectCard>
+          ))}
+        </ProjectsGrid>
+      </ProjectsSection>
+
       {selected && (
         <ModalOverlay onClick={() => setSelected(null)}>
           <ModalContent onClick={e => e.stopPropagation()}>
-            <CloseButton onClick={() => setSelected(null)}>&times;</CloseButton>
+            <CloseButton onClick={() => setSelected(null)}>×</CloseButton>
+            
             {selected.image && selected.image.trim() !== '' && (
-              <ModalImage src={`/images/${selected.image}`} alt={selected.name + ' screenshot'} />
+              <ModalImage 
+                src={`/images/${selected.image}`} 
+                alt={`${selected.name} screenshot`} 
+              />
             )}
+            
             <ModalTitle>{selected.name}</ModalTitle>
-            <ModalSection>{selected.description}</ModalSection>
-            {selected.keyFeatures && (
-              <ModalSection>
-                <strong>Key Features:</strong>
-                <ModalList>
-                  {selected.keyFeatures.map((f, i) => <ModalListItem key={i}>{f}</ModalListItem>)}
-                </ModalList>
-              </ModalSection>
-            )}
-            {selected.techStack && (
-              <ModalSection>
-                <strong>Tech Stack:</strong>
-                <ModalList>
-                  {selected.techStack.map((t, i) => <ModalListItem key={i}>{t.name} {t.version && `(${t.version})`} - {t.description}</ModalListItem>)}
-                </ModalList>
-              </ModalSection>
-            )}
+            
+            <ModalSection>
+              <p>{selected.description}</p>
+            </ModalSection>
+
             {selected.overview && (
               <ModalSection>
-                <strong>Overview:</strong>
-                <div>{selected.overview}</div>
+                <h3>Overview</h3>
+                <p>{selected.overview}</p>
               </ModalSection>
             )}
+
+            {selected.keyFeatures && selected.keyFeatures.length > 0 && (
+              <ModalSection>
+                <h3>Key Features</h3>
+                <ModalList>
+                  {selected.keyFeatures.map((feature, index) => (
+                    <li key={index}>{feature}</li>
+                  ))}
+                </ModalList>
+              </ModalSection>
+            )}
+
+            {selected.techStack && selected.techStack.length > 0 && (
+              <ModalSection>
+                <h3>Tech Stack</h3>
+                <ModalList>
+                  {selected.techStack.map((tech, index) => (
+                    <li key={index}>
+                      <strong>{tech.name}</strong>
+                      {tech.version && ` (${tech.version})`} - {tech.description}
+                    </li>
+                  ))}
+                </ModalList>
+              </ModalSection>
+            )}
+
             {selected.architectureImage && selected.architectureImage.trim() !== '' && (
               <ModalSection>
-                <strong>Architecture Diagram:</strong>
-                <ModalImage src={`/images/${selected.architectureImage}`} alt={selected.name + ' architecture diagram'} />
+                <h3>Architecture Diagram</h3>
+                <ModalImage 
+                  src={`/images/${selected.architectureImage}`} 
+                  alt={`${selected.name} architecture diagram`} 
+                />
               </ModalSection>
             )}
+
             {selected.summary && (
               <ModalSection>
-                <strong>Summary:</strong>
-                <div>{selected.summary}</div>
+                <h3>Summary</h3>
+                <p>{selected.summary}</p>
               </ModalSection>
             )}
+
             {selected.url && (
               <ModalSection>
-                <a href={selected.url} target="_blank" rel="noopener noreferrer" style={{ color: theme.colors.accent, textDecoration: 'underline' }}>View on GitHub</a>
+                <ExternalLink 
+                  href={selected.url} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                >
+                  → View on GitHub
+                </ExternalLink>
               </ModalSection>
             )}
           </ModalContent>
         </ModalOverlay>
       )}
-    </PageContainer>
+    </Container>
   );
 }; 

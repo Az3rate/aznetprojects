@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useCallback } from 'react';
+import React, { useRef, useEffect, useCallback, useState } from 'react';
 import { useTypingSound } from '../../hooks/useTypingSound';
 import { projects } from '../../data/projects';
 import { ProjectDetails } from './ProjectDetails';
@@ -7,27 +7,22 @@ import { FileViewer } from './FileViewer';
 import { Project } from '../../types';
 import type { FileDetails } from '../../types';
 import { TerminalCommands } from '../../services/commands';
+import { VscTerminal, VscFiles } from 'react-icons/vsc';
 import {
   TerminalWrapper,
-  Sidebar,
-  TerminalContent,
+  TerminalHeader,
+  TerminalBody,
+  SectionTitle,
   CommandLine,
   Prompt,
   Input,
   Output,
   CommandInput,
-  CommandOutput,
   SuggestionBox,
   SuggestionItem,
-  ClickableText,
-  CommandSpan,
-  PathSpan,
-  ArgSpan,
-  ErrorSpan,
   DirSpan,
   FileSpan,
   BlinkingCursor,
-  FeaturedSidebar,
   ResizerBar,
   FeaturedHeader,
   FeaturedTitle,
@@ -47,7 +42,6 @@ import {
 import Joyride, { Step } from 'react-joyride';
 import { useBackgroundAudio } from '../../hooks/useBackgroundAudio';
 import { useDirectory } from '../../context/DirectoryContext';
-import { SwirlBackground } from './SwirlBackground';
 import { useTheme } from 'styled-components';
 import { TerminalLayout } from './TerminalLayout';
 import { useTerminalContext } from '../../context/TerminalContext';
@@ -59,22 +53,23 @@ function formatPromptPath(path: string) {
   return '/' + path;
 }
 
-function highlightInput(input: string, knownCommands: string[], lastError: boolean) {
-  if (!input) return <><BlinkingCursor>&#9608;</BlinkingCursor></>;
+function highlightInput(input: string, knownCommands: string[], lastError: boolean, isFocused: boolean = false) {
+  if (!input) return <><BlinkingCursor $isFocused={isFocused}>&#9608;</BlinkingCursor></>;
   const [cmd, ...args] = input.split(' ');
   const isKnown = knownCommands.includes(cmd);
+  
   return (
     <>
-      <CommandSpan>{cmd}</CommandSpan>
+      <span style={{ color: isKnown ? '#00d448' : '#f85149' }}>{cmd}</span>
       {args.map((arg, i) => {
         if (arg.startsWith('/')) {
-          return <PathSpan key={i}> {arg}</PathSpan>;
+          return <span key={i} style={{ color: '#58a6ff' }}> {arg}</span>;
         }
-        return <ArgSpan key={i}> {arg}</ArgSpan>;
+        return <span key={i} style={{ color: '#e6edf3' }}> {arg}</span>;
       })}
-      <BlinkingCursor>&#9608;</BlinkingCursor>
-      {!isKnown && cmd && <ErrorSpan> ← unknown command</ErrorSpan>}
-      {lastError && <ErrorSpan> ← error</ErrorSpan>}
+      <BlinkingCursor $isFocused={isFocused}>&#9608;</BlinkingCursor>
+      {!isKnown && cmd && <span style={{ color: '#f85149', fontStyle: 'italic' }}> ← unknown command</span>}
+      {lastError && <span style={{ color: '#f85149', fontStyle: 'italic' }}> ← error</span>}
     </>
   );
 }
@@ -135,6 +130,10 @@ const TerminalComponent: React.ForwardRefRenderFunction<TerminalRef, TerminalPro
   const isResizing = useRef(false);
   const detailsPanelRef = useRef<HTMLDivElement>(null);
   const dragData = useRef<{right: number, startX: number, startWidth: number} | null>(null);
+  const terminalBodyRef = useRef<HTMLDivElement>(null);
+
+  // Focus state management
+  const [isInputFocused, setIsInputFocused] = useState(false);
 
   const { toggleMute } = useBackgroundAudio(isMuted ? 0 : volume);
 
@@ -144,6 +143,31 @@ const TerminalComponent: React.ForwardRefRenderFunction<TerminalRef, TerminalPro
     'help', 'clear', 'about', 'projects', 'contact', 'ls', 'cd', 'pwd', 'cat', 'echo', 'neofetch', 'exit'
   ];
   const lastStatus = state.history.length > 0 ? state.history[state.history.length - 1].type : 'default';
+
+  // Auto-focus input when user starts typing anywhere
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      // Don't interfere with special keys or when modifiers are pressed
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      
+      // Don't interfere with navigation keys
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Tab', 'Escape', 'F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12'].includes(e.key)) return;
+      
+      // Don't interfere if user is typing in a different input
+      const activeElement = document.activeElement;
+      if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA')) {
+        return;
+      }
+      
+      // Focus the terminal input if it's not already focused
+      if (inputRef.current && document.activeElement !== inputRef.current) {
+        inputRef.current.focus();
+      }
+    };
+
+    document.addEventListener('keydown', handleGlobalKeyDown);
+    return () => document.removeEventListener('keydown', handleGlobalKeyDown);
+  }, []);
 
   useEffect(() => {
     if (inputRef.current) {
@@ -165,6 +189,14 @@ const TerminalComponent: React.ForwardRefRenderFunction<TerminalRef, TerminalPro
     } else {
       setSuggestions([]);
     }
+  };
+
+  const handleInputFocus = () => {
+    setIsInputFocused(true);
+  };
+
+  const handleInputBlur = () => {
+    setIsInputFocused(false);
   };
 
   const handleCommandClick = useCallback(async (command: string) => {
@@ -428,159 +460,177 @@ const TerminalComponent: React.ForwardRefRenderFunction<TerminalRef, TerminalPro
   return (
     <TerminalLayout
       sidebar={
-      <Sidebar data-tour="sidebar">
-        <FileExplorer 
-          onFileClick={handleFileClick} 
-          onDirectoryClick={handleDirectoryClick}
-          currentDirectory={currentDirectory}
-          volume={volume}
-          onVolumeChange={handleVolumeChange}
-          onToggleBackground={handleToggleBackground}
-            isBackgroundMuted={isMuted}
-          onOpenWelcome={onOpenWelcome}
-          fileTree={fileTree}
-        />
-      </Sidebar>
+        <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+          <TerminalHeader>
+            <SectionTitle>
+              <VscFiles />
+              File Explorer
+            </SectionTitle>
+          </TerminalHeader>
+          <TerminalBody style={{ padding: '16px' }} data-tour="sidebar">
+            <FileExplorer 
+              onFileClick={handleFileClick} 
+              onDirectoryClick={handleDirectoryClick}
+              currentDirectory={currentDirectory}
+              volume={volume}
+              onVolumeChange={handleVolumeChange}
+              onToggleBackground={handleToggleBackground}
+              isBackgroundMuted={isMuted}
+              onOpenWelcome={onOpenWelcome}
+              fileTree={fileTree}
+            />
+          </TerminalBody>
+        </div>
       }
       mainContent={
-      <TerminalContent onClick={handleTerminalClick}>
-          <QuickMenuDiv data-tour="quick-menu" />
-        <Joyride
-          steps={tourType === 'recruiter' ? recruiterTourSteps : technicalTourSteps}
-          run={tourOpen}
-          continuous
-            showSkipButton
-            callback={handleTourCallback}
-          styles={{
-            options: {
-                primaryColor: theme.colors.accent,
-              backgroundColor: theme.colors.background.primary,
-              textColor: theme.colors.text.primary,
-              arrowColor: theme.colors.background.primary,
-              }
-          }}
-        />
-        {getVisibleHistory().map((item, index) => (
-          <React.Fragment key={index}>
-            <CommandLine>
-              <Prompt $status={item.type === 'success' ? 'success' : item.type === 'error' ? 'error' : 'default'}>
-                user@aznet:{formatPromptPath(String(item.currentDirectory))}$
-              </Prompt>
-              {item.command}
-            </CommandLine>
-            {typeof item.output === 'object' && item.output !== null && 'projects' in item.output ? (
-              <Output type="info">
-                {(item.output as { projects: Project[] }).projects.map((project: Project) => (
-                  <div key={project.name}>
-                      <ClickableProjectText
-                      onClick={() => handleCommandClick(`cat ${project.name.toLowerCase()}`)}
-                    >
-                      {project.name}
-                      </ClickableProjectText>
-                    {': '}{project.description}
-                  </div>
-                ))}
-              </Output>
-            ) : typeof item.output === 'string' ? (
-              <Output type={item.type === 'project-list' || item.type === 'welcome' || item.type === 'clear' ? 'info' : item.type as 'success' | 'error' | 'info'}>
-                {item.command === 'ls' ? (
-                    <StyledPre>
-                    {item.output.split('\n').map((line, i) => {
-                      const match = line.match(/^([d-])\s+\d+\s+(.+)$/);
-                      if (match) {
-                        const [, type, name] = match;
-                        return (
-                            <OutputRow key={i}>
-                              <OutputTypeSpan>{type}</OutputTypeSpan>
-                              <OutputNameSpan>{line.split(/\s+/)[1]}</OutputNameSpan>
-                            {type === 'd' ? <DirSpan>{name}</DirSpan> : <FileSpan>{name}</FileSpan>}
-                            </OutputRow>
-                        );
-                      }
-                      return <div key={i}>{line}</div>;
-                    })}
-                    </StyledPre>
-                ) : (
-                    <StyledPre>{item.output}</StyledPre>
-                )}
-              </Output>
-            ) : null}
-          </React.Fragment>
-        ))}
-        <CommandInput data-tour="terminal-input">
-          <Prompt $status="default">
-            user@aznet:{formatPromptPath(currentDirectory)}$
-          </Prompt>
-          <div style={{ position: 'relative', flex: 1, minWidth: 0 }}>
+        <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+          <TerminalHeader>
+            <SectionTitle>
+              <VscTerminal />
+              Terminal
+            </SectionTitle>
+          </TerminalHeader>
+          <TerminalBody onClick={handleTerminalClick}>
+            <QuickMenuDiv data-tour="quick-menu" />
+            <Joyride
+              steps={tourType === 'recruiter' ? recruiterTourSteps : technicalTourSteps}
+              run={tourOpen}
+              continuous
+              showSkipButton
+              callback={handleTourCallback}
+              styles={{
+                options: {
+                  primaryColor: '#238636',
+                  backgroundColor: '#0a0c10',
+                  textColor: '#e6edf3',
+                  arrowColor: '#0a0c10',
+                }
+              }}
+            />
+            {getVisibleHistory().map((item, index) => (
+              <React.Fragment key={index}>
+                <CommandLine>
+                  <Prompt $status={item.type === 'success' ? 'success' : item.type === 'error' ? 'error' : 'default'}>
+                    user@aznet:{formatPromptPath(String(item.currentDirectory))}$
+                  </Prompt>
+                  {item.command}
+                </CommandLine>
+                {typeof item.output === 'object' && item.output !== null && 'projects' in item.output ? (
+                  <Output type="info">
+                    {(item.output as { projects: Project[] }).projects.map((project: Project) => (
+                      <div key={project.name}>
+                        <ClickableProjectText
+                          onClick={() => handleCommandClick(`cat ${project.name.toLowerCase()}`)}
+                        >
+                          {project.name}
+                        </ClickableProjectText>
+                        {': '}{project.description}
+                      </div>
+                    ))}
+                  </Output>
+                ) : typeof item.output === 'string' ? (
+                  <Output type={item.type === 'project-list' || item.type === 'welcome' || item.type === 'clear' ? 'info' : item.type as 'success' | 'error' | 'info'}>
+                    {item.command === 'ls' ? (
+                      <StyledPre>
+                        {item.output.split('\n').map((line, i) => {
+                          const match = line.match(/^([d-])\s+\d+\s+(.+)$/);
+                          if (match) {
+                            const [, type, name] = match;
+                            return (
+                              <OutputRow key={i}>
+                                <OutputTypeSpan>{type}</OutputTypeSpan>
+                                <OutputNameSpan>{line.split(/\s+/)[1]}</OutputNameSpan>
+                                {type === 'd' ? <DirSpan>{name}</DirSpan> : <FileSpan>{name}</FileSpan>}
+                              </OutputRow>
+                            );
+                          }
+                          return <div key={i}>{line}</div>;
+                        })}
+                      </StyledPre>
+                    ) : (
+                      <StyledPre>{item.output}</StyledPre>
+                    )}
+                  </Output>
+                ) : null}
+              </React.Fragment>
+            ))}
+          </TerminalBody>
+          <CommandInput $isFocused={isInputFocused} data-tour="terminal-input">
+            <Prompt $status="default" $isFocused={isInputFocused}>
+              user@aznet:{formatPromptPath(currentDirectory)}$
+            </Prompt>
+            <div style={{ position: 'relative', flex: 1, minWidth: 0 }}>
               <HighlightInputSpan>
-              {highlightInput(input, knownCommands, lastStatus === 'error')}
+                {highlightInput(input, knownCommands, lastStatus === 'error', isInputFocused)}
               </HighlightInputSpan>
               <InputOverlay
-              ref={inputRef}
-              value={input}
-              onChange={handleInputChange}
-              onKeyDown={handleKeyDown}
-              placeholder="Type a command..."
-              tabIndex={0}
-              autoFocus
-            />
-          </div>
-          {suggestions.length > 0 && (
-            <SuggestionBox role="list" aria-label="command suggestions">
-              {suggestions.map((suggestion, index) => (
-                <SuggestionItem
-                  key={suggestion}
-                  $isSelected={index === selectedSuggestion}
-                  onClick={() => {
-                    setInput(suggestion);
-                    setSuggestions([]);
-                    setSelectedSuggestion(-1);
-                    inputRef.current?.focus();
-                  }}
-                  role="listitem"
-                  aria-label={suggestion}
-                >
-                  {suggestion}
-                </SuggestionItem>
-              ))}
-            </SuggestionBox>
-          )}
-        </CommandInput>
-        <div ref={endOfTerminalRef} />
-      </TerminalContent>
+                ref={inputRef}
+                value={input}
+                onChange={handleInputChange}
+                onFocus={handleInputFocus}
+                onBlur={handleInputBlur}
+                onKeyDown={handleKeyDown}
+                placeholder="Type a command..."
+                tabIndex={0}
+                autoFocus
+              />
+            </div>
+            {suggestions.length > 0 && (
+              <SuggestionBox role="list" aria-label="command suggestions">
+                {suggestions.map((suggestion, index) => (
+                  <SuggestionItem
+                    key={suggestion}
+                    $isSelected={index === selectedSuggestion}
+                    onClick={() => {
+                      setInput(suggestion);
+                      setSuggestions([]);
+                      setSelectedSuggestion(-1);
+                      inputRef.current?.focus();
+                    }}
+                    role="listitem"
+                    aria-label={suggestion}
+                  >
+                    {suggestion}
+                  </SuggestionItem>
+                ))}
+              </SuggestionBox>
+            )}
+          </CommandInput>
+          <div ref={endOfTerminalRef} />
+        </div>
       }
       detailsPanel={state.isDetailsPanelOpen ? (
-        <>
-        <ResizerBar
-          ref={resizerRef}
-          onMouseDown={e => {
-            e.preventDefault();
-            isResizing.current = true;
-            if (detailsPanelRef.current) {
-              const rect = detailsPanelRef.current.getBoundingClientRect();
-              dragData.current = {
-                right: rect.right,
-                startX: e.clientX,
-                startWidth: rect.width
-              };
-            }
-            document.body.style.cursor = 'ew-resize';
-          }}
-        />
-        {state.selectedProject && (
-          <ProjectDetails
-            project={state.selectedProject}
-            onClose={closeDetailsPanel}
+        <div style={{ position: 'relative', height: '100%' }}>
+          <ResizerBar
+            ref={resizerRef}
+            onMouseDown={e => {
+              e.preventDefault();
+              isResizing.current = true;
+              if (detailsPanelRef.current) {
+                const rect = detailsPanelRef.current.getBoundingClientRect();
+                dragData.current = {
+                  right: rect.right,
+                  startX: e.clientX,
+                  startWidth: rect.width
+                };
+              }
+              document.body.style.cursor = 'ew-resize';
+            }}
           />
-        )}
-        {state.selectedFile && (
-          <FileViewer
-            fileName={state.selectedFile.fileName}
-            content={state.selectedFile.content}
-            onClose={closeDetailsPanel}
-          />
-        )}
-        </>
+          {state.selectedProject && (
+            <ProjectDetails
+              project={state.selectedProject}
+              onClose={closeDetailsPanel}
+            />
+          )}
+          {state.selectedFile && (
+            <FileViewer
+              fileName={state.selectedFile.fileName}
+              content={state.selectedFile.content}
+              onClose={closeDetailsPanel}
+            />
+          )}
+        </div>
       ) : null}
       isDetailsOpen={state.isDetailsPanelOpen}
       detailsWidth={detailsPanelWidth}

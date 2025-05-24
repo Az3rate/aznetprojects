@@ -1,63 +1,69 @@
 import React from 'react';
 import styled from 'styled-components';
 
+// Weighted & Anchored Design System - Runtime Playground Style
 const TerminalContainer = styled.div<{ $detailsOpen: boolean; $detailsWidth: number }>`
   display: grid;
   grid-template-columns: 264px 1fr ${({ $detailsOpen, $detailsWidth }) => $detailsOpen ? `${$detailsWidth}px` : '0px'};
-  gap: ${({ theme }) => theme.spacing.lg};
-  height: 100%;
-  min-height: 0;
-  width: 100%;
-  background: transparent;
-  z-index: 1;
+  grid-template-rows: 1fr;
+  grid-template-areas:
+    "featured-sidebar main-content details-panel";
+  gap: 24px;
+  padding: 24px;
+  padding-top: 88px; /* Account for floating navigation + optimal breathing room */
+  height: 100vh;
+  max-width: 100vw;
+  overflow: hidden;
+  background: #010409;
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
   transition: grid-template-columns 0.3s ease;
-`;
-
-const FeaturedSidebar = styled.div`
-  height: 100%;
-  min-height: 0;
-  overflow-y: auto;
-  border-right: 1px solid ${({ theme }) => theme.colors.border};
-  backdrop-filter: blur(${({ theme }) => theme.effects.blur.md});
-  flex-shrink: 0;
-  padding: ${({ theme }) => theme.spacing.lg};
-  border-radius: 0;
-`;
-
-const Sidebar = styled.div`
-  height: 100%;
-  min-height: 0;
-  min-width: 0;
-  overflow-y: auto;
-  backdrop-filter: blur(${({ theme }) => theme.effects.blur.md});
-  flex-shrink: 0;
-  border-radius: 0;
   box-sizing: border-box;
 `;
 
-const MainContent = styled.div`
-  height: 100%;
-  min-height: 0;
-  overflow-y: auto;
-  padding: ${({ theme }) => theme.spacing.xl};
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  backdrop-filter: blur(${({ theme }) => theme.effects.blur.md});
-  gap: ${({ theme }) => theme.spacing.xs};
-  border-radius: 0;
+// Base weighted container pattern
+const WeightedContainer = styled.div`
+  position: relative;
+  background: #0a0c10;
+  border: 4px solid #1c2128;
+  box-shadow: 
+    0 0 0 1px #21262d,
+    0 8px 24px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  overflow: hidden;
 `;
 
-const DetailsPanel = styled.div`
-  height: 100%;
+const FeaturedSidebar = styled(WeightedContainer)`
+  grid-area: featured-sidebar;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   min-height: 0;
-  overflow-y: auto;
-  border-left: 1px solid ${({ theme }) => theme.colors.border};
-  backdrop-filter: blur(${({ theme }) => theme.effects.blur.md});
-  padding: ${({ theme }) => theme.spacing.xl};
-  border-radius: 0;
-  transition: width 0.3s ease, opacity 0.3s ease;
-  width: 100%;
+`;
+
+const Sidebar = styled(WeightedContainer)`
+  grid-area: main-content;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+`;
+
+const MainContent = styled(WeightedContainer)`
+  grid-area: main-content;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+`;
+
+const DetailsPanel = styled(WeightedContainer)`
+  grid-area: details-panel;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+  transition: opacity 0.3s ease;
 `;
 
 interface TerminalLayoutProps {
@@ -77,11 +83,11 @@ export const TerminalLayout: React.FC<TerminalLayoutProps> = ({
 }) => {
   return (
     <TerminalContainer $detailsOpen={!!detailsPanel && isDetailsOpen} $detailsWidth={detailsWidth}>
-      <Sidebar>{sidebar}</Sidebar>
+      <FeaturedSidebar>{sidebar}</FeaturedSidebar>
       <MainContent>{mainContent}</MainContent>
-      {detailsPanel && isDetailsOpen ? (
+      {detailsPanel && isDetailsOpen && (
         <DetailsPanel>{detailsPanel}</DetailsPanel>
-      ) : null}
+      )}
     </TerminalContainer>
   );
 }; 

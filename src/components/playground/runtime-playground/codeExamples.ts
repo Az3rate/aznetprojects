@@ -2280,6 +2280,278 @@ async function main() {
 
 main();`,
     visualizationHint: 'Tests chaotic async patterns with random timings, competing operations, recursive async calls, and error handling that could break the visualization tracking.'
+  },
+
+  // Import the extreme chaos test
+  {
+    id: 'mega-chaos-ultimate',
+    name: '💀 MEGA CHAOS: The Ultimate Parser Destroyer',
+    description: 'Every possible JavaScript chaos pattern combined into one apocalyptic test - EXTREME WARNING',
+    complexity: 'expert',
+    code: `function artificialDelay(ms = 50) { 
+  const start = Date.now(); 
+  while (Date.now() - start < ms) {} 
+}
+
+// 🔥 CHAOS LEVEL 1: Dynamic Code Generation Hell
+function dynamicCodeChaos() {
+  console.log('🔥 Starting dynamic code generation chaos...');
+  artificialDelay(100);
+  
+  // Create functions with eval (parser nightmare)
+  try {
+    eval(\`
+      function evalCreatedFunction() {
+        console.log('💀 This function was created by eval');
+        artificialDelay(25);
+        return 'eval-result';
+      }
+    \`);
+    
+    // Call the eval'd function if it exists
+    if (typeof evalCreatedFunction !== 'undefined') {
+      evalCreatedFunction();
+    }
+  } catch (e) {
+    console.log('💀 Eval failed (expected):', e.message);
+  }
+  
+  // Function constructor madness
+  const FunctionConstructor = Function;
+  const dynamicFunc = new FunctionConstructor('x', 'y', \`
+    console.log('💀 Function constructor created me:', x, y);
+    artificialDelay(25);
+    return x + y;
+  \`);
+  
+  console.log('💀 Dynamic function result:', dynamicFunc(5, 10));
+  
+  // Template literal function generation
+  const funcTemplate = (name) => \`
+    function \${name}() {
+      console.log('💀 Template generated function: \${name}');
+      artificialDelay(25);
+    }
+  \`;
+  
+  try {
+    eval(funcTemplate('templateGenerated'));
+    if (typeof templateGenerated !== 'undefined') {
+      templateGenerated();
+    }
+  } catch (e) {
+    console.log('💀 Template eval failed:', e.message);
+  }
+  
+  artificialDelay(100);
+  console.log('🔥 Dynamic code chaos completed');
+}
+
+// 🔥 CHAOS LEVEL 2: Meta-Programming Nightmare
+function metaProgrammingHell() {
+  console.log('🔥 Starting meta-programming hell...');
+  artificialDelay(100);
+  
+  // Function factory that creates functions with closures
+  function createFunctionFactory(type) {
+    const functionMap = new Map();
+    
+    return function functionFactory(name, behavior) {
+      const dynamicFunction = function(...args) {
+        console.log(\`💀 Generated \${type} function: \${name}\`, args);
+        artificialDelay(25);
+        return behavior.apply(this, args);
+      };
+      
+      // Store in map to avoid garbage collection
+      functionMap.set(name, dynamicFunction);
+      
+      // Assign to global scope dynamically
+      try {
+        globalThis[name] = dynamicFunction;
+        console.log(\`💀 Assigned \${name} to global scope\`);
+      } catch (e) {
+        console.log(\`💀 Failed to assign \${name}:\`, e.message);
+      }
+      
+      return dynamicFunction;
+    };
+  }
+  
+  // Create different types of function factories
+  const syncFactory = createFunctionFactory('sync');
+  const asyncFactory = createFunctionFactory('async');
+  
+  // Generate functions dynamically
+  syncFactory('generatedSync1', (x) => x * 2);
+  syncFactory('generatedSync2', (a, b) => a + b);
+  
+  // Try to call generated functions
+  try {
+    if (typeof generatedSync1 !== 'undefined') {
+      console.log('💀 Generated sync1 result:', generatedSync1(21));
+    }
+    if (typeof generatedSync2 !== 'undefined') {
+      console.log('💀 Generated sync2 result:', generatedSync2(10, 15));
+    }
+  } catch (e) {
+    console.log('💀 Generated function call failed:', e.message);
+  }
+  
+  artificialDelay(100);
+  console.log('🔥 Meta-programming hell completed');
+}
+
+// 🔥 CHAOS LEVEL 3: Self-Modifying Function Chaos
+function selfModifyingChaos() {
+  console.log('🔥 Starting self-modifying function chaos...');
+  artificialDelay(100);
+  
+  // Function that redefines itself
+  let shapeshifter = function() {
+    console.log('💀 Shapeshifter: First form');
+    artificialDelay(25);
+    
+    // Redefine itself
+    shapeshifter = function() {
+      console.log('💀 Shapeshifter: Second form');
+      artificialDelay(25);
+      
+      // Redefine again
+      shapeshifter = function() {
+        console.log('💀 Shapeshifter: Final form');
+        artificialDelay(25);
+        return 'transformation-complete';
+      };
+      
+      return 'second-form-result';
+    };
+    
+    return 'first-form-result';
+  };
+  
+  // Call the shapeshifter multiple times
+  console.log('💀 Result 1:', shapeshifter());
+  console.log('💀 Result 2:', shapeshifter());
+  console.log('💀 Result 3:', shapeshifter());
+  
+  // Function that modifies other functions
+  function functionHijacker() {
+    console.log('💀 Function hijacker activated');
+    artificialDelay(25);
+    
+    // Try to hijack console.log (dangerous!)
+    const originalLog = console.log;
+    let hijackCount = 0;
+    
+    console.log = function(...args) {
+      hijackCount++;
+      if (hijackCount <= 3) {
+        originalLog('💀 [HIJACKED]', ...args);
+      } else {
+        // Restore after 3 calls
+        console.log = originalLog;
+        originalLog('💀 [RESTORED]', ...args);
+      }
+    };
+    
+    return 'hijacking-complete';
+  }
+  
+  functionHijacker();
+  console.log('Test hijacked log 1');
+  console.log('Test hijacked log 2');
+  console.log('Test hijacked log 3');
+  console.log('Test restored log');
+  
+  artificialDelay(100);
+  console.log('🔥 Self-modifying chaos completed');
+}
+
+// 🔥 CHAOS LEVEL 4: Memory Pressure & Function Spam
+function memoryPressureHell() {
+  console.log('🔥 Starting memory pressure hell...');
+  artificialDelay(100);
+  
+  const functionCollection = [];
+  const nameMap = new Map();
+  
+  // Create dozens of functions dynamically (reduced from 100 for safety)
+  for (let i = 0; i < 25; i++) {
+    const functionName = \`dynamicFunc_\${i}_\${Date.now()}\`;
+    
+    const dynamicFunction = new Function('index', \`
+      console.log('💀 Dynamic function ' + index + ' executing');
+      artificialDelay(5);
+      return 'result-' + index;
+    \`);
+    
+    // Store references to prevent garbage collection
+    functionCollection.push(dynamicFunction);
+    nameMap.set(functionName, dynamicFunction);
+    
+    // Assign to global scope (if possible)
+    try {
+      globalThis[functionName] = dynamicFunction;
+    } catch (e) {
+      // Ignore assignment failures
+    }
+  }
+  
+  console.log(\`💀 Created \${functionCollection.length} dynamic functions\`);
+  
+  // Execute a few random functions
+  for (let i = 0; i < 3; i++) {
+    const randomIndex = Math.floor(Math.random() * functionCollection.length);
+    const randomFunc = functionCollection[randomIndex];
+    console.log(\`💀 Random execution \${i}:\`, randomFunc(randomIndex));
+  }
+  
+  // Cleanup (release memory)
+  functionCollection.length = 0;
+  nameMap.clear();
+  
+  artificialDelay(100);
+  console.log('🔥 Memory pressure hell completed');
+}
+
+// 🔥 MAIN CHAOS ORCHESTRATOR
+async function main() {
+  console.log('🔥🔥🔥 MEGA CHAOS TEST STARTED - BRACE FOR IMPACT! 🔥🔥🔥');
+  console.log('💀 This test combines every possible JavaScript chaos pattern');
+  console.log('💀 Expected: Parser confusion, tracking failures, memory pressure');
+  console.log('💀 Goal: See what survives the apocalypse');
+  
+  artificialDelay(200);
+  
+  try {
+    // Execute chaos levels (reduced set for safety)
+    dynamicCodeChaos();
+    metaProgrammingHell();
+    selfModifyingChaos();
+    memoryPressureHell();
+    
+    console.log('🔥🔥🔥 MEGA CHAOS TEST COMPLETED - SOMEHOW WE SURVIVED! 🔥🔥🔥');
+    
+  } catch (error) {
+    console.log('💀💀💀 MEGA CHAOS CAUSED CATASTROPHIC FAILURE:', error.message);
+    console.log('💀 Stack:', error.stack);
+  }
+  
+  // Final memory cleanup attempt
+  try {
+    if (typeof gc === 'function') {
+      gc(); // Force garbage collection if available
+    }
+  } catch (e) {
+    // Ignore gc failures
+  }
+  
+  console.log('🔥 Apocalypse test sequence completed');
+}
+
+main();`,
+    visualizationHint: 'This is an EXTREME test designed to break parsers. It combines dynamic code generation, meta-programming, self-modifying functions, and memory pressure. Expect: many functions will NOT be tracked due to dynamic creation, eval usage, and runtime modification. The goal is to see what survives the chaos!'
   }
 ];
 

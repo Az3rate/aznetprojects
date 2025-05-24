@@ -3,53 +3,57 @@ import styled from 'styled-components';
 
 const LayoutContainer = styled.div`
   display: grid;
-  grid-template-rows: 3vh 94vh 3vh; /* # Reason: Minimal header/footer (3vh) and main (94vh) */
+  grid-template-rows: auto 1fr auto;
   background: ${({ theme }) => theme.colors.background.primary};
+  height: 100vh;
   overflow: hidden;
 `;
 
 const Header = styled.header`
-  height: 3vh;
-  /* No background, no border for super minimal look */
+  height: auto;
+  min-height: 48px;
+  background: #010409;
+  border-bottom: 1px solid #21262d;
   z-index: ${({ theme }) => theme.zIndex.modal};
-  backdrop-filter: blur(${({ theme }) => theme.effects.blur.md});
-  border-radius: 0;
   display: flex;
   align-items: center;
+  padding: 8px 16px;
 `;
 
-const Main = styled.main`
+const Main = styled.main<{ $noPadding?: boolean }>`
   height: 100%;
   min-height: 0;
   display: grid;
   grid-template-columns: 1fr;
-  gap: ${({ theme }) => theme.spacing.lg};
-  padding: ${({ theme }) => theme.spacing.lg};
+  gap: ${({ theme, $noPadding }) => $noPadding ? '0' : theme.spacing.lg};
+  padding: ${({ theme, $noPadding }) => $noPadding ? '0' : theme.spacing.lg};
   background: transparent;
-  overflow: auto;
+  overflow: ${({ $noPadding }) => $noPadding ? 'hidden' : 'auto'};
 `;
 
 const Footer = styled.footer`
-  height: 3vh;
-  /* No background, no border for super minimal look */
+  height: auto;
+  min-height: 32px;
+  background: #010409;
+  border-top: 1px solid #21262d;
   z-index: ${({ theme }) => theme.zIndex.modal};
-  backdrop-filter: blur(${({ theme }) => theme.effects.blur.md});
-  border-radius: 0;
   display: flex;
   align-items: center;
+  padding: 4px 16px;
 `;
 
 interface PageLayoutProps {
   header: React.ReactNode;
   children: React.ReactNode;
   footer: React.ReactNode;
+  noPadding?: boolean;
 }
 
-export const PageLayout: React.FC<PageLayoutProps> = ({ header, children, footer }) => {
+export const PageLayout: React.FC<PageLayoutProps> = ({ header, children, footer, noPadding }) => {
   return (
     <LayoutContainer>
       <Header>{header}</Header>
-      <Main>{children}</Main>
+      <Main $noPadding={noPadding}>{children}</Main>
       <Footer>{footer}</Footer>
     </LayoutContainer>
   );

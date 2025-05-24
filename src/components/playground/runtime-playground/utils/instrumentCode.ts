@@ -1,8 +1,428 @@
 // Simple, reliable code instrumentation for browser environments
 function instrumentCode(code: string): string {
-  console.log('[DB1] Instrumenting code with enhanced promise chain tracking:', code);
+  console.log('[DB1] Instrumenting code with enhanced AST-aware parsing:', code);
 
-  // The runtime tracking code that will be injected
+  // Enhanced parsing that understands JavaScript context
+  function parseJavaScriptFunctions(code: string) {
+    const functions = new Set<string>();
+    const nestedFunctions = new Map<string, string>();
+    
+    // Advanced JavaScript tokenizer with proper context tracking
+    class JavaScriptTokenizer {
+      private pos = 0;
+      private code: string;
+      private currentLine = 1;
+      private currentColumn = 1;
+      private tokens: Array<{ type: string; value: string; line: number; column: number }> = [];
+      
+      constructor(code: string) {
+        this.code = code;
+      }
+      
+      private peek(offset = 0): string {
+        return this.code[this.pos + offset] || '';
+      }
+      
+      private advance(): string {
+        const char = this.code[this.pos++];
+        if (char === '\n') {
+          this.currentLine++;
+          this.currentColumn = 1;
+        } else {
+          this.currentColumn++;
+        }
+        return char;
+      }
+      
+      private skipWhitespace(): void {
+        while (this.pos < this.code.length && /\s/.test(this.peek())) {
+          this.advance();
+        }
+      }
+      
+      private readString(quote: string): string {
+        let value = quote;
+        this.advance(); // Skip opening quote
+        
+        while (this.pos < this.code.length) {
+          const char = this.peek();
+          if (char === quote) {
+            value += this.advance();
+            break;
+          } else if (char === '\\') {
+            value += this.advance(); // Backslash
+            value += this.advance(); // Escaped character
+          } else {
+            value += this.advance();
+          }
+        }
+        return value;
+      }
+      
+      private readTemplateString(): string {
+        let value = '`';
+        this.advance(); // Skip opening backtick
+        let braceDepth = 0;
+        
+        while (this.pos < this.code.length) {
+          const char = this.peek();
+          if (char === '`' && braceDepth === 0) {
+            value += this.advance();
+            break;
+          } else if (char === '$' && this.peek(1) === '{') {
+            value += this.advance(); // $
+            value += this.advance(); // {
+            braceDepth++;
+          } else if (char === '}' && braceDepth > 0) {
+            value += this.advance();
+            braceDepth--;
+          } else if (char === '\\') {
+            value += this.advance(); // Backslash
+            value += this.advance(); // Escaped character
+          } else {
+            value += this.advance();
+          }
+        }
+        return value;
+      }
+      
+      private readRegex(): string {
+        let value = '/';
+        this.advance(); // Skip opening slash
+        
+        while (this.pos < this.code.length) {
+          const char = this.peek();
+          if (char === '/') {
+            value += this.advance();
+            // Read flags
+            while (this.pos < this.code.length && /[gimuy]/.test(this.peek())) {
+              value += this.advance();
+            }
+            break;
+          } else if (char === '\\') {
+            value += this.advance(); // Backslash
+            value += this.advance(); // Escaped character
+          } else {
+            value += this.advance();
+          }
+        }
+        return value;
+      }
+      
+      private readLineComment(): string {
+        let value = '//';
+        this.advance(); // First /
+        this.advance(); // Second /
+        
+        while (this.pos < this.code.length && this.peek() !== '\n') {
+          value += this.advance();
+        }
+        return value;
+      }
+      
+      private readBlockComment(): string {
+        let value = '/*';
+        this.advance(); // /
+        this.advance(); // *
+        
+        while (this.pos < this.code.length - 1) {
+          if (this.peek() === '*' && this.peek(1) === '/') {
+            value += this.advance(); // *
+            value += this.advance(); // /
+            break;
+          } else {
+            value += this.advance();
+          }
+        }
+        return value;
+      }
+      
+      private readIdentifier(): string {
+        let value = '';
+        while (this.pos < this.code.length && /[a-zA-Z0-9_$]/.test(this.peek())) {
+          value += this.advance();
+        }
+        return value;
+      }
+      
+      private isRegexContext(): boolean {
+        // Look backwards to determine if / should be treated as regex or division
+        let i = this.tokens.length - 1;
+        while (i >= 0 && this.tokens[i].type === 'WHITESPACE') {
+          i--;
+        }
+        
+        if (i < 0) return true; // Start of file
+        
+        const lastToken = this.tokens[i];
+        const regexContexts = ['=', '(', '[', '{', ';', ',', ':', '!', '&', '|', '?', '+', '-', '*', '/', '%', 'return', 'throw', 'case'];
+        return regexContexts.includes(lastToken.value) || regexContexts.includes(lastToken.type);
+      }
+      
+      public tokenize(): Array<{ type: string; value: string; line: number; column: number }> {
+        this.tokens = [];
+        this.pos = 0;
+        this.currentLine = 1;
+        this.currentColumn = 1;
+        
+        while (this.pos < this.code.length) {
+          this.skipWhitespace();
+          if (this.pos >= this.code.length) break;
+          
+          const startLine = this.currentLine;
+          const startColumn = this.currentColumn;
+          const char = this.peek();
+          
+          let token;
+          
+          if (char === '"' || char === "'") {
+            token = { type: 'STRING', value: this.readString(char), line: startLine, column: startColumn };
+          } else if (char === '`') {
+            token = { type: 'TEMPLATE', value: this.readTemplateString(), line: startLine, column: startColumn };
+          } else if (char === '/' && this.peek(1) === '/') {
+            token = { type: 'LINE_COMMENT', value: this.readLineComment(), line: startLine, column: startColumn };
+          } else if (char === '/' && this.peek(1) === '*') {
+            token = { type: 'BLOCK_COMMENT', value: this.readBlockComment(), line: startLine, column: startColumn };
+          } else if (char === '/' && this.isRegexContext()) {
+            token = { type: 'REGEX', value: this.readRegex(), line: startLine, column: startColumn };
+          } else if (/[a-zA-Z_$]/.test(char)) {
+            token = { type: 'IDENTIFIER', value: this.readIdentifier(), line: startLine, column: startColumn };
+          } else {
+            token = { type: 'OPERATOR', value: this.advance(), line: startLine, column: startColumn };
+          }
+          
+          this.tokens.push(token);
+        }
+        
+        return this.tokens;
+      }
+    }
+    
+    // Parse tokens to find function declarations in proper context
+    class FunctionParser {
+      private tokens: Array<{ type: string; value: string; line: number; column: number }>;
+      private pos = 0;
+      
+      constructor(tokens: Array<{ type: string; value: string; line: number; column: number }>) {
+        this.tokens = tokens;
+      }
+      
+      private peek(offset = 0): any {
+        return this.tokens[this.pos + offset] || { type: 'EOF', value: '', line: 0, column: 0 };
+      }
+      
+      private advance(): any {
+        return this.tokens[this.pos++] || { type: 'EOF', value: '', line: 0, column: 0 };
+      }
+      
+      private skipNonCode(): void {
+        while (this.pos < this.tokens.length) {
+          const token = this.peek();
+          if (token.type === 'STRING' || token.type === 'TEMPLATE' || 
+              token.type === 'LINE_COMMENT' || token.type === 'BLOCK_COMMENT' || 
+              token.type === 'REGEX') {
+            this.advance();
+          } else {
+            break;
+          }
+        }
+      }
+      
+      public parseFunctions(): { functions: Set<string>; nestedFunctions: Map<string, string> } {
+        const functions = new Set<string>();
+        const nestedFunctions = new Map<string, string>();
+        const scopeStack: string[] = [];
+        let braceDepth = 0;
+        
+        while (this.pos < this.tokens.length) {
+          this.skipNonCode();
+          
+          const token = this.peek();
+          
+          if (token.type === 'IDENTIFIER' && token.value === 'function') {
+            // Found function keyword, parse function declaration
+            this.advance(); // Skip 'function'
+            this.skipNonCode();
+            
+            // Check for generator function (*)
+            if (this.peek().value === '*') {
+              this.advance(); // Skip *
+              this.skipNonCode();
+            }
+            
+            // Get function name
+            const nameToken = this.peek();
+            if (nameToken.type === 'IDENTIFIER') {
+              const functionName = nameToken.value;
+              this.advance(); // Skip function name
+              
+              console.log('[AST_PARSER] Found function:', functionName, 'at line', nameToken.line, 'depth:', braceDepth);
+              
+              if (braceDepth === 0) {
+                functions.add(functionName);
+                console.log('[AST_PARSER] Added global function:', functionName);
+                scopeStack.push(functionName);
+              } else {
+                const parentFunction = scopeStack[scopeStack.length - 1];
+                if (parentFunction) {
+                  nestedFunctions.set(functionName, parentFunction);
+                  console.log('[AST_PARSER] Added nested function:', functionName, 'inside', parentFunction);
+                  scopeStack.push(functionName);
+                }
+              }
+            }
+          } else if (token.type === 'IDENTIFIER' && (token.value === 'const' || token.value === 'let' || token.value === 'var')) {
+            // Check for function expressions and arrow functions
+            this.advance(); // Skip variable declaration
+            this.skipNonCode();
+            
+            const nameToken = this.peek();
+            if (nameToken.type === 'IDENTIFIER') {
+              const variableName = nameToken.value;
+              this.advance(); // Skip variable name
+              this.skipNonCode();
+              
+              if (this.peek().value === '=') {
+                this.advance(); // Skip =
+                this.skipNonCode();
+                
+                // Check if it's a function expression or arrow function
+                const nextToken = this.peek();
+                if (nextToken.type === 'IDENTIFIER' && nextToken.value === 'function') {
+                  // Function expression
+                  console.log('[AST_PARSER] Found function expression:', variableName, 'at line', nameToken.line);
+                  if (braceDepth === 0) {
+                    functions.add(variableName);
+                  } else {
+                    const parentFunction = scopeStack[scopeStack.length - 1];
+                    if (parentFunction) {
+                      nestedFunctions.set(variableName, parentFunction);
+                    }
+                  }
+                } else {
+                  // Could be arrow function, look for => pattern
+                  let lookahead = 0;
+                  let foundArrow = false;
+                  let parenDepth = 0;
+                  
+                  while (lookahead < 10 && this.pos + lookahead < this.tokens.length) {
+                    const lookToken = this.peek(lookahead);
+                    if (lookToken.value === '(') parenDepth++;
+                    if (lookToken.value === ')') parenDepth--;
+                    if (lookToken.value === '=' && this.peek(lookahead + 1)?.value === '>') {
+                      foundArrow = true;
+                      break;
+                    }
+                    if (parenDepth < 0) break;
+                    lookahead++;
+                  }
+                  
+                  if (foundArrow) {
+                    console.log('[AST_PARSER] Found arrow function:', variableName, 'at line', nameToken.line);
+                    if (braceDepth === 0) {
+                      functions.add(variableName);
+                    } else {
+                      const parentFunction = scopeStack[scopeStack.length - 1];
+                      if (parentFunction) {
+                        nestedFunctions.set(variableName, parentFunction);
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          } else if (token.value === '{') {
+            braceDepth++;
+            this.advance();
+          } else if (token.value === '}') {
+            braceDepth--;
+            if (braceDepth >= 0 && scopeStack.length > 0) {
+              const poppedFunction = scopeStack.pop();
+              console.log('[AST_PARSER] Popped function from scope:', poppedFunction);
+            }
+            this.advance();
+          } else {
+            this.advance();
+          }
+        }
+        
+        return { functions, nestedFunctions };
+      }
+    }
+    
+    try {
+      console.log('[AST_PARSER] Starting enhanced JavaScript parsing...');
+      
+      // Tokenize the code with context awareness
+      const tokenizer = new JavaScriptTokenizer(code);
+      const tokens = tokenizer.tokenize();
+      
+      console.log('[AST_PARSER] Tokenized', tokens.length, 'tokens');
+      
+      // Parse tokens to find functions in correct context
+      const parser = new FunctionParser(tokens);
+      const result = parser.parseFunctions();
+      
+      console.log('[AST_PARSER] Parsing complete. Found', result.functions.size, 'global functions and', result.nestedFunctions.size, 'nested functions');
+      
+      return result;
+    } catch (error) {
+      console.error('[AST_PARSER] Parsing failed, falling back to simple parsing:', error);
+      
+      // Fallback to simpler parsing if AST parsing fails
+      return parseJavaScriptFunctionsSimple(code);
+    }
+  }
+  
+  // Fallback simple parsing function for when AST parsing fails
+  function parseJavaScriptFunctionsSimple(code: string) {
+    console.log('[SIMPLE_PARSER] Using fallback parser');
+    const functions = new Set<string>();
+    const nestedFunctions = new Map<string, string>();
+    
+    // Very basic parsing as fallback
+    const lines = code.split('\n');
+    let braceDepth = 0;
+    let parentStack: string[] = [];
+    
+    for (let lineNum = 0; lineNum < lines.length; lineNum++) {
+      const line = lines[lineNum].trim();
+      
+      // Very basic function detection for fallback
+      const functionMatch = line.match(/^function\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\(/);
+      if (functionMatch) {
+        const functionName = functionMatch[1];
+        
+        if (braceDepth === 0) {
+          functions.add(functionName);
+          parentStack = [functionName];
+        } else {
+          const parentFunction = parentStack[parentStack.length - 1];
+          if (parentFunction) {
+            nestedFunctions.set(functionName, parentFunction);
+            parentStack.push(functionName);
+          }
+        }
+      }
+      
+      // Track brace depth
+      const openBraces = (line.match(/\{/g) || []).length;
+      const closeBraces = (line.match(/\}/g) || []).length;
+      braceDepth += openBraces - closeBraces;
+      
+      if (closeBraces > 0) {
+        for (let j = 0; j < closeBraces; j++) {
+          if (parentStack.length > 1) {
+            parentStack.pop();
+          }
+        }
+      }
+    }
+    
+    return { functions, nestedFunctions };
+  }
+
+  // Runtime tracking code (unchanged)
   const runtimeTrackingCode = `
 // Global state for tracking function execution
 const parentStack = [];
@@ -36,26 +456,29 @@ function emitProcessEvent(id, name, type, status, capturedParentId = null) {
     timestamp: Date.now()
   };
   
+  console.log('[EVENT_EMIT] ' + status + ' ' + name + ' (ID: ' + id + ') -> Parent: ' + (parentId || 'none'));
+  
   if (status === 'start') {
     if (parentId) {
       parentMap.set(id, parentId);
     }
     parentStack.push(id);
+    console.log('[STACK] After ' + name + ' START, stack:', parentStack.slice());
   } else if (status === 'end') {
-    // Handle stack properly for end events
-    if (parentStack.length > 0 && parentStack[parentStack.length - 1] === id) {
-      parentStack.pop();
-    } else {
-      // Function might have completed out of order (async), find and remove
-      const index = parentStack.indexOf(id);
-      if (index !== -1) {
-        parentStack.splice(index, 1);
-      }
+    // For synchronous functions, they should complete in LIFO order
+    // For async functions, they might complete out of order
+    
+    // Always use the stored parent ID for end events
+          if (parentMap.has(id)) {
+            event.parentId = parentMap.get(id);
+      console.log('[EVENT_EMIT] Using stored parent for ' + name + ': ' + event.parentId);
     }
     
-    // Use the stored parent ID for end events if not provided
-    if (capturedParentId === null && parentMap.has(id)) {
-      event.parentId = parentMap.get(id);
+    // Handle stack cleanup - remove the function from wherever it is in the stack
+    const stackIndex = parentStack.indexOf(id);
+    if (stackIndex !== -1) {
+      parentStack.splice(stackIndex, 1);
+      console.log('[STACK] After ' + name + ' END, removed from position ' + stackIndex + ', stack:', parentStack.slice());
     }
     
     event.isCompleted = true;
@@ -415,65 +838,13 @@ function __wrapNestedFunction(fn, name) {
     }
   });
 
-  // Analyze code structure to find global vs nested functions
-  const globalFunctions = new Set();
-  const nestedFunctions = new Map(); // Maps nested function name to parent function
+  // Use enhanced parsing instead of naive regex
+  const parseResult = parseJavaScriptFunctions(cleanCode);
+  const globalFunctions = parseResult.functions;
+  const nestedFunctions = parseResult.nestedFunctions;
   
-  // Parse the code to understand function nesting
-  function analyzeCodeStructure(code: string) {
-    const lines = code.split('\n');
-    let braceDepth = 0;
-    let functionStack: string[] = [];
-    
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i].trim();
-      
-      // Check for function declaration BEFORE updating brace depth
-      const functionMatch = line.match(/function\s+(\w+)\s*\(/);
-      if (functionMatch) {
-        const functionName = functionMatch[1];
-        
-        console.log('[ANALYSIS] Processing function:', functionName, 'at brace depth:', braceDepth);
-        
-        if (braceDepth === 0) {
-          // Top-level function
-          globalFunctions.add(functionName);
-          console.log('[ANALYSIS] Found global function:', functionName);
-          // Reset function stack for new top-level function
-          functionStack = [functionName];
-        } else {
-          // Nested function - parent is the last function in the stack
-          const parentFunction = functionStack[functionStack.length - 1];
-          nestedFunctions.set(functionName, parentFunction);
-          console.log('[ANALYSIS] Found nested function:', functionName, 'inside', parentFunction, 'at depth:', braceDepth);
-          // Add to function stack for potential further nesting
-          functionStack.push(functionName);
-        }
-      }
-      
-      // Count braces on this line
-      const openBraces = (line.match(/\{/g) || []).length;
-      const closeBraces = (line.match(/\}/g) || []).length;
-      
-      // Update brace depth
-      braceDepth += openBraces - closeBraces;
-      
-      // Pop from function stack when closing braces
-      if (closeBraces > 0) {
-        for (let j = 0; j < closeBraces; j++) {
-          if (functionStack.length > 1) {
-            const poppedFunction = functionStack.pop();
-            console.log('[ANALYSIS] Popped function from stack:', poppedFunction, 'remaining stack:', functionStack);
-          }
-        }
-      }
-    }
-  }
-  
-  analyzeCodeStructure(cleanCode);
-  
-  console.log('[ANALYSIS] Global functions:', Array.from(globalFunctions));
-  console.log('[ANALYSIS] Nested functions:', Array.from(nestedFunctions.entries()));
+  console.log('[ENHANCED_ANALYSIS] Global functions:', Array.from(globalFunctions));
+  console.log('[ENHANCED_ANALYSIS] Nested functions:', Array.from(nestedFunctions.entries()));
 
   // Transform code with smart scoping
   let transformedCode = cleanCode;
@@ -565,7 +936,7 @@ function __wrapNestedFunction(fn, name) {
     transformedCode = lines.join('\n');
   });
   
-  console.log('[TRANSFORM] Applied smart scoping transformations');
+  console.log('[TRANSFORM] Applied enhanced parsing transformations');
 
   // Enhanced instrumentation with better promise chain handling
   const finalCode = `
@@ -573,6 +944,16 @@ ${runtimeTrackingCode}
 
 // Store reference to global scope for Web Worker compatibility
 const globalScope = (typeof self !== 'undefined') ? self : (typeof global !== 'undefined') ? global : this;
+
+// Error handling wrapper for better resilience
+function safeExecute(fn, context = 'unknown') {
+  try {
+    return fn();
+  } catch (error) {
+    console.error('[SAFE_EXECUTE] Error in', context, ':', error);
+    return null;
+  }
+}
 
 try {
   // Execute user code first to declare all functions
@@ -589,7 +970,7 @@ try {
   
   // Check what functions are actually accessible and promote them to global scope
   globalFunctionNames.forEach(functionName => {
-    try {
+    safeExecute(() => {
       // Try to access the function in the current scope
       const fn = eval(functionName);
       if (typeof fn === 'function') {
@@ -599,15 +980,13 @@ try {
       } else {
         console.log('[INSTRUMENT] Function not accessible:', functionName, typeof fn);
       }
-    } catch (error) {
-      console.log('[INSTRUMENT] Could not access function:', functionName, error.message);
-    }
+    }, 'function promotion for ' + functionName);
   });
   
   // Wrap each global function that exists in global scope
   let wrappedCount = 0;
   globalFunctionNames.forEach(functionName => {
-    try {
+    safeExecute(() => {
       if (typeof globalScope[functionName] === 'function') {
         const originalFunction = globalScope[functionName];
         globalScope[functionName] = __wrapFunction(originalFunction, functionName);
@@ -616,24 +995,179 @@ try {
       } else {
         console.log('[INSTRUMENT] Global function not found in global scope:', functionName);
       }
-    } catch (error) {
-      console.error('[INSTRUMENT] Failed to wrap global function:', functionName, error);
-    }
+    }, 'function wrapping for ' + functionName);
   });
   
   console.log('[INSTRUMENT] Wrapped', wrappedCount, 'global functions');
-  console.log('[INSTRUMENT] Enhanced promise chain tracking enabled');
+  console.log('[INSTRUMENT] Enhanced AST-aware parsing enabled');
+  
+  // Runtime function detection fallback - find functions that static analysis missed
+  function discoverRuntimeFunctions() {
+    console.log('[RUNTIME_DISCOVERY] Scanning for dynamically created or missed functions...');
+    
+    const discoveredFunctions = [];
+    const potentialFunctionNames = [];
+    
+    // Comprehensive list of built-in functions to NEVER wrap
+    const systemFunctions = new Set([
+      // Core JavaScript
+      'eval', 'Function', 'Object', 'Array', 'String', 'Number', 'Boolean', 
+      'Date', 'RegExp', 'Error', 'Symbol', 'BigInt', 'Promise', 'Proxy',
+      'Map', 'Set', 'WeakMap', 'WeakSet', 'ArrayBuffer', 'DataView',
+      'Int8Array', 'Uint8Array', 'Int16Array', 'Uint16Array', 'Int32Array', 'Uint32Array',
+      'Float32Array', 'Float64Array', 'Uint8ClampedArray', 'BigInt64Array', 'BigUint64Array',
+      
+      // Timers
+      'setTimeout', 'setInterval', 'clearTimeout', 'clearInterval', 'requestAnimationFrame',
+      'cancelAnimationFrame', 'queueMicrotask',
+      
+      // Global functions
+      'isNaN', 'isFinite', 'parseFloat', 'parseInt', 'encodeURI', 'decodeURI',
+      'encodeURIComponent', 'decodeURIComponent', 'escape', 'unescape',
+      
+      // Console and debugging
+      'console', 'alert', 'confirm', 'prompt', 'dump', 'reportError',
+      
+      // Web Worker specific
+      'postMessage', 'close', 'importScripts', 'addEventListener', 'removeEventListener',
+      'dispatchEvent', 'btoa', 'atob', 'createImageBitmap', 'structuredClone', 'fetch',
+      
+      // Event and DOM related
+      'Event', 'EventTarget', 'CustomEvent', 'MessageEvent', 'ErrorEvent', 'CloseEvent',
+      'ProgressEvent', 'MessageChannel', 'MessagePort', 'BroadcastChannel',
+      
+      // Web APIs
+      'XMLHttpRequest', 'WebSocket', 'Worker', 'Blob', 'File', 'FileReader',
+      'URL', 'URLSearchParams', 'Headers', 'Request', 'Response', 'AbortController',
+      'AbortSignal', 'FormData', 'Crypto', 'CryptoKey', 'SubtleCrypto',
+      
+      // Storage and IndexedDB
+      'IDBFactory', 'IDBDatabase', 'IDBTransaction', 'IDBObjectStore', 'IDBIndex',
+      'IDBCursor', 'IDBKeyRange', 'IDBRequest', 'IDBOpenDBRequest',
+      
+      // Streams
+      'ReadableStream', 'WritableStream', 'TransformStream', 'CompressionStream',
+      'DecompressionStream', 'TextEncoder', 'TextDecoder',
+      
+      // Canvas and WebGL
+      'CanvasGradient', 'CanvasPattern', 'ImageData', 'ImageBitmap', 'Path2D',
+      'WebGLRenderingContext', 'WebGL2RenderingContext', 'OffscreenCanvas',
+      
+      // Performance and Observers
+      'Performance', 'PerformanceEntry', 'PerformanceObserver', 'MutationObserver',
+      'IntersectionObserver', 'ResizeObserver',
+      
+      // Instrumentation system functions
+      'safeExecute', 'discoverRuntimeFunctions', '__wrapFunction', '__wrapNestedFunction',
+      'emitProcessEvent', 'captureParentContext', 'getParentId', 'wrapSetTimeout',
+      
+      // Constructor functions that should never be wrapped
+      'WeakRef', 'FinalizationRegistry', 'Iterator', 'Generator', 'GeneratorFunction',
+      'AsyncFunction', 'AsyncGenerator', 'AsyncGeneratorFunction'
+    ]);
+    
+    // Only look for functions that could be user-defined
+    const userDefinedPattern = /^[a-zA-Z_$][a-zA-Z0-9_$]*$/;
+    
+    // Scan globalScope for function properties that we might have missed
+    for (const key in globalScope) {
+      try {
+        // Skip if it's a system function
+        if (systemFunctions.has(key)) {
+          continue;
+        }
+        
+        // Skip if it doesn't look like a user-defined function name
+        if (!userDefinedPattern.test(key)) {
+          continue;
+        }
+        
+        // Skip if it's already been found by static analysis
+        if (globalFunctionNames.includes(key)) {
+          continue;
+        }
+        
+        // Skip internal/private functions
+        if (key.startsWith('_') || key.startsWith('$') || key.includes('Interval') || key.includes('Timeout')) {
+          continue;
+        }
+        
+        // Skip if it's not actually a function
+        if (typeof globalScope[key] !== 'function') {
+          continue;
+        }
+        
+        // Additional safety check - skip constructor functions for built-in types
+        try {
+          const fnString = globalScope[key].toString();
+          if (fnString.includes('[native code]') || fnString.length < 20) {
+            continue; // Skip native functions and very short functions (likely built-ins)
+          }
+        } catch (e) {
+          continue; // Skip functions we can't inspect
+        }
+        
+        // Skip if the function name suggests it's a built-in (uppercase start often indicates constructor)
+        if (key[0] === key[0].toUpperCase() && key.length > 1) {
+          continue; // Skip potential constructor functions
+        }
+        
+        potentialFunctionNames.push(key);
+} catch (error) {
+        // Skip any functions that cause errors during inspection
+        console.log('[RUNTIME_DISCOVERY] Skipping function due to error:', key, error.message);
+        continue;
+      }
+    }
+    
+    console.log('[RUNTIME_DISCOVERY] Found potential user functions:', potentialFunctionNames);
+    
+    // Wrap discovered functions with additional safety checks
+    potentialFunctionNames.forEach(functionName => {
+      safeExecute(() => {
+        // Double-check the function still exists and is safe to wrap
+        if (typeof globalScope[functionName] === 'function' && 
+            !systemFunctions.has(functionName) &&
+            !functionName.startsWith('__')) {
+          
+          const originalFunction = globalScope[functionName];
+          
+          // Final safety check - don't wrap if it's critical to the system
+          try {
+            const fnString = originalFunction.toString();
+            if (fnString.includes('[native code]')) {
+              console.log('[RUNTIME_DISCOVERY] Skipping native function:', functionName);
+              return;
+            }
+          } catch (e) {
+            console.log('[RUNTIME_DISCOVERY] Cannot inspect function, skipping:', functionName);
+            return;
+          }
+          
+          globalScope[functionName] = __wrapFunction(originalFunction, functionName);
+          discoveredFunctions.push(functionName);
+          console.log('[RUNTIME_DISCOVERY] Wrapped discovered function:', functionName);
+        }
+      }, 'runtime function wrapping for ' + functionName);
+    });
+    
+    return discoveredFunctions;
+  }
+  
+  // Perform runtime discovery
+  const discoveredFunctions = discoverRuntimeFunctions();
+  console.log('[RUNTIME_DISCOVERY] Discovered and wrapped', discoveredFunctions.length, 'additional functions:', discoveredFunctions);
   
   // Execute detected top-level function calls or main()
   if (typeof globalScope.main === 'function') {
     console.log('[INSTRUMENT] Executing main function with tracking');
-    globalScope.main();
+    safeExecute(() => globalScope.main(), 'main function execution');
   } else if (topLevelCallNames.length > 0) {
     console.log('[INSTRUMENT] Executing top-level function calls');
     topLevelCallNames.forEach(funcName => {
       if (typeof globalScope[funcName] === 'function') {
         console.log('[INSTRUMENT] Executing top-level call:', funcName);
-        globalScope[funcName]();
+        safeExecute(() => globalScope[funcName](), 'top-level call ' + funcName);
       } else {
         console.log('[INSTRUMENT] Top-level function not found:', funcName);
       }
@@ -644,10 +1178,18 @@ try {
   
 } catch (error) {
   console.error('[RUNTIME_ERROR]', error);
+  // Attempt to provide partial functionality even if parsing fails
+  console.log('[FALLBACK] Attempting fallback execution...');
+  safeExecute(() => {
+    if (typeof main === 'function') {
+      console.log('[FALLBACK] Found main function, executing without full instrumentation');
+      main();
+    }
+  }, 'fallback main execution');
 }
 `;
 
-  console.log('[DB1] Successfully created enhanced instrumentation with promise chain tracking');
+  console.log('[DB1] Successfully created enhanced AST-aware instrumentation');
   return finalCode;
 }
 

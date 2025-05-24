@@ -1,6 +1,10 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
+const webpack = require('webpack');
+
+// Load environment variables
+require('dotenv').config({ path: '.env.local' });
 
 module.exports = {
   entry: './src/index.tsx',
@@ -33,6 +37,11 @@ module.exports = {
         { from: 'public/sounds', to: 'sounds' },
         { from: 'public/images', to: 'images' }
       ]
+    }),
+    // Define environment variables for the browser
+    new webpack.DefinePlugin({
+      'process.env.REACT_APP_OPENAI_API_KEY': JSON.stringify(process.env.REACT_APP_OPENAI_API_KEY),
+      'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
     }),
   ],
   devServer: {

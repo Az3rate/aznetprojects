@@ -1,34 +1,94 @@
 import React from 'react';
 import styled, { useTheme } from 'styled-components';
 import { Project } from '../../types';
+import { VscFile, VscLinkExternal } from 'react-icons/vsc';
 
+// Weighted & Anchored Design System - Runtime Playground Style
 const DetailsContainer = styled.div`
-  padding: ${({ theme }) => theme.spacing.xl};
-  color: ${({ theme }) => theme.colors.text.primary};
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 `;
 
-const Title = styled.h1`
-  color: ${({ theme }) => theme.colors.text.primary};
-  font-size: ${({ theme }) => theme.typography.fontSize.xxl};
-  margin-bottom: ${({ theme }) => theme.spacing.xl};
-  font-weight: ${({ theme }) => theme.typography.fontWeight.bold};
+const DetailsHeader = styled.div`
+  background: #0d1117;
+  border-bottom: 2px solid #1c2128;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  flex-shrink: 0;
 `;
 
-const Section = styled.div`
-  margin-bottom: ${({ theme }) => theme.spacing.xl};
+const DetailsBody = styled.div`
+  flex: 1;
+  overflow: auto;
+  padding: 20px;
+  font-family: 'SF Mono', monospace;
+  background: #0a0c10;
 `;
 
 const SectionTitle = styled.h2`
-  color: ${({ theme }) => theme.colors.text.primary};
-  font-size: ${({ theme }) => theme.typography.fontSize.xl};
-  margin-bottom: ${({ theme }) => theme.spacing.md};
-  font-weight: ${({ theme }) => theme.typography.fontWeight.bold};
+  font-size: 18px;
+  font-weight: 800;
+  color: #e6edf3;
+  font-family: 'SF Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  
+  svg {
+    width: 20px;
+    height: 20px;
+    color: #58a6ff;
+    filter: drop-shadow(0 0 8px rgba(88, 166, 255, 0.4));
+  }
+`;
+
+const Title = styled.h1`
+  color: #58a6ff;
+  font-size: 24px;
+  font-weight: 900;
+  margin: 0 0 24px 0;
+  font-family: 'SF Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  text-shadow: 0 0 20px rgba(88, 166, 255, 0.3);
+`;
+
+const Section = styled.div`
+  margin-bottom: 32px;
+  font-family: 'SF Mono', monospace;
+`;
+
+const SubSectionTitle = styled.h3`
+  color: #00d448;
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0 0 16px 0;
+  font-family: 'SF Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  
+  &:before {
+    content: '▶';
+    color: #238636;
+    margin-right: 8px;
+    font-size: 14px;
+  }
 `;
 
 const Description = styled.p`
-  color: ${({ theme }) => theme.colors.text.secondary};
+  color: #e6edf3;
   line-height: 1.6;
-  margin-bottom: ${({ theme }) => theme.spacing.md};
+  margin-bottom: 16px;
+  font-size: 14px;
+  font-family: 'SF Mono', monospace;
 `;
 
 const List = styled.ul`
@@ -38,87 +98,165 @@ const List = styled.ul`
 `;
 
 const ListItem = styled.li`
-  color: ${({ theme }) => theme.colors.text.secondary};
-  margin-bottom: ${({ theme }) => theme.spacing.sm};
-  padding-left: ${({ theme }) => theme.spacing.lg};
+  color: #e6edf3;
+  margin-bottom: 12px;
+  padding: 12px 16px;
+  background: #161b22;
+  border: 2px solid #21262d;
+  border-radius: 6px;
   position: relative;
+  font-size: 13px;
+  line-height: 1.4;
+  box-shadow: 
+    0 0 0 1px rgba(0, 0, 0, 0.8),
+    0 2px 4px rgba(0, 0, 0, 0.3);
   
   &:before {
-    content: "•";
-    color: ${({ theme }) => theme.colors.accent};
+    content: '✓';
+    color: #00d448;
     position: absolute;
-    left: 0;
+    left: -8px;
+    top: 8px;
+    background: #238636;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    box-shadow: 0 0 10px rgba(35, 134, 54, 0.3);
   }
 `;
 
 const TechStack = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: ${({ theme }) => theme.spacing.md};
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
 `;
 
 const TechItem = styled.div`
-  background: ${({ theme }) => theme.colors.background.secondary};
-  padding: ${({ theme }) => theme.spacing.md};
-  border-radius: ${({ theme }) => theme.effects.borderRadius.sm};
-  border: 1px solid ${({ theme }) => theme.colors.border};
-  color: ${({ theme }) => theme.colors.text.secondary};
+  background: #161b22;
+  border: 2px solid #21262d;
+  border-radius: 8px;
+  padding: 16px;
+  font-family: 'SF Mono', monospace;
+  transition: all 0.2s ease;
+  box-shadow: 
+    0 0 0 1px rgba(0, 0, 0, 0.8),
+    0 2px 4px rgba(0, 0, 0, 0.3);
   
-  strong {
-    color: ${({ theme }) => theme.colors.text.primary};
+  &:hover {
+    border-color: #1f6feb;
+    transform: translateY(-1px);
+    box-shadow: 
+      0 0 0 1px rgba(0, 0, 0, 0.8),
+      0 4px 8px rgba(0, 0, 0, 0.4),
+      0 0 20px rgba(31, 111, 235, 0.2);
   }
 `;
 
+const TechName = styled.div`
+  font-size: 14px;
+  font-weight: 700;
+  color: #58a6ff;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+`;
+
+const TechDescription = styled.div`
+  font-size: 12px;
+  color: #7d8590;
+  line-height: 1.4;
+`;
+
 const CloseButton = styled.button`
-  background-color: ${({ theme }) => theme.colors.background.secondary};
-  color: ${({ theme }) => theme.colors.text.primary};
-  border: 1px solid ${({ theme }) => theme.colors.border};
-  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
+  background: linear-gradient(135deg, #f85149, #da3633);
+  color: #ffffff;
+  border: 2px solid #da3633;
+  border-radius: 6px;
+  padding: 10px 16px;
   cursor: pointer;
-  margin-top: ${({ theme }) => theme.spacing.md};
+  font-family: 'SF Mono', monospace;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: all 0.2s ease;
+  box-shadow: 
+    0 0 0 1px rgba(0, 0, 0, 0.8),
+    0 2px 4px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    
   &:hover {
-    background-color: ${({ theme }) => theme.colors.background.hover};
+    background: linear-gradient(135deg, #ff6b6b, #f85149);
+    transform: translateY(-1px);
+    box-shadow: 
+      0 0 0 1px rgba(0, 0, 0, 0.8),
+      0 4px 8px rgba(0, 0, 0, 0.4),
+      inset 0 1px 0 rgba(255, 255, 255, 0.15);
   }
+  
+  &:active {
+    transform: translateY(0);
+  }
+`;
+
+const ImageContainer = styled.div`
+  margin: 16px 0;
+  border: 2px solid #21262d;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 
+    0 0 0 1px rgba(0, 0, 0, 0.8),
+    0 4px 8px rgba(0, 0, 0, 0.3);
 `;
 
 const ProjectImage = styled.img`
   width: 100%;
-  max-width: 600px;
-  margin: ${({ theme }) => theme.spacing.xl} auto;
+  height: auto;
   display: block;
-  border: 1px solid ${({ theme }) => theme.colors.border};
-  box-shadow: 0 0 10px ${({ theme }) => theme.colors.border};
-  background: ${({ theme }) => theme.colors.background.secondary};
+  filter: brightness(0.9);
+  transition: filter 0.2s ease;
+  
+  &:hover {
+    filter: brightness(1);
+  }
 `;
 
-const ApiTable = styled.table`
-  width: 100%;
-  border-collapse: collapse;
-  background: ${({ theme }) => theme.colors.background.secondary};
-  border: 1px solid ${({ theme }) => theme.colors.accent};
-  box-shadow: 0 0 10px ${({ theme }) => theme.colors.accent};
-  margin: ${({ theme }) => theme.spacing.lg} 0;
-`;
-
-const ApiTableHeader = styled.th`
-  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
-  border-bottom: 1px solid ${({ theme }) => theme.colors.accent};
-  color: ${({ theme }) => theme.colors.accent};
-  text-align: left;
-`;
-
-const ApiTableCell = styled.td`
-  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
-  border-bottom: 1px solid ${({ theme }) => theme.colors.accent};
-  color: ${({ theme }) => theme.colors.accent};
-`;
-
-const ApiTableContainer = styled.div`
-  overflow-x: auto;
-`;
-
-const DirectoryEntry = styled.div`
-  margin-left: ${({ theme }) => theme.spacing.md};
+const UrlLink = styled.a`
+  color: #8b5cf6;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 14px;
+  border: 2px solid #8b5cf6;
+  padding: 8px 16px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  
+  svg {
+    width: 14px;
+    height: 14px;
+  }
+  
+  &:hover {
+    background: #8b5cf6;
+    color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 
+      0 0 0 1px rgba(0, 0, 0, 0.8),
+      0 4px 8px rgba(0, 0, 0, 0.4),
+      0 0 20px rgba(139, 92, 246, 0.3);
+  }
 `;
 
 interface ProjectDetailsProps {
@@ -127,107 +265,79 @@ interface ProjectDetailsProps {
 }
 
 export const ProjectDetails: React.FC<ProjectDetailsProps> = ({ project, onClose }) => {
-  const theme = useTheme();
-  
   return (
     <DetailsContainer>
-      <Title>{project.name}</Title>
-      {project.image && (
-        <ProjectImage
-          src={project.image.startsWith('http') ? project.image : `/images/${project.image}`}
-          alt={`${project.name} screenshot`}
-        />
-      )}
-      <Section>
-        <SectionTitle>Project Overview</SectionTitle>
-        <Description>{project.overview}</Description>
-      </Section>
-      <Section>
-        <SectionTitle>Key Features</SectionTitle>
-        <List>
-          {project.keyFeatures.map((feature, index) => (
-            <ListItem key={index}>{feature}</ListItem>
-          ))}
-        </List>
-      </Section>
-      {project.architectureImage && (
+      <DetailsHeader>
+        <SectionTitle>
+          <VscFile />
+          Project Details
+        </SectionTitle>
+        <CloseButton onClick={onClose}>✕ Close</CloseButton>
+      </DetailsHeader>
+      
+      <DetailsBody>
+        <Title>{project.name}</Title>
+        
         <Section>
-          <SectionTitle>Architecture Flowchart</SectionTitle>
-          <ProjectImage
-            src={project.architectureImage.startsWith('http') ? project.architectureImage : `/images/${project.architectureImage}`}
-            alt={`${project.name} architecture diagram`}
-          />
+          <Description>{project.description}</Description>
+          {project.url && (
+            <UrlLink href={project.url} target="_blank" rel="noopener noreferrer">
+              <VscLinkExternal />
+              View Project
+            </UrlLink>
+          )}
         </Section>
-      )}
-      <Section>
-        <SectionTitle>Technical Stack</SectionTitle>
-        <TechStack>
-          {project.techStack.map((tech, index) => (
-            <TechItem key={index}>
-              <strong>{tech.name}</strong> ({tech.version})<br />
-              {tech.description}
-            </TechItem>
-          ))}
-        </TechStack>
-      </Section>
-      <Section>
-        <SectionTitle>Directory Structure (Key Parts)</SectionTitle>
-        <List>
-          {Object.entries(project.directoryStructure).map(([dir, contents]) => (
-            <ListItem key={dir}>
-              <strong>{dir}/</strong>
-              <br />
-              {Object.entries(contents).map(([subdir, files]) => (
-                <DirectoryEntry key={subdir}>
-                  {subdir}/: {files.join(', ')}
-                </DirectoryEntry>
-              ))}
-            </ListItem>
-          ))}
-        </List>
-      </Section>
-      {project.apiEndpoints && project.apiEndpoints.length > 0 && (
+
+        {project.image && (
+          <Section>
+            <ImageContainer>
+              <ProjectImage src={project.image} alt={`${project.name} screenshot`} />
+            </ImageContainer>
+          </Section>
+        )}
+
         <Section>
-          <SectionTitle>API Endpoints</SectionTitle>
-          <ApiTableContainer>
-            <ApiTable>
-              <thead>
-                <tr>
-                  <ApiTableHeader>Method</ApiTableHeader>
-                  <ApiTableHeader>Endpoint</ApiTableHeader>
-                  <ApiTableHeader>Description</ApiTableHeader>
-                </tr>
-              </thead>
-              <tbody>
-                {project.apiEndpoints.map((endpoint, idx) => (
-                  <tr key={idx}>
-                    <ApiTableCell>{endpoint.method}</ApiTableCell>
-                    <ApiTableCell>{endpoint.path}</ApiTableCell>
-                    <ApiTableCell>{endpoint.description}</ApiTableCell>
-                  </tr>
-                ))}
-              </tbody>
-            </ApiTable>
-          </ApiTableContainer>
+          <SubSectionTitle>Overview</SubSectionTitle>
+          <Description>{project.overview}</Description>
         </Section>
-      )}
-      {project.workflow && project.workflow.length > 0 && (
+
         <Section>
-          <SectionTitle>Development Workflow</SectionTitle>
+          <SubSectionTitle>Key Features</SubSectionTitle>
           <List>
-            {project.workflow.map((step, idx) => (
-              <ListItem key={idx}>{step}</ListItem>
+            {project.keyFeatures.map((feature, index) => (
+              <ListItem key={index}>{feature}</ListItem>
             ))}
           </List>
         </Section>
-      )}
-      {project.summary && (
+
         <Section>
-          <SectionTitle>Summary</SectionTitle>
+          <SubSectionTitle>Technology Stack</SubSectionTitle>
+          <TechStack>
+            {project.techStack.map((tech, index) => (
+              <TechItem key={index}>
+                <TechName>{tech.name}</TechName>
+                <TechDescription>{tech.description}</TechDescription>
+              </TechItem>
+            ))}
+          </TechStack>
+        </Section>
+
+        {project.workflow && project.workflow.length > 0 && (
+          <Section>
+            <SubSectionTitle>Workflow</SubSectionTitle>
+            <List>
+              {project.workflow.map((step, index) => (
+                <ListItem key={index}>{step}</ListItem>
+              ))}
+            </List>
+          </Section>
+        )}
+
+        <Section>
+          <SubSectionTitle>Summary</SubSectionTitle>
           <Description>{project.summary}</Description>
         </Section>
-      )}
-      <CloseButton onClick={onClose}>Close</CloseButton>
+      </DetailsBody>
     </DetailsContainer>
   );
 }; 

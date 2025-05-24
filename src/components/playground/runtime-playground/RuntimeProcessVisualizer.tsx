@@ -4,6 +4,7 @@ import MermaidDiagram from '../components/MermaidDiagram';
 import { RuntimeTimeline } from './RuntimeTimeline';
 import styled, { keyframes, css } from 'styled-components';
 import { RuntimeContext } from './context/RuntimeContext';
+import { VscGroupByRefType, VscPlay, VscTools } from 'react-icons/vsc';
 
 // Enhanced animation keyframes
 const fadeIn = keyframes`
@@ -64,15 +65,11 @@ const ZoomableContainer = styled.div<{ zoom: number; panX: number; panY: number 
   overflow: auto;
   width: 100%;
   height: 100%;
-  cursor: ${({ zoom }) => zoom !== 1 ? 'grab' : 'default'};
-  background: 
-    radial-gradient(circle at 24px 24px, #1c2128 1px, transparent 0),
-    radial-gradient(circle at 72px 72px, #1c2128 1px, transparent 0);
-  background-size: 48px 48px;
+  cursor: grab;
   position: relative;
   
   &:active {
-    cursor: ${({ zoom }) => zoom !== 1 ? 'grabbing' : 'default'};
+    cursor: grabbing;
   }
 `;
 
@@ -90,12 +87,12 @@ const TreeCanvas = styled.div`
   padding: 40px;
   min-width: 100%;
   min-height: 100%;
-  max-width: 1200px; /* Prevent excessive width */
+  max-width: 1400px; /* Increase max width for better tree layout */
   display: flex;
   flex-direction: column;
-  gap: 32px;
-  align-items: stretch;
-  margin: 0 auto; /* Center the content */
+  gap: 24px; /* Reduced gap for tighter tree structure */
+  align-items: flex-start; /* Align to start for tree layout */
+  margin: 0 auto;
 `;
 
 // Substantial, weighted tree nodes
@@ -116,49 +113,139 @@ const TreeNode = styled.div<{
     if (nodeType === 'callback') return status === 'completed' ? '#0d0d1b' : '#1a0a00';
     return status === 'completed' ? '#001a1a' : '#0f0f0f';
   }};
-  border: 4px solid ${({ status, nodeType }) => {
-    if (nodeType === 'async') return status === 'completed' ? '#00d448' : '#ffa500';
-    if (nodeType === 'callback') return status === 'completed' ? '#8b5cf6' : '#ef4444';
-    return status === 'completed' ? '#06b6d4' : '#71717a';
+  border: 3px solid ${({ status, nodeType, depth }) => {
+    // Use the same enhanced color system for borders
+    const getLineColor = (depth: number, nodeType: 'sync' | 'async' | 'callback') => {
+      const baseColors = {
+        async: { h: 45, s: 85, l: 65 },
+        callback: { h: 270, s: 75, l: 70 },
+        sync: { h: 210, s: 85, l: 65 }
+      };
+      
+      const base = baseColors[nodeType || 'sync'];
+      const hueShift = (depth || 0) * 40;
+      const saturationBoost = Math.min(95, base.s + (depth || 0) * 5);
+      const lightnessAdjust = status === 'completed' 
+        ? Math.min(75, base.l + 10) // Brighter for completed
+        : Math.max(45, base.l - (depth || 0) * 3);
+      const newHue = (base.h + hueShift) % 360;
+      
+      return `hsl(${newHue}, ${saturationBoost}%, ${lightnessAdjust}%)`;
+    };
+    
+    return getLineColor(depth || 0, nodeType || 'sync');
   }};
   box-shadow: 
     0 0 0 1px rgba(0, 0, 0, 0.8),
-    0 8px 16px rgba(0, 0, 0, 0.4),
-    0 0 32px ${({ status, nodeType }) => {
-      if (nodeType === 'async') return status === 'completed' ? 'rgba(0, 212, 72, 0.15)' : 'rgba(255, 165, 0, 0.15)';
-      if (nodeType === 'callback') return status === 'completed' ? 'rgba(139, 92, 246, 0.15)' : 'rgba(239, 68, 68, 0.15)';
-      return status === 'completed' ? 'rgba(6, 182, 212, 0.15)' : 'rgba(113, 113, 122, 0.15)';
+    0 6px 12px rgba(0, 0, 0, 0.4),
+    0 0 20px ${({ status, nodeType, depth }) => {
+      // Use the same enhanced color system for glow
+      const getLineColor = (depth: number, nodeType: 'sync' | 'async' | 'callback') => {
+        const baseColors = {
+          async: { h: 45, s: 85, l: 65 },
+          callback: { h: 270, s: 75, l: 70 },
+          sync: { h: 210, s: 85, l: 65 }
+        };
+        
+        const base = baseColors[nodeType || 'sync'];
+        const hueShift = (depth || 0) * 40;
+        const saturationBoost = Math.min(95, base.s + (depth || 0) * 5);
+        const lightnessAdjust = Math.max(45, base.l - (depth || 0) * 3);
+        const newHue = (base.h + hueShift) % 360;
+        
+        return `hsl(${newHue}, ${saturationBoost}%, ${lightnessAdjust}%, 0.15)`;
+      };
+      
+      return getLineColor(depth || 0, nodeType || 'sync');
     }},
     inset 0 1px 0 rgba(255, 255, 255, 0.1),
     inset 0 -1px 0 rgba(0, 0, 0, 0.2);
   min-height: 56px;
-  padding: 16px 20px;
+  max-height: 56px; /* Fixed height for consistent tree alignment */
+  padding: 12px 20px;
   margin: 0;
   font-weight: 700;
   font-size: ${({ depth }) => 
-    depth === 0 ? '18px' :
-    depth === 1 ? '16px' :
+    depth === 0 ? '16px' :
+    depth === 1 ? '15px' :
     '14px'
   };
   color: #ffffff;
   cursor: pointer;
-  transition: none;
+  transition: all 0.2s ease;
   text-align: center;
   font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
   letter-spacing: 0;
   line-height: 1.2;
   backdrop-filter: none;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  border-radius: 8px;
+  
+  /* Add connector alignment guide */
+  &::before {
+    content: '';
+    position: absolute;
+    left: -8px;
+    top: 50%;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: ${({ status, nodeType, depth }) => {
+      // Use the same enhanced color system
+      const getLineColor = (depth: number, nodeType: 'sync' | 'async' | 'callback') => {
+        const baseColors = {
+          async: { h: 45, s: 85, l: 65 },
+          callback: { h: 270, s: 75, l: 70 },
+          sync: { h: 210, s: 85, l: 65 }
+        };
+        
+        const base = baseColors[nodeType || 'sync'];
+        const hueShift = (depth || 0) * 40;
+        const saturationBoost = Math.min(95, base.s + (depth || 0) * 5);
+        const lightnessAdjust = Math.max(45, base.l - (depth || 0) * 3);
+        const newHue = (base.h + hueShift) % 360;
+        
+        return `hsl(${newHue}, ${saturationBoost}%, ${lightnessAdjust}%)`;
+      };
+      
+      return getLineColor(depth || 0, nodeType || 'sync');
+    }};
+    transform: translateY(-50%);
+    box-shadow: 0 0 4px currentColor;
+    z-index: 3;
+  }
+  
+  /* Hide connector dot for root node */
+  ${({ depth }) => depth === 0 && `
+    &::before {
+      display: none;
+    }
+  `}
   
   &:hover {
-    transform: translateY(-1px);
+    transform: translateY(-2px) scale(1.02);
     box-shadow: 
       0 0 0 1px rgba(0, 0, 0, 0.8),
       0 12px 24px rgba(0, 0, 0, 0.5),
-      0 0 48px ${({ status, nodeType }) => {
-        if (nodeType === 'async') return status === 'completed' ? 'rgba(0, 212, 72, 0.25)' : 'rgba(255, 165, 0, 0.25)';
-        if (nodeType === 'callback') return status === 'completed' ? 'rgba(139, 92, 246, 0.25)' : 'rgba(239, 68, 68, 0.25)';
-        return status === 'completed' ? 'rgba(6, 182, 212, 0.25)' : 'rgba(113, 113, 122, 0.25)';
+      0 0 32px ${({ status, nodeType, depth }) => {
+        // Use the same enhanced color system for hover glow
+        const getLineColor = (depth: number, nodeType: 'sync' | 'async' | 'callback') => {
+          const baseColors = {
+            async: { h: 45, s: 85, l: 65 },
+            callback: { h: 270, s: 75, l: 70 },
+            sync: { h: 210, s: 85, l: 65 }
+          };
+          
+          const base = baseColors[nodeType || 'sync'];
+          const hueShift = (depth || 0) * 40;
+          const saturationBoost = Math.min(95, base.s + (depth || 0) * 5);
+          const lightnessAdjust = Math.max(45, base.l - (depth || 0) * 3);
+          const newHue = (base.h + hueShift) % 360;
+          
+          return `hsl(${newHue}, ${saturationBoost}%, ${lightnessAdjust}%, 0.25)`;
+        };
+        
+        return getLineColor(depth || 0, nodeType || 'sync');
       }},
       inset 0 1px 0 rgba(255, 255, 255, 0.15),
       inset 0 -1px 0 rgba(0, 0, 0, 0.3);
@@ -166,23 +253,27 @@ const TreeNode = styled.div<{
   }
   
   &:active {
-    transform: translateY(0);
+    transform: translateY(-1px) scale(1.01);
   }
   
   ${({ status }) => status === 'running' && css`
     border-color: #fbbf24;
+    animation: ${pulse} 2s infinite;
     box-shadow: 
       0 0 0 1px rgba(0, 0, 0, 0.8),
-      0 8px 16px rgba(0, 0, 0, 0.4),
-      0 0 32px rgba(251, 191, 36, 0.4),
-      0 0 64px rgba(251, 191, 36, 0.2),
+      0 6px 12px rgba(0, 0, 0, 0.4),
+      0 0 24px rgba(251, 191, 36, 0.4),
+      0 0 48px rgba(251, 191, 36, 0.2),
       inset 0 1px 0 rgba(255, 255, 255, 0.1),
       inset 0 -1px 0 rgba(0, 0, 0, 0.2);
   `}
   
   ${({ collapsed }) => collapsed && css`
-    opacity: 0.6;
+    opacity: 0.7;
     border-style: dashed;
+    &::before {
+      opacity: 0.5;
+    }
   `}
 `;
 
@@ -410,6 +501,14 @@ const NodeLane = styled.div<{ depth: number }>`
   }
 `;
 
+const EmptyStateIcon = styled(VscPlay)`
+  width: 48px;
+  height: 48px;
+  color: #7d8590;
+  opacity: 0.5;
+  margin-bottom: 16px;
+`;
+
 const Title = styled.h1`
   font-size: 20px;
   font-weight: 800;
@@ -418,12 +517,15 @@ const Title = styled.h1`
   text-transform: uppercase;
   letter-spacing: 1px;
   margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
   
-  &:before {
-    content: '●';
+  svg {
+    width: 20px;
+    height: 20px;
     color: #00d448;
-    margin-right: 12px;
-    font-size: 16px;
+    filter: drop-shadow(0 0 8px rgba(0, 212, 72, 0.4));
     animation: ${pulse} 2s infinite;
   }
 `;
@@ -437,6 +539,11 @@ interface VisualizationState {
   searchTerm: string;
   layout: 'compact' | 'spacious' | 'grid';
   showMetrics: boolean;
+  // Promise method display options
+  showPromiseMethods: boolean;
+  groupPromiseChains: boolean;
+  showOnlyUserPromises: boolean;
+  promiseDetailLevel: 'summary' | 'detailed' | 'full';
 }
 
 interface EnhancedTreeNodeProps {
@@ -626,112 +733,168 @@ const GridLayoutNode: React.FC<EnhancedTreeNodeProps> = ({
 
   const hasChildren = node.children && node.children.length > 0;
   const showCollapsed = hasChildren && !isExpanded;
+  const INDENT_SIZE = 40; // Consistent indentation
+  const NODE_HEIGHT = 68; // Height per node including margins
+  
+  // Enhanced color system based on depth and node type
+  const getLineColor = (depth: number, nodeType: 'sync' | 'async' | 'callback') => {
+    // Base colors for different node types
+    const baseColors = {
+      async: { h: 45, s: 85, l: 65 },    // Yellow-orange base
+      callback: { h: 270, s: 75, l: 70 }, // Purple base  
+      sync: { h: 210, s: 85, l: 65 }     // Blue base
+    };
+    
+    const base = baseColors[nodeType];
+    
+    // Rotate hue and adjust saturation/lightness based on depth
+    const hueShift = depth * 40; // 40 degree rotation per level
+    const saturationBoost = Math.min(95, base.s + depth * 5); // Increase saturation slightly
+    const lightnessAdjust = Math.max(45, base.l - depth * 3); // Slightly darker for deeper levels
+    
+    const newHue = (base.h + hueShift) % 360;
+    
+    return `hsl(${newHue}, ${saturationBoost}%, ${lightnessAdjust}%)`;
+  };
+  
+  const LINE_COLOR = getLineColor(depth, nodeType);
+  
+  // Calculate total height of all descendants when expanded
+  const calculateSubtreeHeight = (node: RuntimeProcessNode, isExpanded: boolean): number => {
+    if (!node.children || node.children.length === 0 || !isExpanded) {
+      return NODE_HEIGHT; // Just this node
+    }
+    
+    let totalHeight = NODE_HEIGHT; // This node
+    
+    for (const child of node.children) {
+      const childExpanded = !collapsedNodes.has(child.id);
+      totalHeight += calculateSubtreeHeight(child, childExpanded);
+    }
+    
+    return totalHeight;
+  };
+  
+  const subtreeHeight = calculateSubtreeHeight(node, isExpanded);
+  const childrenHeight = subtreeHeight - NODE_HEIGHT; // Height of just the children portion
   
   return (
     <div style={{
-      display: 'flex',
-      flexDirection: 'column',
-      width: '100%',
-      marginLeft: `${Math.min(depth * 20, 100)}px`, // Limit max indentation to 100px
-      position: 'relative'
+      position: 'relative',
+      width: '100%'
     }}>
-      {/* The main node */}
-      <TreeNode
-        status={node.status}
-        depth={depth}
-        collapsed={showCollapsed}
-        nodeType={nodeType}
-        gridColumn="1 / -1"
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-        onClick={handleToggle}
-        style={{
-          outline: isSearchMatch ? '3px solid #ffc107' : 'none',
-          filter: isSearchMatch ? 'brightness(1.2)' : 'none',
-          maxWidth: `${Math.max(200, 500 - depth * 30)}px`, // Reduce width more gradually
-          marginBottom: hasChildren && isExpanded ? '24px' : '0'
-        }}
-      >
-        {node.name}
-        <WeightedStatusIndicator status={node.status || 'running'} />
-        
-        {/* Metrics overlay when showMetrics is true */}
-        {showMetrics && (
-          <div style={{
-            position: 'absolute',
-            top: '-8px',
-            left: '-8px',
-            right: '-8px',
-            background: 'rgba(0, 0, 0, 0.9)',
-            color: '#e6edf3',
-            padding: '8px',
-            borderRadius: '6px',
-            fontSize: '10px',
-            fontFamily: 'SF Mono, monospace',
-            zIndex: 25,
-            border: '1px solid #30363d',
-            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.5)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '2px'
-          }}>
-            <div>ID: {node.id.substring(3)}</div>
-            <div>Type: {nodeType}</div>
-            <div>Children: {node.children?.length || 0}</div>
-            {duration > 0 && <div>Duration: {duration < 1000 ? `${duration}ms` : `${(duration/1000).toFixed(2)}s`}</div>}
-            {node.parentId && <div>Parent: {node.parentId.substring(3)}</div>}
-          </div>
-        )}
-        
-        {/* Timing badge on hover (only if not showing metrics) */}
-        {isHovered && duration > 0 && !showMetrics && (
-          <div style={{
-            position: 'absolute',
-            top: '-35px',
-            right: '0',
-            background: 'rgba(0,0,0,0.9)',
-            color: '#e6edf3',
-            padding: '6px 10px',
-            borderRadius: '6px',
-            fontSize: '12px',
-            fontFamily: 'SF Mono, monospace',
-            whiteSpace: 'nowrap',
-            zIndex: 20,
-            border: '1px solid #30363d',
-            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.4)'
-          }}>
-            {duration < 1000 ? `${duration}ms` : `${(duration/1000).toFixed(2)}s`}
-          </div>
-        )}
-      </TreeNode>
-      
-      {/* Connection line to children */}
-      {hasChildren && isExpanded && (
+      {/* Only draw connector line if this is not the root node */}
+      {depth > 0 && (
         <div style={{
-          width: '4px',
-          height: '20px',
-          background: nodeType === 'async' ? 
-            'linear-gradient(180deg, #fbbf24, #f59e0b)' : 
-            'linear-gradient(180deg, #3b82f6, #2563eb)',
-          margin: '0 auto 16px auto',
-          borderRadius: '2px',
-          boxShadow: `0 0 8px ${nodeType === 'async' ? 'rgba(251, 191, 36, 0.4)' : 'rgba(59, 130, 246, 0.4)'}`
+          position: 'absolute',
+          left: `${(depth - 1) * INDENT_SIZE + 18}px`, // Connect to parent's vertical line
+          top: '30px', // Align with center of node
+          width: `${INDENT_SIZE - 18}px`, // Horizontal line to node
+          height: '3px',
+          background: LINE_COLOR,
+          borderRadius: '1px',
+          zIndex: 1
         }} />
       )}
       
-      {/* Children container */}
-      {hasChildren && isExpanded && (
+      {/* Draw vertical line for nodes that have children (and are expanded) */}
+      {hasChildren && isExpanded && childrenHeight > 0 && (
         <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '16px',
-          paddingLeft: `${Math.min(20, 40 - depth * 5)}px`, // Reduce padding for deeper levels
-          borderLeft: `2px solid ${depth < 4 ? 'rgba(255, 255, 255, 0.1)' : 'transparent'}`,
-          marginLeft: `${Math.min(15, 25 - depth * 3)}px` // Reduce margin for deeper levels
-        }}>
-          {node.children?.map((child, index) => (
+          position: 'absolute',
+          left: `${depth * INDENT_SIZE + 18}px`, // Vertical line position for this node
+          top: '64px', // Start below the node
+          width: '3px',
+          height: `${childrenHeight - 12}px`, // Dynamic height based on actual children
+          background: LINE_COLOR,
+          borderRadius: '1px',
+          zIndex: 1
+        }} />
+      )}
+      
+      {/* The main node */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        marginLeft: `${depth * INDENT_SIZE}px`,
+        marginBottom: '12px',
+        position: 'relative',
+        zIndex: 2
+      }}>
+        <TreeNode
+          status={node.status}
+          depth={depth}
+          collapsed={showCollapsed}
+          nodeType={nodeType}
+          gridColumn="1 / -1"
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+          onClick={handleToggle}
+          style={{
+            outline: isSearchMatch ? '3px solid #ffc107' : 'none',
+            filter: isSearchMatch ? 'brightness(1.2)' : 'none',
+            maxWidth: `${Math.max(300, 700 - depth * 50)}px`
+          }}
+        >
+          {node.name}
+          <WeightedStatusIndicator status={node.status || 'running'} />
+          
+          {/* Metrics overlay when showMetrics is true */}
+          {showMetrics && (
+            <div style={{
+              position: 'absolute',
+              top: '-8px',
+              left: '-8px',
+              right: '-8px',
+              background: 'rgba(0, 0, 0, 0.9)',
+              color: '#e6edf3',
+              padding: '8px',
+              borderRadius: '6px',
+              fontSize: '10px',
+              fontFamily: 'SF Mono, monospace',
+              zIndex: 25,
+              border: '1px solid #30363d',
+              boxShadow: '0 4px 8px rgba(0, 0, 0, 0.5)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '2px'
+            }}>
+              <div>ID: {node.id.substring(3)}</div>
+              <div>Type: {nodeType}</div>
+              <div>Children: {node.children?.length || 0}</div>
+              {duration > 0 && <div>Duration: {duration < 1000 ? `${duration}ms` : `${(duration/1000).toFixed(2)}s`}</div>}
+              {node.parentId && <div>Parent: {node.parentId.substring(3)}</div>}
+            </div>
+          )}
+          
+          {/* Timing badge on hover (only if not showing metrics) */}
+          {isHovered && duration > 0 && !showMetrics && (
+            <div style={{
+              position: 'absolute',
+              top: '-35px',
+              right: '0',
+              background: 'rgba(0,0,0,0.9)',
+              color: '#e6edf3',
+              padding: '6px 10px',
+              borderRadius: '6px',
+              fontSize: '12px',
+              fontFamily: 'SF Mono, monospace',
+              whiteSpace: 'nowrap',
+              zIndex: 20,
+              border: '1px solid #30363d',
+              boxShadow: '0 4px 8px rgba(0, 0, 0, 0.4)'
+            }}>
+              {duration < 1000 ? `${duration}ms` : `${(duration/1000).toFixed(2)}s`}
+            </div>
+          )}
+        </TreeNode>
+      </div>
+      
+      {/* Render children */}
+      {hasChildren && isExpanded && (
+        <div>
+          {node.children!.map((child, index) => (
             <GridLayoutNode
-              key={child.id}
+              key={child.id || `child-${index}`}
               node={child}
               depth={depth + 1}
               onCollapse={onCollapse}
@@ -743,26 +906,155 @@ const GridLayoutNode: React.FC<EnhancedTreeNodeProps> = ({
           ))}
         </div>
       )}
-      
-      {/* Collapsed children indicator */}
-      {showCollapsed && (
-        <div style={{
-          textAlign: 'center',
-          padding: '8px 16px',
-          background: 'rgba(28, 33, 40, 0.5)',
-          borderRadius: '6px',
-          fontSize: '12px',
-          color: '#7d8590',
-          fontFamily: 'SF Mono, monospace',
-          margin: '16px auto 0 auto',
-          maxWidth: '200px',
-          border: '1px dashed #30363d'
-        }}>
-          {node.children?.length || 0} hidden {(node.children?.length || 0) === 1 ? 'child' : 'children'}
-        </div>
-      )}
     </div>
   );
+};
+
+const CheckboxWrapper = styled.label`
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  color: #7d8590;
+  font-size: 12px;
+  font-family: 'SF Mono', monospace;
+  margin-bottom: 8px;
+  
+  input {
+    margin-right: 8px;
+    accent-color: #238636;
+    cursor: pointer;
+  }
+  
+  &:hover {
+    color: #e6edf3;
+  }
+`;
+
+const ControlSubsection = styled.div`
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #30363d;
+`;
+
+const SubsectionTitle = styled.h4`
+  color: #7d8590;
+  fontSize: '12px';
+  margin: 0 0 12px 0;
+  font-family: 'SF Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-size: 11px;
+`;
+
+// Helper functions for Promise method detection and filtering
+const isPromiseMethod = (functionName: string): boolean => {
+  const promiseMethods = ['then', 'catch', 'finally', 'resolve', 'reject', 'all', 'race', 'allSettled'];
+  return promiseMethods.some(method => 
+    functionName.includes(`.${method}`) || 
+    functionName.includes(`Promise.${method}`) ||
+    functionName === method
+  );
+};
+
+const isFrameworkPromise = (functionName: string): boolean => {
+  const frameworkPatterns = [
+    'fetch', 'axios', 'jquery', '$http', 'XMLHttpRequest',
+    'react', 'vue', 'angular', 'lodash', 'ramda',
+    'zone.js', 'scheduler', 'webpack', 'babel'
+  ];
+  return frameworkPatterns.some(pattern => 
+    functionName.toLowerCase().includes(pattern.toLowerCase())
+  );
+};
+
+const shouldShowNode = (
+  node: RuntimeProcessNode, 
+  options: {
+    showPromiseMethods: boolean;
+    showOnlyUserPromises: boolean;
+  }
+): boolean => {
+  // Always show non-Promise methods
+  if (!isPromiseMethod(node.name)) {
+    return true;
+  }
+  
+  // Hide Promise methods if disabled
+  if (!options.showPromiseMethods) {
+    return false;
+  }
+  
+  // Hide framework Promises if user-only is enabled
+  if (options.showOnlyUserPromises && isFrameworkPromise(node.name)) {
+    return false;
+  }
+  
+  return true;
+};
+
+const groupPromiseChain = (node: RuntimeProcessNode): RuntimeProcessNode => {
+  if (!node.children || node.children.length === 0) {
+    return node;
+  }
+  
+  // Look for consecutive Promise method children
+  const promiseChildren = node.children.filter(child => isPromiseMethod(child.name));
+  const nonPromiseChildren = node.children.filter(child => !isPromiseMethod(child.name));
+  
+  if (promiseChildren.length > 1) {
+    // Create a grouped Promise chain node
+    const chainNode: RuntimeProcessNode = {
+      id: `${node.id}-promise-chain`,
+      name: `Promise Chain (${promiseChildren.length} steps)`,
+      type: 'promise-chain',
+      status: promiseChildren.every(c => c.status === 'completed') ? 'completed' : 'running',
+      startTime: Math.min(...promiseChildren.map(c => c.startTime)),
+      endTime: promiseChildren.every(c => c.endTime) ? Math.max(...promiseChildren.map(c => c.endTime!)) : undefined,
+      children: promiseChildren,
+      parentId: node.id
+    };
+    
+    return {
+      ...node,
+      children: [...nonPromiseChildren, chainNode]
+    };
+  }
+  
+  return {
+    ...node,
+    children: node.children.map(groupPromiseChain)
+  };
+};
+
+const filterNodeTree = (
+  node: RuntimeProcessNode,
+  options: {
+    showPromiseMethods: boolean;
+    showOnlyUserPromises: boolean;
+    groupPromiseChains: boolean;
+  }
+): RuntimeProcessNode | null => {
+  // First check if this node should be shown
+  if (!shouldShowNode(node, options)) {
+    return null;
+  }
+  
+  // Process children recursively
+  const filteredChildren = (node.children || [])
+    .map(child => filterNodeTree(child, options))
+    .filter((child): child is RuntimeProcessNode => child !== null);
+  
+  let processedNode: RuntimeProcessNode = {
+    ...node,
+    children: filteredChildren
+  };
+  
+  // Apply Promise chain grouping if enabled
+  if (options.groupPromiseChains && isPromiseMethod(node.name)) {
+    processedNode = groupPromiseChain(processedNode);
+  }
+  
+  return processedNode;
 };
 
 export const RuntimeProcessVisualizer: React.FC<Props> = ({ root }) => {
@@ -778,7 +1070,12 @@ export const RuntimeProcessVisualizer: React.FC<Props> = ({ root }) => {
     collapsedNodes: new Set(),
     searchTerm: '',
     layout: 'compact',
-    showMetrics: false
+    showMetrics: false,
+    // Promise method display options
+    showPromiseMethods: false,
+    groupPromiseChains: false,
+    showOnlyUserPromises: false,
+    promiseDetailLevel: 'summary'
   });
 
   // Refs for pan and zoom functionality
@@ -794,18 +1091,29 @@ export const RuntimeProcessVisualizer: React.FC<Props> = ({ root }) => {
     children: Array.isArray(root.children) ? root.children : []
   } : null;
 
+  // Apply Promise filtering to the tree
+  const filteredRoot = useMemo(() => {
+    if (!safeRoot) return null;
+    
+    return filterNodeTree(safeRoot, {
+      showPromiseMethods: visualizationState.showPromiseMethods,
+      showOnlyUserPromises: visualizationState.showOnlyUserPromises,
+      groupPromiseChains: visualizationState.groupPromiseChains
+    });
+  }, [safeRoot, visualizationState.showPromiseMethods, visualizationState.showOnlyUserPromises, visualizationState.groupPromiseChains, forceRender]);
+
   // Calculate total nodes for performance info - moved before early return
   const totalNodes = useMemo(() => {
-    if (!safeRoot) return 0;
+    if (!filteredRoot) return 0;
     const count = (node: RuntimeProcessNode): number => {
       return 1 + (node.children?.reduce((sum, child) => sum + count(child), 0) || 0);
     };
-    return count(safeRoot);
-  }, [safeRoot, forceRender]); // Add forceRender to dependencies
+    return count(filteredRoot);
+  }, [filteredRoot, forceRender]); // Add forceRender to dependencies
 
   // Calculate execution metrics
   const executionMetrics = useMemo(() => {
-    if (!safeRoot) return null;
+    if (!filteredRoot) return null;
     
     const metrics = {
       totalDuration: 0,
@@ -838,11 +1146,11 @@ export const RuntimeProcessVisualizer: React.FC<Props> = ({ root }) => {
       node.children?.forEach(child => calculateMetrics(child, depth + 1, false));
     };
     
-    calculateMetrics(safeRoot, 0, true); // Mark root as true
+    calculateMetrics(filteredRoot, 0, true); // Mark root as true
     metrics.averageDuration = metrics.totalDuration / totalNodes;
     
     return metrics;
-  }, [safeRoot, totalNodes, forceRender]);
+  }, [filteredRoot, totalNodes, forceRender]);
 
   // Debug logging
   useEffect(() => {
@@ -889,13 +1197,12 @@ export const RuntimeProcessVisualizer: React.FC<Props> = ({ root }) => {
     updateTransform(newZoom, newPanX, newPanY);
   }, [visualizationState.zoom, visualizationState.panX, visualizationState.panY, updateState, updateTransform]);
 
-  // Handle pan with optimized performance
+  // Handle pan with optimized performance - Allow panning at any zoom level
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (visualizationState.zoom !== 1) {
-      isDragging.current = true;
-      lastMousePos.current = { x: e.clientX, y: e.clientY };
-      e.preventDefault();
-    }
+    // Allow panning at any zoom level, not just when zoomed out
+    isDragging.current = true;
+    lastMousePos.current = { x: e.clientX, y: e.clientY };
+    e.preventDefault();
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
@@ -941,18 +1248,19 @@ export const RuntimeProcessVisualizer: React.FC<Props> = ({ root }) => {
     e.preventDefault();
   };
 
-  // Add native wheel event listener for better scroll prevention
+  // Enhanced wheel event handler - Disable all wheel scrolling, only allow Ctrl+wheel for zoom
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
     const nativeWheelHandler = (e: WheelEvent) => {
-      // Check if Ctrl is held for zoom, otherwise allow normal scroll
+      // Always prevent default wheel behavior in the visualizer
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+      
+      // Only allow zoom when Ctrl/Cmd is held
       if (e.ctrlKey || e.metaKey) {
-        e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-        
         const rect = container.getBoundingClientRect();
         const centerX = e.clientX - rect.left;
         const centerY = e.clientY - rect.top;
@@ -961,10 +1269,10 @@ export const RuntimeProcessVisualizer: React.FC<Props> = ({ root }) => {
         const delta = -Math.sign(e.deltaY) * 0.1;
         handleZoom(delta, centerX, centerY);
       }
-      // For normal scroll without Ctrl, let the browser handle it naturally
+      // For all other wheel events, do nothing (disabled)
     };
 
-    // Add listener with passive: false to ensure preventDefault works when needed
+    // Add listener with passive: false to ensure preventDefault works
     container.addEventListener('wheel', nativeWheelHandler, { 
       passive: false, 
       capture: true 
@@ -1027,7 +1335,7 @@ export const RuntimeProcessVisualizer: React.FC<Props> = ({ root }) => {
     
     // Calculate optimal zoom to fit content
     const container = containerRef.current;
-    if (container && safeRoot) {
+    if (container && filteredRoot) {
       const containerRect = container.getBoundingClientRect();
       const contentWidth = Math.max(800, totalNodes * 150); // Estimate content width
       const contentHeight = Math.max(600, totalNodes * 100); // Estimate content height
@@ -1069,7 +1377,7 @@ export const RuntimeProcessVisualizer: React.FC<Props> = ({ root }) => {
 
   const collapseAll = () => {
     console.log('[VISUALIZER] Collapse All clicked');
-    if (safeRoot) {
+    if (filteredRoot) {
       const allNodeIds = new Set<string>();
       const collectIds = (node: RuntimeProcessNode) => {
         if (node.children && node.children.length > 0) {
@@ -1077,7 +1385,7 @@ export const RuntimeProcessVisualizer: React.FC<Props> = ({ root }) => {
           node.children.forEach(collectIds);
         }
       };
-      collectIds(safeRoot);
+      collectIds(filteredRoot);
       console.log(`[COLLAPSE_ALL] Collected ${allNodeIds.size} node IDs to collapse:`, Array.from(allNodeIds));
       updateState({ collapsedNodes: allNodeIds });
       
@@ -1106,7 +1414,10 @@ export const RuntimeProcessVisualizer: React.FC<Props> = ({ root }) => {
       <VisualizationContainer>
         {/* Anchored Toolbar */}
         <ToolbarArea>
-          <Title>Runtime Visualizer</Title>
+          <Title>
+            <VscGroupByRefType />
+            Runtime Visualizer
+          </Title>
           <SearchField
             placeholder="Search nodes..."
             value={visualizationState.searchTerm}
@@ -1231,6 +1542,87 @@ export const RuntimeProcessVisualizer: React.FC<Props> = ({ root }) => {
               <div>• <strong>Search:</strong> Highlight matching nodes</div>
             </div>
           </div>
+
+          {/* Promise Method Controls */}
+          <ControlSubsection>
+            <SubsectionTitle>Promise Tracking</SubsectionTitle>
+            
+            <CheckboxWrapper>
+              <input 
+                type="checkbox" 
+                checked={visualizationState.showPromiseMethods} 
+                onChange={(e) => updateState({ showPromiseMethods: e.target.checked })}
+              />
+              Show Promise Methods (.then, .catch, .finally)
+            </CheckboxWrapper>
+            
+            <CheckboxWrapper>
+              <input 
+                type="checkbox" 
+                checked={visualizationState.groupPromiseChains} 
+                onChange={(e) => updateState({ groupPromiseChains: e.target.checked })}
+                disabled={!visualizationState.showPromiseMethods}
+              />
+              Group Promise Chains
+            </CheckboxWrapper>
+            
+            <CheckboxWrapper>
+              <input 
+                type="checkbox" 
+                checked={visualizationState.showOnlyUserPromises} 
+                onChange={(e) => updateState({ showOnlyUserPromises: e.target.checked })}
+                disabled={!visualizationState.showPromiseMethods}
+              />
+              Hide Framework/Library Promises
+            </CheckboxWrapper>
+
+            <div style={{ marginTop: '12px' }}>
+              <label style={{ 
+                color: '#7d8590', 
+                fontSize: '11px',
+                fontFamily: 'SF Mono, monospace',
+                marginBottom: '6px',
+                display: 'block'
+              }}>
+                Detail Level:
+              </label>
+              <select 
+                value={visualizationState.promiseDetailLevel}
+                onChange={(e) => updateState({ promiseDetailLevel: e.target.value as 'summary' | 'detailed' | 'full' })}
+                disabled={!visualizationState.showPromiseMethods}
+                style={{
+                  background: '#21262d',
+                  border: '1px solid #30363d',
+                  borderRadius: '4px',
+                  padding: '4px 8px',
+                  color: '#e6edf3',
+                  fontSize: '11px',
+                  fontFamily: 'SF Mono, monospace',
+                  cursor: visualizationState.showPromiseMethods ? 'pointer' : 'not-allowed',
+                  opacity: visualizationState.showPromiseMethods ? 1 : 0.5,
+                  width: '100%'
+                }}
+              >
+                <option value="summary">Summary (collapsed chains)</option>
+                <option value="detailed">Detailed (show main methods)</option>
+                <option value="full">Full (show everything)</option>
+              </select>
+            </div>
+            
+            <div style={{
+              marginTop: '8px',
+              padding: '8px',
+              background: 'rgba(88, 166, 255, 0.1)',
+              border: '1px solid rgba(88, 166, 255, 0.3)',
+              borderRadius: '4px',
+              fontSize: '10px',
+              color: '#58a6ff',
+              fontFamily: 'SF Mono, monospace',
+              lineHeight: '1.4'
+            }}>
+              <strong>💡 Tip:</strong> Enable Promise tracking for debugging async flows. Use "Summary" mode to avoid clutter in Promise-heavy code.
+            </div>
+          </ControlSubsection>
         </SidebarPanel>
 
         {/* Main Canvas Area */}
@@ -1251,12 +1643,12 @@ export const RuntimeProcessVisualizer: React.FC<Props> = ({ root }) => {
             panY={visualizationState.panY}
           >
             <TreeCanvas>
-              {safeRoot ? (
+              {filteredRoot ? (
                 <GridLayoutNode
-                  node={safeRoot}
+                  node={filteredRoot}
                   depth={0}
                   onCollapse={handleCollapse}
-                  collapsed={visualizationState.collapsedNodes.has(safeRoot.id)}
+                  collapsed={visualizationState.collapsedNodes.has(filteredRoot.id)}
                   collapsedNodes={visualizationState.collapsedNodes}
                   searchTerm={visualizationState.searchTerm}
                   showMetrics={visualizationState.showMetrics}
@@ -1274,13 +1666,7 @@ export const RuntimeProcessVisualizer: React.FC<Props> = ({ root }) => {
                   fontSize: '16px',
                   textAlign: 'center'
                 }}>
-                  <div style={{ 
-                    fontSize: '48px', 
-                    marginBottom: '16px',
-                    opacity: '0.5'
-                  }}>
-                    ⚡
-                  </div>
+                  <EmptyStateIcon />
                   <div>No runtime data available</div>
                   <div style={{ 
                     fontSize: '14px', 
@@ -1298,17 +1684,17 @@ export const RuntimeProcessVisualizer: React.FC<Props> = ({ root }) => {
         {/* Anchored Status Bar */}
         <StatusBar>
           <div>
-            Status: {safeRoot ? 'Active' : 'Idle'} • 
+            Status: {filteredRoot ? 'Active' : 'Idle'} • 
             Total Nodes: {totalNodes} • 
-            Root Children: {safeRoot?.children?.length || 0} •
-            Execution Time: {safeRoot?.endTime && safeRoot?.startTime 
-              ? `${safeRoot.endTime - safeRoot.startTime}ms` 
+            Root Children: {filteredRoot?.children?.length || 0} •
+            Execution Time: {filteredRoot?.endTime && filteredRoot?.startTime 
+              ? `${filteredRoot.endTime - filteredRoot.startTime}ms` 
               : 'N/A'}
           </div>
           <div>
             Zoom: {(visualizationState.zoom * 100).toFixed(0)}% • 
             Collapsed: {visualizationState.collapsedNodes.size} • 
-            💡 Ctrl+Wheel: Zoom • Scroll: Navigate • Click: Expand/Collapse
+            ℹ️ Ctrl+Wheel: Zoom • Scroll: Navigate • Click: Expand/Collapse
           </div>
         </StatusBar>
 
@@ -1334,66 +1720,6 @@ export const RuntimeProcessVisualizer: React.FC<Props> = ({ root }) => {
           </div>
         )}
       </VisualizationContainer>
-
-      {/* Troubleshooting Section - Easy to copy with Ctrl+A */}
-      <div style={{
-        marginTop: '24px',
-        padding: '20px',
-        background: '#0d1117',
-        border: '2px solid #1c2128',
-        borderRadius: '8px',
-        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)'
-      }}>
-        <details open>
-          <summary style={{ 
-            color: '#e6edf3', 
-            fontSize: '16px',
-            margin: '0 0 16px 0',
-            fontFamily: 'SF Mono, monospace',
-            fontWeight: '700',
-            cursor: 'pointer',
-            padding: '8px 0',
-            borderBottom: '1px solid #30363d'
-          }}>
-            🔧 Debug Tree Structure (Click to copy with Ctrl+A)
-          </summary>
-          <div style={{
-            background: '#0a0c10',
-            border: '1px solid #30363d',
-            borderRadius: '6px',
-            padding: '16px',
-            marginTop: '16px',
-            maxHeight: '600px',
-            overflow: 'auto'
-          }}>
-            <pre style={{
-              color: '#e6edf3',
-              fontSize: '12px',
-              fontFamily: 'SF Mono, monospace',
-              lineHeight: '1.4',
-              margin: '0',
-              whiteSpace: 'pre-wrap',
-              wordWrap: 'break-word',
-              userSelect: 'text'
-            }}>
-              {safeRoot ? JSON.stringify(safeRoot, null, 2) : 'No tree data available'}
-            </pre>
-          </div>
-          <div style={{ 
-            marginTop: '12px',
-            fontSize: '14px',
-            color: '#7d8590',
-            fontFamily: 'SF Mono, monospace',
-            fontStyle: 'italic',
-            textAlign: 'center',
-            padding: '8px',
-            background: 'rgba(30, 30, 30, 0.5)',
-            borderRadius: '4px'
-          }}>
-            💡 Press Ctrl+A to select all text, then Ctrl+C to copy for troubleshooting
-          </div>
-        </details>
-      </div>
     </>
   );
 };
@@ -1509,4 +1835,4 @@ function generateMermaidChart(root: RuntimeProcessNode): string {
   }
   
   return mermaidChart;
-} 
+}

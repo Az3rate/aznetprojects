@@ -2,15 +2,19 @@ import React from 'react';
 import styled from 'styled-components';
 import { SoundSettings } from './SoundSettings';
 
-const NavContainer = styled.nav`
+const NavContainer = styled.nav<{ $isFloating?: boolean }>`
   width: 100%;
   height: ${({ theme }) => theme.spacing.xl};
-  background: ${({ theme }) => theme.colors.background.secondary};
+  background: ${({ theme, $isFloating }) => $isFloating ? '#010409' : theme.colors.background.secondary};
   display: flex;
   align-items: center;
   padding: 0 ${({ theme }) => theme.spacing.xl};
-  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
+  border-bottom: 1px solid ${({ theme, $isFloating }) => $isFloating ? '#21262d' : theme.colors.border};
   box-shadow: ${({ theme }) => theme.effects.boxShadow.sm};
+  position: ${({ $isFloating }) => $isFloating ? 'fixed' : 'static'};
+  top: ${({ $isFloating }) => $isFloating ? '0' : 'auto'};
+  left: ${({ $isFloating }) => $isFloating ? '0' : 'auto'};
+  z-index: ${({ theme, $isFloating }) => $isFloating ? theme.zIndex.modal + 1 : 'auto'};
 `;
 
 const MenuList = styled.ul`
@@ -58,7 +62,7 @@ const Spacer = styled.div`
   flex: 1;
 `;
 
-type Page = 'terminal' | 'api' | 'featured' | 'playground' | 'runtime-playground';
+type Page = 'terminal' | 'featured' | 'runtime-studio';
 
 interface NavigationProps {
   currentPage: Page;
@@ -67,26 +71,21 @@ interface NavigationProps {
   onVolumeChange: (v: number) => void;
   isMuted: boolean;
   onToggleMute: () => void;
+  isFloating?: boolean;
 }
 
-export const Navigation: React.FC<NavigationProps> = ({ currentPage, onPageChange, volume, onVolumeChange, isMuted, onToggleMute }) => {
+export const Navigation: React.FC<NavigationProps> = ({ currentPage, onPageChange, volume, onVolumeChange, isMuted, onToggleMute, isFloating }) => {
   return (
-    <NavContainer>
+    <NavContainer $isFloating={isFloating}>
       <MenuList>
         <MenuItem $active={currentPage === 'terminal'}>
           <MenuLink onClick={() => onPageChange('terminal')}>Terminal</MenuLink>
         </MenuItem>
-        <MenuItem $active={currentPage === 'api'}>
-          <MenuLink onClick={() => onPageChange('api')}>API</MenuLink>
-        </MenuItem>
         <MenuItem $active={currentPage === 'featured'}>
           <MenuLink onClick={() => onPageChange('featured')}>Featured</MenuLink>
         </MenuItem>
-        <MenuItem $active={currentPage === 'playground'}>
-          <MenuLink onClick={() => onPageChange('playground')}>Playground</MenuLink>
-        </MenuItem>
-        <MenuItem $active={currentPage === 'runtime-playground'}>
-          <MenuLink onClick={() => onPageChange('runtime-playground')}>Runtime Playground</MenuLink>
+        <MenuItem $active={currentPage === 'runtime-studio'}>
+          <MenuLink onClick={() => onPageChange('runtime-studio')}>JavaScript Runtime Studio</MenuLink>
         </MenuItem>
       </MenuList>
       <Spacer />

@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ThemeProvider } from './styles/ThemeProvider';
 import { GlobalStyles } from './styles/globalStyles';
-import { SwirlBackground } from './components/Terminal/SwirlBackground';
 import { Terminal } from './components/Terminal/Terminal';
 import { WelcomeModal, WelcomeModalRef } from './components/WelcomeModal';
 import { DirectoryProvider } from './context/DirectoryContext';
@@ -9,14 +8,12 @@ import { UserPreferencesProvider, useUserPreferences } from './context/UserPrefe
 import { TerminalProvider } from './context/TerminalContext';
 import type { TerminalRef } from './components/Terminal/Terminal';
 import { Navigation } from './components/Navigation/Navigation';
-import { ApiPage } from './components/Pages/ApiPage';
 import { FeaturedProjectsPage } from './components/Pages/FeaturedProjectsPage';
-import PlaygroundPage from './components/Pages/PlaygroundPage';
 import { Footer } from './components/Navigation/Footer';
 import { PageLayout } from './components/Layout/PageLayout';
-import RuntimePlaygroundPage from './components/Pages/RuntimePlaygroundPage';
+import JavaScriptRuntimeStudioPage from './components/Pages/RuntimePlaygroundPage';
 
-type Page = 'terminal' | 'api' | 'featured' | 'playground' | 'runtime-playground';
+type Page = 'terminal' | 'featured' | 'runtime-studio';
 
 const AppContent: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<Page>('terminal');
@@ -79,18 +76,38 @@ const AppContent: React.FC = () => {
             />
           </TerminalProvider>
         );
-      case 'api':
-        return <ApiPage />;
       case 'featured':
         return <FeaturedProjectsPage />;
-      case 'playground':
-        return <PlaygroundPage />;
-      case 'runtime-playground':
-        return <RuntimePlaygroundPage />;
+      case 'runtime-studio':
+        return <JavaScriptRuntimeStudioPage />;
       default:
         return null;
     }
   };
+
+  // Special handling for terminal and runtime-studio which need full screen
+  if (currentPage === 'terminal' || currentPage === 'runtime-studio' || currentPage === 'featured') {
+    return (
+      <>
+        <Navigation 
+          currentPage={currentPage} 
+          onPageChange={setCurrentPage} 
+          volume={volume} 
+          onVolumeChange={handleVolumeChange} 
+          isMuted={isMuted} 
+          onToggleMute={handleToggleMute} 
+          isFloating={true}
+        />
+        {renderPage()}
+        <WelcomeModal
+          ref={welcomeModalRef}
+          open={!preferences.hasVisited}
+          onClose={() => setUserType('technical')}
+          onStartTour={handleStartTour}
+        />
+      </>
+    );
+  }
 
   return (
     <PageLayout
@@ -98,12 +115,12 @@ const AppContent: React.FC = () => {
       footer={<Footer />}
     >
       {renderPage()}
-          <WelcomeModal
-            ref={welcomeModalRef}
+      <WelcomeModal
+        ref={welcomeModalRef}
         open={!preferences.hasVisited}
         onClose={() => setUserType('technical')}
-            onStartTour={handleStartTour}
-          />
+        onStartTour={handleStartTour}
+      />
     </PageLayout>
   );
 };
@@ -112,7 +129,6 @@ export const App: React.FC = () => {
   return (
     <ThemeProvider>
       <GlobalStyles />
-      <SwirlBackground />
       <UserPreferencesProvider>
         <DirectoryProvider>
           <AppContent />

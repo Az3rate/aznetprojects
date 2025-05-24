@@ -129,7 +129,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = React.memo(({
   }, [currentDirectory, normalizePath]);
 
 
-  const toggleExpansion = useCallback((path: string, e: React.MouseEvent) => {
+  const toggleExpansion = useCallback((path: string, e: React.MouseEvent<HTMLElement>) => {
     e.stopPropagation();
     const cleanPath = normalizePath(path);
     setExpanded(prev => {
@@ -166,13 +166,13 @@ export const FileExplorer: React.FC<FileExplorerProps> = React.memo(({
           <div key={cleanNodePath}>
             <DirectoryItem
               $isActive={isCurrentDir}
-              onClick={(e) => {
+              onClick={(e: React.MouseEvent<HTMLDivElement>) => {
                 e.stopPropagation();
                 toggleExpansion(cleanNodePath, e);
                 handleDirectoryClick(cleanNodePath);
               }}
             >
-              <DirectoryIcon onClick={(e) => toggleExpansion(cleanNodePath, e)}>
+              <DirectoryIcon onClick={(e: React.MouseEvent<HTMLSpanElement>) => toggleExpansion(cleanNodePath, e)}>
                 {isExpanded ? '📂' : '📁'}
               </DirectoryIcon>
               <DirectoryName>{node.name || path.split('/').pop()}</DirectoryName>
@@ -192,7 +192,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = React.memo(({
         <DirectoryItem
           $isActive={isCurrentDir}
           key={cleanNodePath}
-          onClick={(e) => {
+          onClick={(e: React.MouseEvent<HTMLDivElement>) => {
             e.stopPropagation();
 
             const segments = cleanNodePath.split('/');

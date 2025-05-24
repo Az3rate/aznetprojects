@@ -1,8 +1,8 @@
 import React from 'react';
 import { RuntimePlaygroundContainer } from '../playground/runtime-playground/RuntimePlaygroundContainer';
 
-const RuntimePlaygroundPage: React.FC = () => {
+const JavaScriptRuntimeStudioPage: React.FC = () => {
   return <RuntimePlaygroundContainer />;
 };
 
-export default RuntimePlaygroundPage; 
+export default JavaScriptRuntimeStudioPage; 

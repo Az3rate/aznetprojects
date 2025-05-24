@@ -10,10 +10,10 @@ export interface RuntimeProcessEvent {
 export interface RuntimeProcessNode {
   id: string;
   name: string;
-  type: 'function' | 'call';
-  children: RuntimeProcessNode[];
-  parentId?: string;
-  status: 'running' | 'completed';
+  type: 'function' | 'call' | 'promise-chain';
+  status: 'pending' | 'running' | 'completed' | 'error';
   startTime: number;
   endTime?: number;
+  children: RuntimeProcessNode[];
+  parentId?: string;
 } 

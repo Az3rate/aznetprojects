@@ -186,3 +186,171 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## Author
 
 Hugo Villeneuve - [GitHub Profile](https://github.com/Az3rate)
+
+## 🚀 Features
+
+- **Interactive Terminal Interface**: Authentic terminal experience with command execution
+- **Project Showcase**: Detailed technical project displays with architecture diagrams
+- **Responsive Design**: Optimized for all devices and screen sizes
+- **TypeScript**: Full type safety throughout the application
+- **Styled Components**: Component-based styling with theme support
+- **Runtime Code Visualization**: Advanced JavaScript execution tracking and visualization
+
+## 🛠️ Runtime Visualization System
+
+### **What It Can Do:**
+
+The runtime visualization system is a sophisticated JavaScript instrumentation tool that can track and visualize:
+
+#### ✅ **Fully Supported Patterns:**
+- **Function Declarations**: `function myFunc() {}`
+- **Arrow Functions**: `const fn = () => {}`, `const fn = (a, b) => a + b`
+- **Function Expressions**: `const fn = function() {}`
+- **Async Functions**: `async function myFunc() {}`, `const fn = async () => {}`
+- **Generator Functions**: `function* myGenerator() {}`
+- **Nested Functions**: Functions defined inside other functions
+- **Promise Chains**: `.then()`, `.catch()`, `.finally()` callbacks
+- **Async/Await Patterns**: Complex async operation tracking
+- **setTimeout/setInterval**: Asynchronous timer callbacks
+- **Object Methods**: Basic object method detection
+- **String/Comment Safety**: Ignores function patterns in strings and comments
+- **Template Literals**: Properly handles template strings with embedded expressions
+- **Regex Literals**: Context-aware regex pattern detection
+
+#### ⚡ **Performance Characteristics:**
+- **High Volume**: Successfully tested with 250+ function executions
+- **Complex Async**: Handles deeply nested async operations
+- **Memory Efficient**: Optimized for enterprise-grade applications
+- **Error Resilient**: Graceful degradation when parsing fails
+
+### **Current Limitations:**
+
+#### 🚧 **Partially Supported:**
+- **Class Methods**: Basic detection, may miss complex inheritance patterns
+- **Dynamic Functions**: `new Function()` and `eval()` created functions (runtime discovery helps)
+- **Module Imports**: ES6 `import/export` statements need enhancement
+- **Destructuring**: Complex destructuring assignments with functions
+- **HOF Patterns**: Higher-order functions may lose context tracking
+
+#### ❌ **Not Yet Supported:**
+- **Minified Code**: Compressed JavaScript is difficult to parse reliably
+- **Framework-Specific**: React hooks, Vue composables need specialized handling
+- **WebAssembly**: WASM function calls are outside JavaScript scope
+- **Worker Threads**: Cross-thread function calls not tracked
+- **Proxy/Reflect**: Dynamic function creation via Proxy traps
+
+### **Making It Production-Ready:**
+
+#### **For Enterprise Use:**
+```typescript
+// Recommended patterns that work best:
+async function fetchUserData(userId: string) {
+  const response = await fetch(`/api/users/${userId}`);
+  return response.json();
+}
+
+const processData = (data: any[]) => {
+  return data.map(item => transformItem(item));
+};
+
+function transformItem(item: any) {
+  // Simple, direct function calls work best
+  return { ...item, processed: true };
+}
+
+// Avoid complex patterns like:
+const dynamicFunction = new Function('return 42'); // ❌ Not tracked
+eval('function evalFunc() {}'); // ❌ Not tracked
+```
+
+#### **Performance Optimization:**
+1. **Code Splitting**: Use static analysis for large codebases
+2. **Selective Instrumentation**: Only instrument critical execution paths
+3. **Runtime Toggles**: Enable/disable tracking in production
+4. **Memory Management**: Clear tracking data for long-running applications
+
+#### **Robustness Enhancements:**
+1. **AST Parser**: Uses tokenized parsing instead of naive regex
+2. **Context Awareness**: Understands JavaScript syntax context
+3. **Fallback Systems**: Multiple parsing strategies for resilience
+4. **Error Recovery**: Graceful handling of malformed code
+5. **Runtime Discovery**: Detects functions missed by static analysis
+
+### **Real-World Usage:**
+
+The system excels at:
+- **Development Debugging**: Understanding complex async flows
+- **Performance Analysis**: Identifying function execution bottlenecks  
+- **Code Education**: Visualizing how JavaScript executes
+- **Testing Scenarios**: Verifying async operation completion
+- **Architecture Review**: Understanding system execution patterns
+
+It's particularly powerful for demonstrating JavaScript concepts, debugging complex async flows, and providing visual feedback on code execution patterns.
+
+## 🏗️ Tech Stack
+
+- **React** - Component framework
+- **TypeScript** - Type safety
+- **Styled Components** - CSS-in-JS styling
+- **Context API** - State management
+- **Web Workers** - Background code execution
+- **AST Parsing** - JavaScript code analysis
+
+## 📦 Installation
+
+```bash
+npm install
+npm run dev
+```
+
+## 🚀 Deployment
+
+```bash
+npm run build
+npm run preview
+```
+
+## 📱 Responsive Design
+
+Optimized for:
+- Desktop (1920px+)
+- Laptop (1024px - 1919px)  
+- Tablet (768px - 1023px)
+- Mobile (320px - 767px)
+
+## 🎨 Theme System
+
+The application uses a comprehensive theme system supporting:
+- Dark/Light mode variants
+- Consistent color palette
+- Responsive typography
+- Spacing system
+- Component theming
+
+## 🔧 Development
+
+### Project Structure
+```
+src/
+├── components/     # React components
+├── styles/         # Global styles and themes
+├── types/          # TypeScript definitions
+├── context/        # React context providers
+├── data/           # Static data and content
+└── utils/          # Utility functions
+```
+
+### Code Quality
+- ESLint configuration
+- Prettier formatting
+- TypeScript strict mode
+- Component testing
+- Accessibility compliance
+
+## 📄 License
+
+MIT License - feel free to use this project as inspiration for your own portfolio!
+
+---
+
+*Built with ❤️ and lots of ☕*
