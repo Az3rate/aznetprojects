@@ -10,160 +10,310 @@ import codeExamples from './codeExamples';
 import { VisualizationExplainer } from './VisualizationExplainer';
 import { RuntimeProvider } from './context/RuntimeContext';
 
+// Weighted & Anchored Design System - Base Container
+const WeightedContainer = styled.div<{ gridArea?: string }>`
+  position: relative;
+  background: #0a0c10;
+  border: 4px solid #1c2128;
+  box-shadow: 
+    0 0 0 1px #21262d,
+    0 8px 24px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  overflow: hidden;
+  grid-area: ${({ gridArea }) => gridArea || 'auto'};
+`;
+
+// Main page container with grid layout
 const Container = styled.div`
-  display: flex;
-  gap: ${({ theme }) => theme.spacing.lg};
-  padding: ${({ theme }) => theme.spacing.lg};
-  height: 100%;
-  /* Prevent horizontal overflow */
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto 1fr auto;
+  grid-template-areas:
+    "examples visualizer-hint"
+    "editor visualizer"
+    "debug visualizer";
+  gap: 24px;
+  padding: 24px;
+  height: 100vh;
   max-width: 100vw;
-  overflow-x: hidden;
+  overflow: hidden;
+  background: #010409;
 `;
 
-const EditorSection = styled.div`
-  flex: 1;
+// Header Section for Examples
+const ExamplesSection = styled(WeightedContainer)`
+  grid-area: examples;
+  padding: 20px;
+  min-height: 120px;
+`;
+
+const ExamplesHeader = styled.div`
   display: flex;
-  flex-direction: column;
-  gap: ${({ theme }) => theme.spacing.md};
-  /* Constrain width to prevent expansion */
-  min-width: 0;
-  max-width: 50%;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #1c2128;
 `;
 
-const CodeEditor = styled.textarea`
-  width: 100%;
-  height: 200px;
-  font-family: ${({ theme }) => theme.typography.fontFamily.monospace};
-  font-size: ${({ theme }) => theme.typography.fontSize.md};
-  padding: ${({ theme }) => theme.spacing.md};
-  background: ${({ theme }) => theme.colors.background.secondary};
-  color: ${({ theme }) => theme.colors.text.primary};
-  border: 1px solid ${({ theme }) => theme.colors.border};
-  border-radius: ${({ theme }) => theme.effects.borderRadius.sm};
-  resize: vertical;
-  /* Prevent text overflow */
-  word-wrap: break-word;
-  overflow-wrap: break-word;
-`;
-
-const RunButton = styled.button`
-  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.lg};
-  background: ${({ theme }) => theme.colors.accent};
-  color: ${({ theme }) => theme.colors.text.primary};
-  border: none;
-  border-radius: ${({ theme }) => theme.effects.borderRadius.sm};
-  cursor: pointer;
-  font-weight: ${({ theme }) => theme.typography.fontWeight.medium};
-  transition: opacity ${({ theme }) => theme.effects.transition.normal};
-
-  &:hover {
-    opacity: 0.9;
+const SectionTitle = styled.h2`
+  font-size: 18px;
+  font-weight: 800;
+  color: #e6edf3;
+  font-family: 'SF Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin: 0;
+  
+  &:before {
+    content: '⚡';
+    color: #00d448;
+    margin-right: 12px;
+    font-size: 16px;
   }
 `;
 
-const SyncButton = styled(RunButton)`
-  background: ${({ theme }) => theme.colors.primary};
-  margin-left: ${({ theme }) => theme.spacing.sm};
-`;
-
-const ButtonGroup = styled.div`
+// Editor Section
+const EditorSection = styled(WeightedContainer)`
+  grid-area: editor;
   display: flex;
-  margin-bottom: ${({ theme }) => theme.spacing.md};
-  flex-wrap: wrap;
-  gap: ${({ theme }) => theme.spacing.xs};
+  flex-direction: column;
+  overflow: hidden;
 `;
 
-const OutputArea = styled.pre`
-  background: ${({ theme }) => theme.colors.background.secondary};
-  color: ${({ theme }) => theme.colors.text.primary};
-  font-size: ${({ theme }) => theme.typography.fontSize.sm};
-  font-family: ${({ theme }) => theme.typography.fontFamily.monospace};
-  padding: ${({ theme }) => theme.spacing.md};
-  border: 1px solid ${({ theme }) => theme.colors.border};
-  border-radius: ${({ theme }) => theme.effects.borderRadius.sm};
-  overflow: auto;
-  max-height: 200px;
-  margin-top: ${({ theme }) => theme.spacing.sm};
-  /* Critical: Fix text wrapping for long lines */
-  white-space: pre-wrap;
+const EditorHeader = styled.div`
+  background: #0d1117;
+  border-bottom: 2px solid #1c2128;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+`;
+
+const EditorContent = styled.div`
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+`;
+
+const CodeEditor = styled.textarea`
+  flex: 1;
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+  font-size: 14px;
+  padding: 20px;
+  background: #0a0c10;
+  color: #e6edf3;
+  border: none;
+  resize: none;
+  outline: none;
   word-wrap: break-word;
   overflow-wrap: break-word;
-  word-break: break-all;
-  /* Ensure container respects boundaries */
-  min-width: 0;
-  max-width: 100%;
+  line-height: 1.5;
+  border-bottom: 2px solid #1c2128;
 `;
 
-const VisualizerSection = styled.div`
+const EditorControls = styled.div`
+  background: #0d1117;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-top: 2px solid #1c2128;
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.2);
+`;
+
+// Weighted Button System
+const WeightedButton = styled.button<{ active?: boolean; variant?: 'primary' | 'secondary' | 'success' }>`
+  background: ${({ active, variant }) => {
+    if (active) return 'linear-gradient(135deg, #238636, #2ea043)';
+    if (variant === 'primary') return 'linear-gradient(135deg, #1f6feb, #0969da)';
+    if (variant === 'success') return 'linear-gradient(135deg, #238636, #2ea043)';
+    return 'rgba(33, 38, 45, 0.9)';
+  }};
+  color: ${({ active }) => active ? '#ffffff' : '#e6edf3'};
+  border: 2px solid ${({ active, variant }) => {
+    if (active) return '#238636';
+    if (variant === 'primary') return '#1f6feb';
+    if (variant === 'success') return '#238636';
+    return '#30363d';
+  }};
+  border-radius: 6px;
+  padding: 10px 16px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: 'SF Mono', monospace;
+  transition: none;
+  box-shadow: 
+    0 0 0 1px rgba(0, 0, 0, 0.8),
+    0 2px 4px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  
+  &:hover {
+    background: ${({ active, variant }) => {
+      if (active) return 'linear-gradient(135deg, #2ea043, #34d058)';
+      if (variant === 'primary') return 'linear-gradient(135deg, #388bfd, #1f6feb)';
+      if (variant === 'success') return 'linear-gradient(135deg, #2ea043, #34d058)';
+      return 'rgba(48, 54, 61, 0.9)';
+    }};
+    transform: translateY(-1px);
+    box-shadow: 
+      0 0 0 1px rgba(0, 0, 0, 0.8),
+      0 4px 8px rgba(0, 0, 0, 0.4),
+      inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
+`;
+
+// Output Section
+const OutputSection = styled(WeightedContainer)`
+  grid-area: debug;
+  min-height: 200px;
+  max-height: 300px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+`;
+
+const OutputHeader = styled(EditorHeader)`
+  min-height: auto;
+`;
+
+const OutputContent = styled.div`
   flex: 1;
   overflow: auto;
-  min-height: 800px;
-  position: relative;
-  /* Constrain width to prevent expansion */
-  min-width: 0;
-  max-width: 50%;
-`;
-
-const DebugOutput = styled.pre`
-  background: #222;
-  color: #0ff;
+  padding: 20px;
+  font-family: 'SF Mono', monospace;
   font-size: 12px;
-  font-family: ${({ theme }) => theme.typography.fontFamily.monospace};
-  padding: 8px;
-  margin-bottom: 8px;
-  border-radius: 4px;
-  max-height: 120px;
-  overflow: auto;
-  /* Critical: Fix text wrapping for long debug lines */
+  color: #e6edf3;
+  line-height: 1.4;
+  background: #0a0c10;
   white-space: pre-wrap;
   word-wrap: break-word;
   overflow-wrap: break-word;
-  word-break: break-all;
-  /* Ensure container respects boundaries */
-  min-width: 0;
-  max-width: 100%;
 `;
 
-const SelectWrapper = styled.div`
-  margin-bottom: ${({ theme }) => theme.spacing.md};
+const DebugOutput = styled(OutputContent)`
+  color: #00d448;
+  border-bottom: 2px solid #1c2128;
+  max-height: 150px;
 `;
 
-const ExampleSelect = styled.select`
+// Visualizer Hint Section
+const VisualizerHintSection = styled(WeightedContainer)`
+  grid-area: visualizer-hint;
+  padding: 20px;
+  min-height: 120px;
+`;
+
+// Visualizer Section
+const VisualizerSection = styled.div`
+  grid-area: visualizer;
+  overflow: auto;
+  position: relative;
+`;
+
+// Enhanced Select Styling
+const WeightedSelect = styled.select`
+  background: #21262d;
+  border: 2px solid #30363d;
+  border-radius: 6px;
+  padding: 10px 14px;
+  color: #e6edf3;
+  font-size: 14px;
+  font-family: 'SF Mono', monospace;
+  font-weight: 600;
   width: 100%;
-  padding: ${({ theme }) => theme.spacing.sm};
-  font-size: ${({ theme }) => theme.typography.fontSize.md};
-  border-radius: ${({ theme }) => theme.effects.borderRadius.sm};
-  background: ${({ theme }) => theme.colors.background.primary};
-  color: ${({ theme }) => theme.colors.text.primary};
-  border: 1px solid ${({ theme }) => theme.colors.border};
+  max-width: 300px;
+  box-shadow: 
+    inset 0 1px 2px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(0, 0, 0, 0.8);
+  
+  &:focus {
+    outline: none;
+    border-color: #1f6feb;
+    box-shadow: 
+      inset 0 1px 2px rgba(0, 0, 0, 0.3),
+      0 0 0 1px rgba(0, 0, 0, 0.8),
+      0 0 0 3px rgba(31, 111, 235, 0.3);
+  }
+
+  option {
+    background: #21262d;
+    color: #e6edf3;
+  }
+
+  optgroup {
+    background: #0d1117;
+    color: #7d8590;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
 `;
 
 const ExampleDescription = styled.div`
-  margin-top: ${({ theme }) => theme.spacing.sm};
-  padding: ${({ theme }) => theme.spacing.sm};
-  font-size: ${({ theme }) => theme.typography.fontSize.sm};
-  color: ${({ theme }) => theme.colors.text.secondary};
-  background: ${({ theme }) => theme.colors.background.secondary};
-  border-radius: ${({ theme }) => theme.effects.borderRadius.sm};
+  margin-top: 12px;
+  padding: 12px;
+  font-size: 13px;
+  color: #7d8590;
+  background: rgba(33, 38, 45, 0.6);
+  border-radius: 6px;
+  border: 1px solid #30363d;
+  backdrop-filter: blur(8px);
+  line-height: 1.4;
 `;
 
 const ComplexityBadge = styled.span<{ complexity: string }>`
   display: inline-block;
-  padding: 2px 6px;
-  margin-left: 8px;
+  padding: 4px 8px;
+  margin-left: 12px;
   border-radius: 12px;
   font-size: 10px;
-  font-weight: bold;
+  font-weight: 700;
   color: white;
-  background-color: ${({ complexity, theme }) => {
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  background-color: ${({ complexity }) => {
     switch (complexity) {
-      case 'basic': return theme.colors.success;
-      case 'intermediate': return theme.colors.primary;
-      case 'advanced': return theme.colors.warning;
-      case 'expert': return theme.colors.error;
-      default: return theme.colors.secondary;
+      case 'basic': return '#238636';
+      case 'intermediate': return '#1f6feb';
+      case 'advanced': return '#fb8500';
+      case 'expert': return '#f85149';
+      default: return '#6e7681';
     }
   }};
+  box-shadow: 0 0 8px ${({ complexity }) => {
+    switch (complexity) {
+      case 'basic': return 'rgba(35, 134, 54, 0.3)';
+      case 'intermediate': return 'rgba(31, 111, 235, 0.3)';
+      case 'advanced': return 'rgba(251, 133, 0, 0.3)';
+      case 'expert': return 'rgba(248, 81, 73, 0.3)';
+      default: return 'rgba(110, 118, 129, 0.3)';
+    }
+  }};
+`;
+
+const CheckboxWrapper = styled.label`
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  color: #7d8590;
+  font-size: 12px;
+  font-family: 'SF Mono', monospace;
+  
+  input {
+    margin-right: 8px;
+    accent-color: #238636;
+  }
 `;
 
 const DEFAULT_CODE = `// Nested function call example
@@ -201,52 +351,25 @@ function emitProcessEvent(id, name, type, status) {
         name: name,
         type: type,
         status: status,
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        parentId: getCurrentParent()
       }
     }, '*');
   } catch (e) {
-    console.error('Failed to emit event:', e);
+    console.error('Failed to emit process event:', e);
   }
 }
 
-// Use this to wrap any function you want to track
-function trackFunction(fn, name) {
-  return function(...args) {
-    const id = 'fn-' + name;
-    emitProcessEvent(id, name, 'function', 'start');
-    try {
-      const result = fn.apply(this, args);
-      if (result instanceof Promise) {
-        return result.finally(() => {
-          emitProcessEvent(id, name, 'function', 'end');
-        });
-      }
-      emitProcessEvent(id, name, 'function', 'end');
-      return result;
-    } catch (error) {
-      emitProcessEvent(id, name, 'function', 'end');
-      throw error;
-    }
-  };
+let globalCurrentParent = null;
+function getCurrentParent() { 
+  return globalCurrentParent; 
+}
+function setCurrentParent(parentId) { 
+  globalCurrentParent = parentId; 
 }
 
-// Example with async/await and callbacks - manually instrumented
-const main = trackFunction(async function main() {
-  console.log('Starting...');
-  
-  const nested = trackFunction(function nested() {
-    setTimeout(() => {
-      console.log('Timeout in nested');
-    }, 500);
-  }, 'nested');
-  
-  const arrow = trackFunction(() => {
-    console.log('Arrow function');
-  }, 'arrow');
-  
-  await new Promise(r => setTimeout(r, 1000));
-  nested();
-  arrow();
+function main() {
+  console.log('Program started');
   console.log('Done!');
 }, 'main');
 
@@ -256,36 +379,6 @@ main();`;
 interface WorkerAPI {
   executeCode: (code: string) => Promise<void>;
 }
-
-// Create a more prominent SyncButton
-const PromptSyncButton = styled.button`
-  position: absolute;
-  top: ${({ theme }) => theme.spacing.md};
-  right: ${({ theme }) => theme.spacing.md};
-  background: ${({ theme }) => theme.colors.accent};
-  color: white;
-  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
-  border: none;
-  border-radius: ${({ theme }) => theme.effects.borderRadius.sm};
-  font-weight: ${({ theme }) => theme.typography.fontWeight.bold};
-  font-size: ${({ theme }) => theme.typography.fontSize.md};
-  cursor: pointer;
-  z-index: 10;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-  display: flex;
-  align-items: center;
-  gap: ${({ theme }) => theme.spacing.xs};
-  
-  &:hover {
-    opacity: 0.9;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-  }
-  
-  &:active {
-    transform: translateY(0);
-  }
-`;
 
 export const RuntimePlaygroundContainer: React.FC = () => {
   const [code, setCode] = useState(DEFAULT_CODE);
@@ -450,18 +543,23 @@ export const RuntimePlaygroundContainer: React.FC = () => {
     const worker = new Worker(URL.createObjectURL(workerBlob));
     const workerAPI = Comlink.wrap<WorkerAPI>(worker);
 
+    // Track if we should delay termination for Promises
+    let workerTerminated = false;
+    
     // Use Comlink to call the worker's executeCode function
     (async () => {
       await workerAPI.executeCode(instrumentedCode);
-      console.log('[DEBUG] Code execution completed, syncing visualization');
-      // Add a longer delay before syncing to ensure all events are processed
+      console.log('[DEBUG] Code execution completed, but checking for pending Promises...');
+      
+      // Don't terminate immediately - wait for runtime-complete signal
+      // Set a maximum timeout of 15 seconds
       setTimeout(() => {
-        if (syncVisualization) {
-          console.log('[DEBUG] Forcing visualization sync after code execution');
-          syncVisualization();
+        if (!workerTerminated) {
+          console.log('[DEBUG] Maximum wait time reached, terminating worker');
+          worker.terminate();
+          workerTerminated = true;
         }
-      }, 2000); // Increased timeout to ensure console output is fully available
-      worker.terminate();
+      }, 15000);
     })();
 
     // Listen for messages from the worker
@@ -495,12 +593,22 @@ export const RuntimePlaygroundContainer: React.FC = () => {
           }, 500); // Increased timeout to ensure console output is available
         }
       } else if (event.data?.type === 'runtime-complete') {
-        console.log('[DEBUG] Runtime complete event received, syncing visualization');
+        console.log('[DEBUG] Runtime complete event received, all Promises resolved');
+        
+        // Terminate the worker now that all Promises are complete
+        if (!workerTerminated) {
+          console.log('[DEBUG] Terminating worker after Promise completion');
+          worker.terminate();
+          workerTerminated = true;
+        }
+        
+        // Sync visualization after a delay
         setTimeout(() => {
           if (syncVisualization) {
+            console.log('[DEBUG] Syncing visualization after Promise completion');
             syncVisualization();
           }
-        }, 500); // Increased timeout to ensure console output is available
+        }, 500);
       } else if (event.data?.type) {
         const { type, message } = event.data;
         setDebug(d => d + `[WORKER ${type.toUpperCase()}] ${message}\n`);
@@ -554,78 +662,129 @@ export const RuntimePlaygroundContainer: React.FC = () => {
 
   return (
     <Container>
-      <EditorSection>
-        <SelectWrapper>
-          <ExampleSelect 
-            value={selectedExample} 
-            onChange={(e) => setSelectedExample(e.target.value)}
-          >
-            <option value="">Select an example...</option>
-            <optgroup label="Basic">
-              {codeExamples.filter(ex => ex.complexity === 'basic').map(ex => (
-                <option key={ex.id} value={ex.id}>{ex.name}</option>
-              ))}
-            </optgroup>
-            <optgroup label="Intermediate">
-              {codeExamples.filter(ex => ex.complexity === 'intermediate').map(ex => (
-                <option key={ex.id} value={ex.id}>{ex.name}</option>
-              ))}
-            </optgroup>
-            <optgroup label="Advanced">
-              {codeExamples.filter(ex => ex.complexity === 'advanced').map(ex => (
-                <option key={ex.id} value={ex.id}>{ex.name}</option>
-              ))}
-            </optgroup>
-            <optgroup label="Expert">
-              {codeExamples.filter(ex => ex.complexity === 'expert').map(ex => (
-                <option key={ex.id} value={ex.id}>{ex.name}</option>
-              ))}
-            </optgroup>
-          </ExampleSelect>
-          
-          {currentExample && (
-            <ExampleDescription>
-              {currentExample.description}
-              <ComplexityBadge complexity={currentExample.complexity}>
-                {currentExample.complexity}
-              </ComplexityBadge>
-            </ExampleDescription>
-          )}
-        </SelectWrapper>
+      {/* Example Selection Section */}
+      <ExamplesSection>
+        <ExamplesHeader>
+          <SectionTitle>Code Examples</SectionTitle>
+        </ExamplesHeader>
+        <WeightedSelect 
+          value={selectedExample} 
+          onChange={(e) => setSelectedExample(e.target.value)}
+        >
+          <option value="">Select an example...</option>
+          <optgroup label="Basic">
+            {codeExamples.filter(ex => ex.complexity === 'basic').map(ex => (
+              <option key={ex.id} value={ex.id}>{ex.name}</option>
+            ))}
+          </optgroup>
+          <optgroup label="Intermediate">
+            {codeExamples.filter(ex => ex.complexity === 'intermediate').map(ex => (
+              <option key={ex.id} value={ex.id}>{ex.name}</option>
+            ))}
+          </optgroup>
+          <optgroup label="Advanced">
+            {codeExamples.filter(ex => ex.complexity === 'advanced').map(ex => (
+              <option key={ex.id} value={ex.id}>{ex.name}</option>
+            ))}
+          </optgroup>
+          <optgroup label="Expert">
+            {codeExamples.filter(ex => ex.complexity === 'expert').map(ex => (
+              <option key={ex.id} value={ex.id}>{ex.name}</option>
+            ))}
+          </optgroup>
+        </WeightedSelect>
         
-        <DebugOutput data-testid="debug-output">{debug}</DebugOutput>
-        <CodeEditor
-          value={code}
-          onChange={e => setCode(e.target.value)}
-          spellCheck={false}
-        />
-        <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
-          <ButtonGroup>
-            <RunButton onClick={runCode}>Run Code</RunButton>
-            <SyncButton onClick={() => syncVisualization && syncVisualization()}>
-              Sync Visualization
-            </SyncButton>
-          </ButtonGroup>
-          <button onClick={downloadDebugInfo}>Download Debug Info</button>
-          <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-            <input 
-              type="checkbox" 
-              checked={useSimpleWrapper} 
-              onChange={e => setUseSimpleWrapper(e.target.checked)} 
-              style={{ marginRight: '4px' }}
-            />
-            Use Simple Wrapper
-          </label>
-        </div>
-        <OutputArea data-testid="output-area">{output}</OutputArea>
-      </EditorSection>
-      <VisualizerSection>
-        {currentExample && currentExample.visualizationHint && (
-          <VisualizationExplainer hint={currentExample.visualizationHint} />
+        {currentExample && (
+          <ExampleDescription>
+            {currentExample.description}
+            <ComplexityBadge complexity={currentExample.complexity}>
+              {currentExample.complexity}
+            </ComplexityBadge>
+          </ExampleDescription>
         )}
-        <PromptSyncButton onClick={() => syncVisualization && syncVisualization()}>
-          <span>↻</span> Sync Visualization with Console Output
-        </PromptSyncButton>
+      </ExamplesSection>
+
+      {/* Visualizer Hint Section */}
+      <VisualizerHintSection>
+        <ExamplesHeader>
+          <SectionTitle>What to Expect</SectionTitle>
+        </ExamplesHeader>
+        {currentExample && currentExample.visualizationHint ? (
+          <VisualizationExplainer hint={currentExample.visualizationHint} />
+        ) : (
+          <div style={{ 
+            color: '#7d8590', 
+            fontStyle: 'italic',
+            fontSize: '14px',
+            fontFamily: 'SF Mono, monospace'
+          }}>
+            Select an example to see what the visualization will show.
+          </div>
+        )}
+      </VisualizerHintSection>
+
+      {/* Code Editor Section */}
+      <EditorSection>
+        <EditorHeader>
+          <SectionTitle>Code Editor</SectionTitle>
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <CheckboxWrapper>
+              <input 
+                type="checkbox" 
+                checked={useSimpleWrapper} 
+                onChange={e => setUseSimpleWrapper(e.target.checked)} 
+              />
+              Use Simple Wrapper
+            </CheckboxWrapper>
+          </div>
+        </EditorHeader>
+        
+        <EditorContent>
+          <CodeEditor
+            value={code}
+            onChange={e => setCode(e.target.value)}
+            spellCheck={false}
+            placeholder="Enter your JavaScript code here..."
+          />
+          
+          <EditorControls>
+            <WeightedButton variant="success" onClick={runCode}>
+              ▶ Run Code
+            </WeightedButton>
+            <WeightedButton variant="primary" onClick={() => syncVisualization && syncVisualization()}>
+              ↻ Sync Visualization
+            </WeightedButton>
+            <WeightedButton onClick={downloadDebugInfo}>
+              💾 Download Debug
+            </WeightedButton>
+          </EditorControls>
+        </EditorContent>
+      </EditorSection>
+
+      {/* Debug & Output Section */}
+      <OutputSection>
+        <OutputHeader>
+          <SectionTitle>Debug & Output</SectionTitle>
+          <div style={{ 
+            color: '#7d8590', 
+            fontSize: '12px',
+            fontFamily: 'SF Mono, monospace'
+          }}>
+            Run #{runCount}
+          </div>
+        </OutputHeader>
+        
+        <DebugOutput data-testid="debug-output">
+          {debug || 'No debug output yet. Run some code to see execution details.'}
+        </DebugOutput>
+        
+        <OutputContent data-testid="output-area">
+          {output || 'No console output yet. Run some code to see console.log statements.'}
+        </OutputContent>
+      </OutputSection>
+
+      {/* Runtime Visualizer Section */}
+      <VisualizerSection>
         <RuntimeProvider root={root} syncVisualization={syncVisualization}>
           <RuntimeProcessVisualizer root={root} />
         </RuntimeProvider>

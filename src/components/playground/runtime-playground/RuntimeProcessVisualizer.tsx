@@ -188,7 +188,7 @@ const TreeNode = styled.div<{
 
 // Anchored connection system with precise anchor points
 const ConnectorContainer = styled.div<{ depth: number }>`
-  position: absolute;
+    position: absolute;
   top: ${({ depth }) => 40 + depth * 120}px;
   left: 50%;
   transform: translateX(-50%);
@@ -998,9 +998,9 @@ export const RuntimeProcessVisualizer: React.FC<Props> = ({ root }) => {
     setSyncClicked(true);
     
     // Call the sync function from context
-    if (syncVisualization) {
-      syncVisualization();
-    }
+        if (syncVisualization) {
+          syncVisualization();
+        }
     
     // Force a re-render to ensure UI updates
     setForceRender(prev => prev + 1);

@@ -956,6 +956,1330 @@ function level3() {
 // Start the test
 level1();`,
     visualizationHint: 'This test shows nested function calls with different artificial delays. The visualization should accurately reflect the hierarchy and timing of each function.'
+  },
+
+  // NEW STRESS TEST CASES
+  {
+    id: 'new-mixed-async-patterns',
+    name: 'NEW: Mixed Async Patterns',
+    description: 'Complex mix of promises, callbacks, and setTimeout',
+    complexity: 'expert',
+    code: `function artificialDelay(ms = 150) { 
+  const start = Date.now(); 
+  while (Date.now() - start < ms) {} 
+}
+
+function asyncWithCallback(data, callback) {
+  console.log('asyncWithCallback starting with:', data);
+  artificialDelay(100);
+  
+  setTimeout(() => {
+    console.log('asyncWithCallback timeout executing');
+    artificialDelay(200);
+    
+    // Create a promise within the callback
+    const promise = new Promise(resolve => {
+      setTimeout(() => {
+        console.log('nested promise resolving');
+        artificialDelay(150);
+        resolve(data + ' processed');
+      }, 500);
+    });
+    
+    promise.then(result => {
+      console.log('nested promise resolved with:', result);
+      callback(result);
+    });
+  }, 300);
+  
+  console.log('asyncWithCallback setup completed');
+}
+
+async function asyncFunction(input) {
+  console.log('asyncFunction starting with:', input);
+  
+  return new Promise((resolve, reject) => {
+    asyncWithCallback(input, (result) => {
+      console.log('asyncFunction received callback result:', result);
+      artificialDelay(100);
+      
+      // Chain another async operation
+      setTimeout(() => {
+        console.log('final timeout in asyncFunction');
+        artificialDelay(200);
+        resolve(result + ' finalized');
+      }, 400);
+    });
+  });
+}
+
+function main() {
+  console.log('main starting complex async pattern test');
+  
+  asyncFunction('test-data')
+    .then(finalResult => {
+      console.log('main received final result:', finalResult);
+      artificialDelay(100);
+      
+      // Start another async operation after the first completes
+      return asyncFunction('second-test');
+    })
+    .then(secondResult => {
+      console.log('main completed second async operation:', secondResult);
+    })
+    .catch(error => {
+      console.error('main caught error:', error);
+    })
+    .finally(() => {
+      console.log('main async operations completed');
+    });
+    
+  console.log('main continuing synchronously');
+  artificialDelay(200);
+  console.log('main sync portion completed');
+}
+
+main();`,
+    visualizationHint: 'Tests complex nested async patterns with multiple layers of callbacks, promises, and timeouts to stress-test the parent-child relationship tracking.'
+  },
+
+  {
+    id: 'new-parallel-promises',
+    name: 'NEW: Parallel Promise Execution',
+    description: 'Multiple promises running in parallel with Promise.all',
+    complexity: 'expert',
+    code: `function artificialDelay(ms = 150) { 
+  const start = Date.now(); 
+  while (Date.now() - start < ms) {} 
+}
+
+function createTask(id, delay) {
+  console.log('createTask starting for task', id);
+  artificialDelay(100);
+  
+  return new Promise(resolve => {
+    console.log('task', id, 'promise created');
+    setTimeout(() => {
+      console.log('task', id, 'timeout executing');
+      artificialDelay(200);
+      
+      // Nested async operation within each task
+      setTimeout(() => {
+        console.log('task', id, 'nested timeout executing');
+        artificialDelay(150);
+        
+        const result = { taskId: id, completed: true, timestamp: Date.now() };
+        console.log('task', id, 'resolving with result');
+        resolve(result);
+      }, delay / 2);
+    }, delay);
+  });
+}
+
+function processResults(results) {
+  console.log('processResults starting with', results.length, 'results');
+  artificialDelay(300);
+  
+  results.forEach((result, index) => {
+    console.log('processing result', index, ':', result.taskId);
+    artificialDelay(100);
+  });
+  
+  console.log('processResults completed');
+  return results.map(r => ({ ...r, processed: true }));
+}
+
+async function main() {
+  console.log('main starting parallel execution test');
+  
+  // Create multiple parallel tasks
+  const tasks = [
+    createTask('A', 800),
+    createTask('B', 1200),
+    createTask('C', 600),
+    createTask('D', 1000)
+  ];
+  
+  console.log('main created all tasks, waiting for completion');
+  artificialDelay(200);
+  
+  try {
+    const results = await Promise.all(tasks);
+    console.log('main received all parallel results');
+    
+    const processedResults = processResults(results);
+    console.log('main processing completed');
+    
+    // Chain another operation
+    return new Promise(resolve => {
+      setTimeout(() => {
+        console.log('main final operation completing');
+        artificialDelay(250);
+        resolve(processedResults);
+      }, 500);
+    });
+    
+  } catch (error) {
+    console.error('main caught error in parallel execution:', error);
+  }
+}
+
+main().then(finalResults => {
+  console.log('execution completed with', finalResults ? finalResults.length : 0, 'results');
+});`,
+    visualizationHint: 'Tests parallel promise execution to see if the visualizer correctly handles multiple concurrent async operations and their proper completion timing.'
+  },
+
+  {
+    id: 'new-error-handling',
+    name: 'NEW: Error Handling & Recovery',
+    description: 'Complex error scenarios with promise rejections and recovery',
+    complexity: 'expert',
+    code: `function artificialDelay(ms = 150) { 
+  const start = Date.now(); 
+  while (Date.now() - start < ms) {} 
+}
+
+function riskyOperation(shouldFail = false) {
+  console.log('riskyOperation starting, shouldFail:', shouldFail);
+  artificialDelay(100);
+  
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      console.log('riskyOperation timeout executing');
+      artificialDelay(200);
+      
+      if (shouldFail) {
+        console.log('riskyOperation rejecting with error');
+        reject(new Error('Intentional failure'));
+      } else {
+        console.log('riskyOperation resolving successfully');
+        resolve('Success data');
+      }
+    }, 600);
+  });
+}
+
+function recoveryOperation(error) {
+  console.log('recoveryOperation starting for error:', error.message);
+  artificialDelay(150);
+  
+  return new Promise(resolve => {
+    setTimeout(() => {
+      console.log('recoveryOperation timeout executing');
+      artificialDelay(200);
+      resolve('Recovered data');
+    }, 400);
+  });
+}
+
+function finalCleanup() {
+  console.log('finalCleanup starting');
+  artificialDelay(200);
+  
+  return new Promise(resolve => {
+    setTimeout(() => {
+      console.log('finalCleanup timeout executing');
+      artificialDelay(100);
+      console.log('finalCleanup completed');
+      resolve('Cleanup done');
+    }, 300);
+  });
+}
+
+async function main() {
+  console.log('main starting error handling test');
+  
+  // Test successful path
+  try {
+    console.log('main attempting successful operation');
+    const successResult = await riskyOperation(false);
+    console.log('main received success result:', successResult);
+  } catch (error) {
+    console.error('main caught unexpected error:', error.message);
+  }
+  
+  artificialDelay(200);
+  
+  // Test error and recovery path
+  try {
+    console.log('main attempting risky operation that will fail');
+    const failResult = await riskyOperation(true);
+    console.log('main received unexpected success:', failResult);
+  } catch (error) {
+    console.log('main caught expected error:', error.message);
+    
+    try {
+      console.log('main attempting recovery');
+      const recoveryResult = await recoveryOperation(error);
+      console.log('main received recovery result:', recoveryResult);
+    } catch (recoveryError) {
+      console.error('main recovery also failed:', recoveryError.message);
+    }
+  } finally {
+    console.log('main executing finally block');
+    await finalCleanup();
+    console.log('main finally block completed');
+  }
+  
+  console.log('main error handling test completed');
+}
+
+main();`,
+    visualizationHint: 'Tests error handling, promise rejections, catch blocks, and finally blocks to ensure the visualization properly tracks error flows and recovery operations.'
+  },
+
+  {
+    id: 'new-recursive-promises',
+    name: 'NEW: Recursive Promises',
+    description: 'Recursive functions that return promises',
+    complexity: 'expert',
+    code: `function artificialDelay(ms = 150) { 
+  const start = Date.now(); 
+  while (Date.now() - start < ms) {} 
+}
+
+function recursiveAsync(depth, maxDepth = 5) {
+  console.log('recursiveAsync starting, depth:', depth, 'maxDepth:', maxDepth);
+  artificialDelay(100);
+  
+  return new Promise(resolve => {
+    setTimeout(() => {
+      console.log('recursiveAsync timeout at depth:', depth);
+      artificialDelay(150);
+      
+      if (depth >= maxDepth) {
+        console.log('recursiveAsync base case reached at depth:', depth);
+        resolve(depth);
+      } else {
+        console.log('recursiveAsync calling deeper level:', depth + 1);
+        
+        recursiveAsync(depth + 1, maxDepth).then(result => {
+          console.log('recursiveAsync received result from depth:', depth + 1, 'result:', result);
+          artificialDelay(100);
+          const currentResult = result + depth;
+          console.log('recursiveAsync computed result at depth:', depth, 'returning:', currentResult);
+          resolve(currentResult);
+        });
+      }
+    }, 300 + (depth * 100)); // Increasing delay at each level
+  });
+}
+
+function processRecursiveResult(result) {
+  console.log('processRecursiveResult starting with:', result);
+  artificialDelay(200);
+  
+  return new Promise(resolve => {
+    setTimeout(() => {
+      console.log('processRecursiveResult timeout executing');
+      artificialDelay(150);
+      const processedResult = result * 2;
+      console.log('processRecursiveResult completed, returning:', processedResult);
+      resolve(processedResult);
+    }, 400);
+  });
+}
+
+async function main() {
+  console.log('main starting recursive promise test');
+  
+  try {
+    console.log('main calling recursiveAsync');
+    const recursiveResult = await recursiveAsync(1, 4);
+    console.log('main received recursive result:', recursiveResult);
+    
+    console.log('main processing recursive result');
+    const finalResult = await processRecursiveResult(recursiveResult);
+    console.log('main received final processed result:', finalResult);
+    
+  } catch (error) {
+    console.error('main caught error in recursive operations:', error);
+  }
+  
+  console.log('main recursive promise test completed');
+}
+
+main();`,
+    visualizationHint: 'Tests recursive promise chains to see if the visualization can handle deep call stacks with async operations and maintain proper parent-child relationships at each recursion level.'
+  },
+
+  {
+    id: 'new-timing-edge-cases',
+    name: 'NEW: Timing Edge Cases',
+    description: 'Very short and very long delays to test timing precision',
+    complexity: 'advanced',
+    code: `function artificialDelay(ms = 150) { 
+  const start = Date.now(); 
+  while (Date.now() - start < ms) {} 
+}
+
+function microDelay() {
+  console.log('microDelay starting');
+  artificialDelay(1); // Very short delay
+  console.log('microDelay completed');
+}
+
+function macroDelay() {
+  console.log('macroDelay starting');
+  artificialDelay(2000); // Long delay
+  console.log('macroDelay completed');
+}
+
+function zeroDelay() {
+  console.log('zeroDelay starting');
+  artificialDelay(0); // Zero delay
+  console.log('zeroDelay completed');
+}
+
+function rapidFire() {
+  console.log('rapidFire starting');
+  
+  for (let i = 0; i < 5; i++) {
+    console.log('rapidFire iteration:', i);
+    artificialDelay(50); // Multiple short delays
+  }
+  
+  console.log('rapidFire completed');
+}
+
+function asyncTimingTest() {
+  console.log('asyncTimingTest starting');
+  
+  return new Promise(resolve => {
+    // Very short timeout
+    setTimeout(() => {
+      console.log('asyncTimingTest short timeout');
+      microDelay();
+      
+      // Another timeout with medium delay
+      setTimeout(() => {
+        console.log('asyncTimingTest medium timeout');
+        artificialDelay(500);
+        
+        // Final timeout with zero delay
+        setTimeout(() => {
+          console.log('asyncTimingTest zero timeout');
+          zeroDelay();
+          resolve('timing test complete');
+        }, 0);
+        
+      }, 200);
+      
+    }, 10);
+  });
+}
+
+function main() {
+  console.log('main starting timing edge cases test');
+  
+  microDelay();
+  zeroDelay();
+  rapidFire();
+  
+  asyncTimingTest().then(result => {
+    console.log('main async timing completed:', result);
+    macroDelay(); // Long delay at the end
+    console.log('main timing edge cases test completed');
+  });
+  
+  console.log('main sync portion completed');
+}
+
+main();`,
+    visualizationHint: 'Tests edge cases with very short delays (1ms), zero delays, and very long delays (2000ms) to verify timing precision and visualization accuracy.'
+  },
+
+  {
+    id: 'new-promise-race',
+    name: 'NEW: Promise Race Conditions',
+    description: 'Promise.race with competing async operations',
+    complexity: 'expert',
+    code: `function artificialDelay(ms = 150) { 
+  const start = Date.now(); 
+  while (Date.now() - start < ms) {} 
+}
+
+function fastTask(id) {
+  console.log('fastTask', id, 'starting');
+  artificialDelay(100);
+  
+  return new Promise(resolve => {
+    setTimeout(() => {
+      console.log('fastTask', id, 'timeout executing');
+      artificialDelay(100);
+      resolve('fast-' + id);
+    }, 300);
+  });
+}
+
+function slowTask(id) {
+  console.log('slowTask', id, 'starting');
+  artificialDelay(100);
+  
+  return new Promise(resolve => {
+    setTimeout(() => {
+      console.log('slowTask', id, 'timeout executing (this should lose the race)');
+      artificialDelay(200);
+      resolve('slow-' + id);
+    }, 1000);
+  });
+}
+
+function mediumTask(id) {
+  console.log('mediumTask', id, 'starting');
+  artificialDelay(100);
+  
+  return new Promise(resolve => {
+    setTimeout(() => {
+      console.log('mediumTask', id, 'timeout executing');
+      artificialDelay(150);
+      resolve('medium-' + id);
+    }, 600);
+  });
+}
+
+function processWinner(winner) {
+  console.log('processWinner starting with:', winner);
+  artificialDelay(200);
+  
+  return new Promise(resolve => {
+    setTimeout(() => {
+      console.log('processWinner timeout executing');
+      artificialDelay(100);
+      resolve(winner + '-processed');
+    }, 300);
+  });
+}
+
+async function main() {
+  console.log('main starting promise race test');
+  
+  // First race: fast vs slow
+  console.log('main starting first race (fast vs slow)');
+  const race1 = Promise.race([
+    fastTask('A'),
+    slowTask('B')
+  ]);
+  
+  try {
+    const winner1 = await race1;
+    console.log('main first race winner:', winner1);
+    
+    const processed1 = await processWinner(winner1);
+    console.log('main first race processed result:', processed1);
+    
+  } catch (error) {
+    console.error('main first race error:', error);
+  }
+  
+  artificialDelay(200);
+  
+  // Second race: multiple competitors
+  console.log('main starting second race (multiple competitors)');
+  const race2 = Promise.race([
+    fastTask('C'),
+    mediumTask('D'),
+    slowTask('E'),
+    fastTask('F')
+  ]);
+  
+  try {
+    const winner2 = await race2;
+    console.log('main second race winner:', winner2);
+    
+    const processed2 = await processWinner(winner2);
+    console.log('main second race processed result:', processed2);
+    
+  } catch (error) {
+    console.error('main second race error:', error);
+  }
+  
+  console.log('main promise race test completed');
+}
+
+main();`,
+    visualizationHint: 'Tests Promise.race to see how the visualization handles competing async operations where only the fastest one matters, and whether losing operations are properly tracked.'
+  },
+
+  {
+    id: 'new-nested-workers',
+    name: 'NEW: Deeply Nested Async Workers',
+    description: 'Complex nested async operations with multiple layers',
+    complexity: 'expert',
+    code: `function artificialDelay(ms = 150) { 
+  const start = Date.now(); 
+  while (Date.now() - start < ms) {} 
+}
+
+function worker1(data) {
+  console.log('worker1 starting with:', data);
+  artificialDelay(100);
+  
+  return new Promise(resolve => {
+    setTimeout(() => {
+      console.log('worker1 timeout executing');
+      artificialDelay(150);
+      
+      // worker1 calls worker2
+      worker2(data + '-w1').then(result => {
+        console.log('worker1 received result from worker2:', result);
+        artificialDelay(100);
+        resolve(result + '-completed');
+      });
+    }, 400);
+  });
+}
+
+function worker2(data) {
+  console.log('worker2 starting with:', data);
+  artificialDelay(100);
+  
+  return new Promise(resolve => {
+    setTimeout(() => {
+      console.log('worker2 timeout executing');
+      artificialDelay(150);
+      
+      // worker2 calls worker3
+      worker3(data + '-w2').then(result => {
+        console.log('worker2 received result from worker3:', result);
+        artificialDelay(100);
+        
+        // worker2 also calls worker4 in parallel
+        worker4(data + '-w2-parallel').then(parallelResult => {
+          console.log('worker2 received parallel result from worker4:', parallelResult);
+          artificialDelay(100);
+          resolve(result + '-' + parallelResult);
+        });
+      });
+    }, 300);
+  });
+}
+
+function worker3(data) {
+  console.log('worker3 starting with:', data);
+  artificialDelay(100);
+  
+  return new Promise(resolve => {
+    setTimeout(() => {
+      console.log('worker3 timeout executing');
+      artificialDelay(200);
+      
+      // worker3 is the deepest and creates its own nested operation
+      const nestedOperation = new Promise(innerResolve => {
+        setTimeout(() => {
+          console.log('worker3 nested operation executing');
+          artificialDelay(150);
+          innerResolve(data + '-w3-nested');
+        }, 200);
+      });
+      
+      nestedOperation.then(nestedResult => {
+        console.log('worker3 nested operation completed:', nestedResult);
+        artificialDelay(100);
+        resolve(nestedResult);
+      });
+    }, 500);
+  });
+}
+
+function worker4(data) {
+  console.log('worker4 starting with:', data);
+  artificialDelay(100);
+  
+  return new Promise(resolve => {
+    setTimeout(() => {
+      console.log('worker4 timeout executing');
+      artificialDelay(200);
+      resolve(data + '-w4');
+    }, 250);
+  });
+}
+
+function coordinator(initialData) {
+  console.log('coordinator starting with:', initialData);
+  artificialDelay(150);
+  
+  return new Promise(resolve => {
+    setTimeout(() => {
+      console.log('coordinator timeout executing');
+      artificialDelay(100);
+      
+      // Start multiple worker chains
+      const chain1 = worker1(initialData + '-chain1');
+      const chain2 = worker1(initialData + '-chain2');
+      
+      Promise.all([chain1, chain2]).then(results => {
+        console.log('coordinator received all chain results:', results);
+        artificialDelay(200);
+        resolve(results.join(' | '));
+      });
+    }, 200);
+  });
+}
+
+async function main() {
+  console.log('main starting deeply nested async workers test');
+  
+  try {
+    const coordinatorResult = await coordinator('initial-data');
+    console.log('main received coordinator result:', coordinatorResult);
+    
+    // Additional processing after coordination
+    artificialDelay(300);
+    console.log('main additional processing completed');
+    
+  } catch (error) {
+    console.error('main caught error in nested workers:', error);
+  }
+  
+  console.log('main deeply nested async workers test completed');
+}
+
+main();`,
+    visualizationHint: 'Tests deeply nested async operations with multiple layers of workers calling each other, parallel operations, and complex dependency chains to stress-test the visualization hierarchy.'
+  },
+
+  // DIABOLICAL EDGE CASES THAT COULD BREAK THE SYSTEM
+  {
+    id: 'break-self-modifying',
+    name: 'BREAK: Self-Modifying Functions',
+    description: 'Functions that redefine themselves and other functions',
+    complexity: 'expert',
+    code: `function artificialDelay(ms = 150) { 
+  const start = Date.now(); 
+  while (Date.now() - start < ms) {} 
+}
+
+// Function that redefines itself
+function selfModifying() {
+  console.log('selfModifying: first execution');
+  artificialDelay(200);
+  
+  // Redefine myself for future calls
+  selfModifying = function() {
+    console.log('selfModifying: redefined version');
+    artificialDelay(100);
+    
+    // Redefine myself again!
+    selfModifying = function() {
+      console.log('selfModifying: third version');
+      artificialDelay(50);
+    };
+  };
+  
+  console.log('selfModifying: first execution completed');
+}
+
+// Function that redefines other functions
+function functionKiller() {
+  console.log('functionKiller: starting chaos');
+  artificialDelay(100);
+  
+  // Try to break the instrumentation by redefining console.log
+  const originalLog = console.log;
+  console.log = function(...args) {
+    originalLog('HIJACKED:', ...args);
+  };
+  
+  // Redefine setTimeout
+  const originalSetTimeout = setTimeout;
+  setTimeout = function(callback, delay) {
+    console.log('HIJACKED setTimeout called with delay:', delay);
+    return originalSetTimeout(callback, delay);
+  };
+  
+  console.log('functionKiller: chaos unleashed');
+  artificialDelay(200);
+}
+
+// Function that deletes itself
+function suicidalFunction() {
+  console.log('suicidalFunction: about to delete myself');
+  artificialDelay(100);
+  
+  delete globalThis.suicidalFunction;
+  
+  console.log('suicidalFunction: I should not exist anymore');
+  artificialDelay(100);
+}
+
+function main() {
+  console.log('main: starting self-modifying function test');
+  
+  // Call self-modifying function multiple times
+  selfModifying(); // First version
+  selfModifying(); // Second version
+  selfModifying(); // Third version
+  selfModifying(); // Still third version
+  
+  // Call the function killer
+  functionKiller();
+  
+  // Call the suicidal function
+  suicidalFunction();
+  
+  // Try to call the deleted function (this should cause an error)
+  try {
+    suicidalFunction();
+  } catch (error) {
+    console.log('main: caught expected error:', error.message);
+  }
+  
+  console.log('main: self-modifying test completed');
+}
+
+main();`,
+    visualizationHint: 'Tests functions that modify themselves and other functions at runtime, potentially breaking the instrumentation tracking.'
+  },
+
+  {
+    id: 'break-dynamic-functions',
+    name: 'BREAK: Dynamic Function Creation',
+    description: 'Dynamically created functions and eval usage',
+    complexity: 'expert',
+    code: `function artificialDelay(ms = 150) { 
+  const start = Date.now(); 
+  while (Date.now() - start < ms) {} 
+}
+
+function dynamicFunctionCreator() {
+  console.log('dynamicFunctionCreator: creating functions on the fly');
+  artificialDelay(100);
+  
+  // Create function using Function constructor
+  const dynamicFunc1 = new Function('arg', \`
+    console.log('Dynamic function 1 executing with:', arg);
+    const start = Date.now(); 
+    while (Date.now() - start < 150) {} 
+    console.log('Dynamic function 1 completed');
+    return arg + '-processed';
+  \`);
+  
+  // Create function using eval
+  const functionCode = \`
+    function evalCreatedFunction(data) {
+      console.log('Eval-created function executing with:', data);
+      const start = Date.now(); 
+      while (Date.now() - start < 200) {} 
+      console.log('Eval-created function completed');
+      return data + '-eval-processed';
+    }
+  \`;
+  
+  eval(functionCode);
+  
+  // Call the dynamically created functions
+  const result1 = dynamicFunc1('test-data');
+  console.log('dynamicFunctionCreator: result1:', result1);
+  
+  const result2 = evalCreatedFunction('eval-data');
+  console.log('dynamicFunctionCreator: result2:', result2);
+  
+  artificialDelay(100);
+  console.log('dynamicFunctionCreator: completed');
+}
+
+function higherOrderMadness() {
+  console.log('higherOrderMadness: creating function factories');
+  artificialDelay(100);
+  
+  // Function that returns a function that returns a function
+  const createComplexFunction = (level) => {
+    return (data) => {
+      console.log(\`Level \${level} function executing with:\`, data);
+      artificialDelay(50 * level);
+      
+      if (level > 1) {
+        const innerFunc = createComplexFunction(level - 1);
+        return innerFunc(data + \`-L\${level}\`);
+      } else {
+        console.log(\`Base level reached with:\`, data);
+        return data + '-final';
+      }
+    };
+  };
+  
+  const complexFunc = createComplexFunction(4);
+  const result = complexFunc('start');
+  console.log('higherOrderMadness: result:', result);
+  
+  artificialDelay(100);
+  console.log('higherOrderMadness: completed');
+}
+
+// Immediately Invoked Function Expression (IIFE) chaos
+(function() {
+  console.log('IIFE: Anonymous function executing');
+  artificialDelay(100);
+  
+  (function namedIIFE() {
+    console.log('IIFE: Named IIFE executing');
+    artificialDelay(100);
+    
+    // Nested IIFE
+    (function() {
+      console.log('IIFE: Nested anonymous IIFE');
+      artificialDelay(50);
+    })();
+    
+  })();
+  
+})();
+
+function main() {
+  console.log('main: starting dynamic function creation test');
+  
+  dynamicFunctionCreator();
+  higherOrderMadness();
+  
+  console.log('main: dynamic function test completed');
+}
+
+main();`,
+    visualizationHint: 'Tests dynamically created functions using Function constructor, eval, higher-order functions, and IIFEs that could confuse the instrumentation.'
+  },
+
+  {
+    id: 'break-infinite-loops',
+    name: 'BREAK: Infinite Loops & Runaway Code',
+    description: 'Code that never terminates or runs for a very long time',
+    complexity: 'expert',
+    code: `function artificialDelay(ms = 150) { 
+  const start = Date.now(); 
+  while (Date.now() - start < ms) {} 
+}
+
+function controlledInfiniteLoop() {
+  console.log('controlledInfiniteLoop: starting controlled infinite loop');
+  
+  let counter = 0;
+  const maxIterations = 1000000; // Limit to prevent browser crash
+  
+  const start = Date.now();
+  while (counter < maxIterations) {
+    counter++;
+    
+    // Break after 2 seconds to prevent hanging
+    if (Date.now() - start > 2000) {
+      console.log('controlledInfiniteLoop: breaking due to time limit, iterations:', counter);
+      break;
+    }
+  }
+  
+  console.log('controlledInfiniteLoop: completed with', counter, 'iterations');
+}
+
+function recursiveMadness(depth = 0, maxDepth = 100) {
+  console.log('recursiveMadness: depth', depth);
+  
+  if (depth >= maxDepth) {
+    console.log('recursiveMadness: max depth reached, stopping recursion');
+    return depth;
+  }
+  
+  // Add small delay to prevent stack overflow too quickly
+  artificialDelay(1);
+  
+  // Create multiple recursive branches
+  const branch1 = recursiveMadness(depth + 1, maxDepth);
+  const branch2 = recursiveMadness(depth + 1, maxDepth);
+  
+  return branch1 + branch2;
+}
+
+function memoryIntensiveOperation() {
+  console.log('memoryIntensiveOperation: creating large arrays');
+  artificialDelay(100);
+  
+  // Create large arrays to stress memory
+  const largeArray1 = new Array(100000).fill(0).map((_, i) => ({ id: i, data: 'test-' + i }));
+  console.log('memoryIntensiveOperation: created array 1 with', largeArray1.length, 'items');
+  
+  artificialDelay(100);
+  
+  const largeArray2 = new Array(100000).fill(0).map((_, i) => ({ id: i, data: 'test-' + i }));
+  console.log('memoryIntensiveOperation: created array 2 with', largeArray2.length, 'items');
+  
+  // Process the arrays
+  let sum = 0;
+  for (let i = 0; i < Math.min(10000, largeArray1.length); i++) {
+    sum += largeArray1[i].id + largeArray2[i].id;
+  }
+  
+  console.log('memoryIntensiveOperation: processing completed, sum:', sum);
+  artificialDelay(100);
+}
+
+function rapidFireFunctions() {
+  console.log('rapidFireFunctions: starting rapid function calls');
+  
+  function rapidFunc(id) {
+    artificialDelay(1); // Very short delay
+    return id * 2;
+  }
+  
+  // Call the same function many times rapidly
+  for (let i = 0; i < 1000; i++) {
+    rapidFunc(i);
+  }
+  
+  console.log('rapidFireFunctions: completed 1000 rapid calls');
+}
+
+function neverEndingPromise() {
+  console.log('neverEndingPromise: creating promise that never resolves');
+  
+  return new Promise((resolve) => {
+    // This promise intentionally never resolves to test timeout handling
+    console.log('neverEndingPromise: promise created but will never resolve');
+    
+    // Set a timer to resolve it after a reasonable time for testing
+    setTimeout(() => {
+      console.log('neverEndingPromise: finally resolving after timeout');
+      resolve('finally-resolved');
+    }, 5000); // 5 second timeout
+  });
+}
+
+async function main() {
+  console.log('main: starting runaway code test');
+  
+  controlledInfiniteLoop();
+  
+  console.log('main: starting recursive madness');
+  const recursiveResult = recursiveMadness(0, 50); // Limit depth to prevent stack overflow
+  console.log('main: recursive result:', recursiveResult);
+  
+  memoryIntensiveOperation();
+  rapidFireFunctions();
+  
+  console.log('main: starting never-ending promise test');
+  const promiseResult = await neverEndingPromise();
+  console.log('main: never-ending promise result:', promiseResult);
+  
+  console.log('main: runaway code test completed');
+}
+
+main();`,
+    visualizationHint: 'Tests infinite loops, deep recursion, memory-intensive operations, and promises that never resolve to see how the visualization handles runaway code.'
+  },
+
+  {
+    id: 'break-parser-confusion',
+    name: 'BREAK: Parser Confusion',
+    description: 'Code designed to confuse the function parser',
+    complexity: 'expert',
+    code: `function artificialDelay(ms = 150) { 
+  const start = Date.now(); 
+  while (Date.now() - start < ms) {} 
+}
+
+// Function with confusing string content
+function stringConfusion() {
+  console.log('stringConfusion: starting string chaos');
+  artificialDelay(100);
+  
+  const fakeFunction = "function notRealFunction() { return 'fake'; }";
+  console.log('stringConfusion: fake function string:', fakeFunction);
+  
+  const regexWithFunction = /function\\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\\s*\\(/g;
+  console.log('stringConfusion: regex pattern:', regexWithFunction);
+  
+  const templateLiteral = \`
+    This looks like a function but it's not:
+    function templateFunction() {
+      console.log('This is just a string!');
+      artificialDelay(100);
+    }
+  \`;
+  console.log('stringConfusion: template literal:', templateLiteral);
+  
+  artificialDelay(100);
+  console.log('stringConfusion: completed');
+}
+
+// Function with lots of nested braces and confusing structure
+function braceConfusion() {
+  console.log('braceConfusion: starting brace chaos');
+  artificialDelay(100);
+  
+  const complexObject = {
+    method1: function() {
+      console.log('braceConfusion: object method 1');
+      return {
+        nested: {
+          deepMethod: function() {
+            console.log('braceConfusion: deep nested method');
+            artificialDelay(50);
+          }
+        }
+      };
+    },
+    method2: () => {
+      console.log('braceConfusion: arrow function method');
+      artificialDelay(50);
+    }
+  };
+  
+  complexObject.method1().nested.deepMethod();
+  complexObject.method2();
+  
+  // Array of functions
+  const functionArray = [
+    function() { console.log('braceConfusion: array function 1'); },
+    function() { console.log('braceConfusion: array function 2'); },
+    () => { console.log('braceConfusion: array arrow function'); }
+  ];
+  
+  functionArray.forEach((func, index) => {
+    console.log(\`braceConfusion: calling array function \${index}\`);
+    func();
+  });
+  
+  artificialDelay(100);
+  console.log('braceConfusion: completed');
+}
+
+// Functions with identical names in different scopes
+function scopeConfusion() {
+  console.log('scopeConfusion: starting scope chaos');
+  artificialDelay(100);
+  
+  function duplicateName() {
+    console.log('scopeConfusion: outer duplicateName');
+    artificialDelay(50);
+    
+    function duplicateName() {
+      console.log('scopeConfusion: inner duplicateName');
+      artificialDelay(25);
+    }
+    
+    duplicateName(); // Calls inner
+  }
+  
+  duplicateName(); // Calls outer
+  
+  // Same function name with different implementations
+  (function duplicateName() {
+    console.log('scopeConfusion: IIFE duplicateName');
+    artificialDelay(25);
+  })();
+  
+  artificialDelay(100);
+  console.log('scopeConfusion: completed');
+}
+
+// Arrow functions with confusing syntax
+const arrowConfusion = () => {
+  console.log('arrowConfusion: starting arrow chaos');
+  artificialDelay(100);
+  
+  const simpleArrow = x => x * 2;
+  const multiLineArrow = (a, b) => {
+    console.log('arrowConfusion: multi-line arrow function');
+    artificialDelay(50);
+    return a + b;
+  };
+  
+  const complexArrow = (x) => (y) => (z) => {
+    console.log('arrowConfusion: curried arrow function');
+    artificialDelay(25);
+    return x + y + z;
+  };
+  
+  console.log('arrowConfusion: simple result:', simpleArrow(5));
+  console.log('arrowConfusion: multi-line result:', multiLineArrow(3, 4));
+  console.log('arrowConfusion: complex result:', complexArrow(1)(2)(3));
+  
+  artificialDelay(100);
+  console.log('arrowConfusion: completed');
+};
+
+function main() {
+  console.log('main: starting parser confusion test');
+  
+  stringConfusion();
+  braceConfusion();
+  scopeConfusion();
+  arrowConfusion();
+  
+  // Comments that look like function calls
+  // function commentFunction() { }
+  /* function blockCommentFunction() { } */
+  
+  console.log('main: parser confusion test completed');
+}
+
+main();`,
+    visualizationHint: 'Tests code with confusing syntax, string literals containing function-like patterns, complex nested structures, and identical function names in different scopes.'
+  },
+
+  {
+    id: 'break-async-chaos',
+    name: 'BREAK: Async Chaos & Race Conditions',
+    description: 'Chaotic async patterns designed to break tracking',
+    complexity: 'expert',
+    code: `function artificialDelay(ms = 150) { 
+  const start = Date.now(); 
+  while (Date.now() - start < ms) {} 
+}
+
+function asyncChaos() {
+  console.log('asyncChaos: starting async chaos');
+  artificialDelay(100);
+  
+  // Create multiple competing timers
+  for (let i = 0; i < 10; i++) {
+    setTimeout(() => {
+      console.log(\`asyncChaos: timer \${i} executing\`);
+      artificialDelay(Math.random() * 100);
+      
+      // Create nested timers from within timers
+      setTimeout(() => {
+        console.log(\`asyncChaos: nested timer from \${i}\`);
+        artificialDelay(50);
+      }, Math.random() * 200);
+      
+    }, Math.random() * 500);
+  }
+  
+  console.log('asyncChaos: all timers scheduled');
+}
+
+function promiseChaos() {
+  console.log('promiseChaos: starting promise chaos');
+  artificialDelay(100);
+  
+  // Create promises that resolve in random order
+  const promises = [];
+  for (let i = 0; i < 5; i++) {
+    const promise = new Promise((resolve) => {
+      setTimeout(() => {
+        console.log(\`promiseChaos: promise \${i} resolving\`);
+        artificialDelay(100);
+        resolve(\`result-\${i}\`);
+      }, Math.random() * 1000);
+    });
+    
+    promises.push(promise);
+  }
+  
+  // Handle promises in chaotic ways
+  Promise.race(promises).then(winner => {
+    console.log('promiseChaos: race winner:', winner);
+  });
+  
+  Promise.all(promises).then(results => {
+    console.log('promiseChaos: all resolved:', results.length);
+  });
+  
+  Promise.allSettled(promises).then(results => {
+    console.log('promiseChaos: all settled:', results.length);
+  });
+  
+  console.log('promiseChaos: promise chaos initiated');
+}
+
+function recursiveAsyncChaos(depth = 0) {
+  console.log(\`recursiveAsyncChaos: depth \${depth}\`);
+  
+  if (depth > 10) {
+    console.log('recursiveAsyncChaos: max depth reached');
+    return Promise.resolve(depth);
+  }
+  
+  artificialDelay(50);
+  
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      console.log(\`recursiveAsyncChaos: timeout at depth \${depth}\`);
+      
+      // Create multiple recursive branches asynchronously
+      const branch1 = recursiveAsyncChaos(depth + 1);
+      const branch2 = recursiveAsyncChaos(depth + 1);
+      
+      Promise.all([branch1, branch2]).then(results => {
+        console.log(\`recursiveAsyncChaos: branches completed at depth \${depth}\`);
+        resolve(results.reduce((sum, val) => sum + val, 0));
+      });
+      
+    }, Math.random() * 100);
+  });
+}
+
+function errorChaos() {
+  console.log('errorChaos: starting error chaos');
+  artificialDelay(100);
+  
+  // Promise that randomly rejects
+  const riskyPromise = new Promise((resolve, reject) => {
+    setTimeout(() => {
+      if (Math.random() > 0.5) {
+        console.log('errorChaos: promise resolving');
+        resolve('success');
+      } else {
+        console.log('errorChaos: promise rejecting');
+        reject(new Error('Random failure'));
+      }
+    }, 500);
+  });
+  
+  riskyPromise
+    .then(result => {
+      console.log('errorChaos: success result:', result);
+      
+      // Chain another risky operation
+      return new Promise((resolve, reject) => {
+        setTimeout(() => {
+          if (Math.random() > 0.3) {
+            resolve(result + '-chained');
+          } else {
+            reject(new Error('Chained failure'));
+          }
+        }, 300);
+      });
+    })
+    .then(chainedResult => {
+      console.log('errorChaos: chained success:', chainedResult);
+    })
+    .catch(error => {
+      console.log('errorChaos: caught error:', error.message);
+      
+      // Recovery operation
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          console.log('errorChaos: recovery operation');
+          artificialDelay(100);
+          resolve('recovered');
+        }, 200);
+      });
+    })
+    .finally(() => {
+      console.log('errorChaos: cleanup operation');
+      artificialDelay(50);
+    });
+}
+
+async function main() {
+  console.log('main: starting async chaos test');
+  
+  asyncChaos();
+  promiseChaos();
+  errorChaos();
+  
+  console.log('main: starting recursive async chaos');
+  const recursiveResult = await recursiveAsyncChaos(0);
+  console.log('main: recursive chaos result:', recursiveResult);
+  
+  // Wait a bit for all the chaos to settle
+  await new Promise(resolve => setTimeout(resolve, 3000));
+  
+  console.log('main: async chaos test completed');
+}
+
+main();`,
+    visualizationHint: 'Tests chaotic async patterns with random timings, competing operations, recursive async calls, and error handling that could break the visualization tracking.'
   }
 ];
 

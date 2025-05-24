@@ -58,10 +58,23 @@ export function useRuntimeProcessEvents() {
   const rebuildTreeFromNodeMap = useCallback((nodeMapData: Record<string, RuntimeProcessNode>) => {
     console.log('[REBUILD] Rebuilding tree from nodeMap with', Object.keys(nodeMapData).length, 'nodes');
     
-    // Find the root node (main function)
-    const rootNode = Object.values(nodeMapData).find(node => node.name === 'main');
+    // Find the root node - first try 'main', then any node without parentId
+    let rootNode = Object.values(nodeMapData).find(node => node.name === 'main');
+    
     if (!rootNode) {
-      console.log('[REBUILD] No main function found in nodeMap');
+      // Look for any node without a parent (root node)
+      const rootNodes = Object.values(nodeMapData).filter(node => !node.parentId);
+      console.log('[REBUILD] No main function found, looking for root nodes:', rootNodes.map(n => n.name));
+      
+      if (rootNodes.length > 0) {
+        // Take the first root node, or prefer one that's completed
+        rootNode = rootNodes.find(node => node.status === 'completed') || rootNodes[0];
+        console.log('[REBUILD] Using root node:', rootNode.name);
+      }
+    }
+    
+    if (!rootNode) {
+      console.log('[REBUILD] No root node found in nodeMap');
       return null;
     }
     
@@ -79,6 +92,7 @@ export function useRuntimeProcessEvents() {
     
     const completeTree = buildNodeWithChildren(rootNode);
     console.log('[REBUILD] Complete tree built with', getAllNodesCount(completeTree), 'total nodes');
+    console.log('[REBUILD] Root node:', completeTree.name, 'with', completeTree.children.length, 'children');
     
     return completeTree;
   }, []);
@@ -116,23 +130,23 @@ export function useRuntimeProcessEvents() {
     
     // SIMPLIFIED: Remove concurrent processing protection to ensure all events are handled
     setNodeMap(prev => {
-      const newMap = { ...prev };
-      
-      if (event.status === 'start') {
+        const newMap = { ...prev };
+        
+        if (event.status === 'start') {
         // Create new node
-        const node: RuntimeProcessNode = {
-          id: event.id,
-          name: event.name,
-          type: event.type,
-          children: [],
-          parentId: event.parentId,
-          status: 'running',
-          startTime: event.timestamp,
-        };
-        
+          const node: RuntimeProcessNode = {
+            id: event.id,
+            name: event.name,
+            type: event.type,
+            children: [],
+            parentId: event.parentId,
+            status: 'running',
+            startTime: event.timestamp,
+          };
+          
         console.log('[DB1] Creating node:', event.name, 'with parent:', event.parentId);
-        newMap[event.id] = node;
-        
+          newMap[event.id] = node;
+          
         // Rebuild and update root with complete tree
         setTimeout(() => {
           const completeTree = rebuildTreeFromNodeMap(newMap);
@@ -157,10 +171,10 @@ export function useRuntimeProcessEvents() {
               setRoot(completeTree);
             }
           }, 0);
+          }
         }
-      }
-      
-      return newMap;
+        
+        return newMap;
     });
   }, [rebuildTreeFromNodeMap]);
   
