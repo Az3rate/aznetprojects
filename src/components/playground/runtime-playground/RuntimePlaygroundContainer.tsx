@@ -15,6 +15,9 @@ const Container = styled.div`
   gap: ${({ theme }) => theme.spacing.lg};
   padding: ${({ theme }) => theme.spacing.lg};
   height: 100%;
+  /* Prevent horizontal overflow */
+  max-width: 100vw;
+  overflow-x: hidden;
 `;
 
 const EditorSection = styled.div`
@@ -22,6 +25,9 @@ const EditorSection = styled.div`
   display: flex;
   flex-direction: column;
   gap: ${({ theme }) => theme.spacing.md};
+  /* Constrain width to prevent expansion */
+  min-width: 0;
+  max-width: 50%;
 `;
 
 const CodeEditor = styled.textarea`
@@ -35,6 +41,9 @@ const CodeEditor = styled.textarea`
   border: 1px solid ${({ theme }) => theme.colors.border};
   border-radius: ${({ theme }) => theme.effects.borderRadius.sm};
   resize: vertical;
+  /* Prevent text overflow */
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 `;
 
 const RunButton = styled.button`
@@ -60,18 +69,29 @@ const SyncButton = styled(RunButton)`
 const ButtonGroup = styled.div`
   display: flex;
   margin-bottom: ${({ theme }) => theme.spacing.md};
+  flex-wrap: wrap;
+  gap: ${({ theme }) => theme.spacing.xs};
 `;
 
 const OutputArea = styled.pre`
   background: ${({ theme }) => theme.colors.background.secondary};
   color: ${({ theme }) => theme.colors.text.primary};
   font-size: ${({ theme }) => theme.typography.fontSize.sm};
+  font-family: ${({ theme }) => theme.typography.fontFamily.monospace};
   padding: ${({ theme }) => theme.spacing.md};
   border: 1px solid ${({ theme }) => theme.colors.border};
   border-radius: ${({ theme }) => theme.effects.borderRadius.sm};
   overflow: auto;
   max-height: 200px;
   margin-top: ${({ theme }) => theme.spacing.sm};
+  /* Critical: Fix text wrapping for long lines */
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  word-break: break-all;
+  /* Ensure container respects boundaries */
+  min-width: 0;
+  max-width: 100%;
 `;
 
 const VisualizerSection = styled.div`
@@ -79,17 +99,29 @@ const VisualizerSection = styled.div`
   overflow: auto;
   min-height: 800px;
   position: relative;
+  /* Constrain width to prevent expansion */
+  min-width: 0;
+  max-width: 50%;
 `;
 
 const DebugOutput = styled.pre`
   background: #222;
   color: #0ff;
   font-size: 12px;
+  font-family: ${({ theme }) => theme.typography.fontFamily.monospace};
   padding: 8px;
   margin-bottom: 8px;
   border-radius: 4px;
   max-height: 120px;
   overflow: auto;
+  /* Critical: Fix text wrapping for long debug lines */
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  word-break: break-all;
+  /* Ensure container respects boundaries */
+  min-width: 0;
+  max-width: 100%;
 `;
 
 const SelectWrapper = styled.div`
