@@ -848,8 +848,12 @@ main();`,
     name: 'Artificial Delay Test',
     description: 'Test how artificial delay affects visualization',
     complexity: 'basic',
-    code: `// We don't need to define artificialDelay - it's handled by the instrumenter
-// The instrumentation will add starting/completed logs automatically
+    code: `function artificialDelay(ms = 150) {
+  console.log("artificialDelay starting");
+  const start = Date.now();
+  while (Date.now() - start < ms) {}
+  console.log("artificialDelay completed");
+}
 
 // Main function with delays
 function first() {
@@ -883,8 +887,12 @@ first();`,
     name: 'Timing Precision Test',
     description: 'Test the timing precision of artificial delays in visualization',
     complexity: 'basic',
-    code: `// We don't need to define artificialDelay - it's handled by the instrumenter
-// The instrumentation will add starting/completed logs automatically
+    code: `function artificialDelay(ms = 150) {
+  console.log("artificialDelay starting");
+  const start = Date.now();
+  while (Date.now() - start < ms) {}
+  console.log("artificialDelay completed");
+}
 
 // Main function that will call the same delay function with different durations
 function main() {
@@ -914,7 +922,14 @@ main();`,
     name: 'Nested Delays Test',
     description: 'Test nested function calls with different artificial delays',
     complexity: 'intermediate',
-    code: `// Each function introduces its own delay, creating a measurable timing hierarchy
+    code: `function artificialDelay(ms = 150) {
+  console.log("artificialDelay starting");
+  const start = Date.now();
+  while (Date.now() - start < ms) {}
+  console.log("artificialDelay completed");
+}
+
+// Each function introduces its own delay, creating a measurable timing hierarchy
 
 function level1() {
   console.log("level1 starting");

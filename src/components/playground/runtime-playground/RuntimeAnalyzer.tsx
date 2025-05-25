@@ -16,8 +16,30 @@ import {
   VscGraphLine,
   VscTriangleUp,
   VscTriangleDown,
-  VscArrowRight
+  VscArrowRight,
+  VscTarget,
+  VscComment,
+  VscRocket,
+  VscBeaker,
+  VscCheck,
+  VscPlay,
+  VscCircleFilled,
+  VscWatch,
+  VscSymbolStructure,
+  VscClose,
+  VscRefresh,
+  VscLoading,
+  VscQuestion,
+  VscOutput,
+  VscSync
 } from 'react-icons/vsc';
+import { 
+  FaBrain, 
+  FaBalanceScale, 
+  FaCog,
+  FaClock,
+  FaStar
+} from 'react-icons/fa';
 
 // Get API key from environment variables
 const OPENAI_API_KEY = process.env.REACT_APP_OPENAI_API_KEY || '';
@@ -635,14 +657,27 @@ const CodeSpoilerComponent: React.FC<CodeSpoilerComponentProps> = ({
         
         <div style={{ position: 'relative' }}>
           <CopyButton onClick={handleCopy}>
-            {copied ? '✓ Copied!' : '📋 Copy'}
+            {copied ? (
+              <>
+                <VscCheck style={{ marginRight: '4px' }} />
+                Copied!
+              </>
+            ) : (
+              <>
+                <VscOutput style={{ marginRight: '4px' }} />
+                Copy
+              </>
+            )}
           </CopyButton>
           <CodeBlock>{code}</CodeBlock>
         </div>
         
         {explanation && (
           <CodeDescription style={{ borderTop: '1px solid #21262d', borderBottom: 'none' }}>
-            <strong>💬 Explanation:</strong> {explanation}
+            <strong>
+              <VscComment style={{ marginRight: '6px', color: '#58a6ff' }} />
+              Explanation:
+            </strong> {explanation}
           </CodeDescription>
         )}
       </SpoilerContent>
@@ -735,6 +770,10 @@ export const RuntimeAnalyzer: React.FC<Props> = ({ root, debug, runCount, curren
     original: AdvancedAnalysisData;
     improved: AdvancedAnalysisData | null;
     gptCode: string;
+    gptExecutionResult?: {
+      root: RuntimeProcessNode | null;
+      debug: string;
+    };
   } | null>(null);
   const [isTestingGPTCode, setIsTestingGPTCode] = useState(false);
   const [testError, setTestError] = useState<string | null>(null);
@@ -746,6 +785,18 @@ export const RuntimeAnalyzer: React.FC<Props> = ({ root, debug, runCount, curren
     }, 1000);
     return () => clearInterval(interval);
   }, []);
+
+  // Reset AI analysis state when new execution results come in
+  useEffect(() => {
+    // Only reset when runCount changes (indicating new code execution)
+    if (runCount > 0) {
+      setAiAnalysis(null);
+      setComparisonData(null);
+      setAiError(null);
+      setTestError(null);
+      // Don't reset loading states as they should be managed by the actual operations
+    }
+  }, [runCount]); // Only reset when runCount changes
 
   const analysisData: AdvancedAnalysisData = useMemo(() => {
     if (!root) {
@@ -824,34 +875,46 @@ export const RuntimeAnalyzer: React.FC<Props> = ({ root, debug, runCount, curren
     
     const overallScore = (performanceScore + complexityScore + maintainabilityScore + securityScore) / 4;
 
-    // AI-powered insights using pattern recognition
-    const aiInsights = [];
+    // AI-powered insights - only real GPT analysis will be shown (no fake insights)
+    const aiInsights: {
+      type: 'ai';
+      title: string;
+      message: string;
+      confidence: number;
+    }[] = [];
     
     if (nestingDepth > 7) {
-      aiInsights.push({
-        type: 'ai' as const,
-        title: 'Deep Nesting Anti-Pattern Detected',
-        message: 'AI Analysis: Your code exhibits the "Arrow Anti-Pattern" with excessive nesting. This suggests callback hell or deeply nested conditionals. Consider implementing the Strategy Pattern or Promise chains to flatten the structure.',
-        confidence: 94
-      });
+      // Removed fake AI insight - only real GPT analysis should be shown
+      // aiInsights.push({
+      //   type: 'ai' as const,
+      //   title: 'Deep Nesting Anti-Pattern Detected',
+      //   message: 'AI Analysis: Your code exhibits the "Arrow Anti-Pattern" with excessive nesting. This suggests callback hell or deeply nested conditionals. Consider implementing the Strategy Pattern or Promise chains to flatten the structure.',
+      //   confidence: 94
+      // });
     }
 
     if (totalFunctions > 15 && asyncOperations > 8) {
+      // Removed fake AI insight
+      /*
       aiInsights.push({
         type: 'ai' as const,
         title: 'Concurrent Execution Optimization Opportunity',
         message: 'AI Analysis: Multiple async operations detected. Your code could benefit from Promise.allSettled() or async pools to improve parallel execution efficiency by ~40-60%.',
         confidence: 87
       });
+      */
     }
 
     if (executionTimes.some(time => time > 1000)) {
+      // Removed fake AI insight
+      /*
       aiInsights.push({
         type: 'ai' as const,
         title: 'Performance Bottleneck Prediction',
         message: 'AI Analysis: Long-running functions detected. This pattern typically leads to UI blocking and poor user experience. Consider implementing Web Workers or time-slicing for operations exceeding 16ms.',
         confidence: 91
       });
+      */
     }
 
     // Complexity analysis
@@ -955,21 +1018,27 @@ export const RuntimeAnalyzer: React.FC<Props> = ({ root, debug, runCount, curren
 
     // Add AI-powered error insights
     if (errorAnalysis.totalErrors > 0) {
+      // Removed fake error insight - not actually AI-powered
+      /*
       errorAnalysis.errorInsights.push({
         type: 'error' as const,
         title: 'Error Detection Pattern',
         message: `Detected ${errorAnalysis.totalErrors} error(s) during execution. This indicates potential stability issues.`,
         suggestion: 'Consider adding try-catch blocks and implementing proper error handling strategies.'
       });
+      */
     }
 
     if (errorAnalysis.criticalErrors.length > 0) {
+      // Removed fake error insight - not actually AI-powered
+      /*
       errorAnalysis.errorInsights.push({
         type: 'error' as const,
         title: 'Critical Error Alert',
         message: `Found ${errorAnalysis.criticalErrors.length} critical error(s) that could cause application crashes.`,
         suggestion: 'Immediately review and fix critical errors to prevent runtime failures.'
       });
+      */
     }
 
     // Performance heatmap data - group similar functions and aggregate their performance
@@ -1048,6 +1117,11 @@ export const RuntimeAnalyzer: React.FC<Props> = ({ root, debug, runCount, curren
       });
 
       console.log('[GPT_TEST] Testing GPT recommended code:', aiAnalysis.fullCodeRecommendation.improvedCode);
+      console.log('[GPT_TEST] GPT code structure analysis:');
+      console.log('[GPT_TEST] - Contains async:', aiAnalysis.fullCodeRecommendation.improvedCode.includes('async'));
+      console.log('[GPT_TEST] - Contains await:', aiAnalysis.fullCodeRecommendation.improvedCode.includes('await'));
+      console.log('[GPT_TEST] - Contains Promise:', aiAnalysis.fullCodeRecommendation.improvedCode.includes('Promise'));
+      console.log('[GPT_TEST] - Function count:', (aiAnalysis.fullCodeRecommendation.improvedCode.match(/function\s+\w+/g) || []).length);
       
       // Execute the GPT code and get the results
       const executionResult = await onExecuteCode(aiAnalysis.fullCodeRecommendation.improvedCode);
@@ -1058,13 +1132,27 @@ export const RuntimeAnalyzer: React.FC<Props> = ({ root, debug, runCount, curren
         analysisData: executionResult.analysisData
       });
       
-      // Update comparison data with improved results
+      // Update comparison data with improved results and execution data
       setComparisonData(prev => prev ? {
         ...prev,
-        improved: executionResult.analysisData
+        improved: executionResult.analysisData,
+        gptExecutionResult: {
+          root: executionResult.root,
+          debug: executionResult.debug
+        }
       } : null);
       
       console.log('[GPT_TEST] Comparison data updated successfully');
+      console.log('[GPT_TEST] GPT execution root:', executionResult.root);
+      console.log('[GPT_TEST] GPT execution debug length:', executionResult.debug.length);
+      if (executionResult.root) {
+        const flattenGptNodes = (node: RuntimeProcessNode): RuntimeProcessNode[] => {
+          return [node, ...node.children.flatMap(flattenGptNodes)];
+        };
+        const gptNodes = flattenGptNodes(executionResult.root);
+        console.log('[GPT_TEST] Total nodes captured:', gptNodes.length);
+        console.log('[GPT_TEST] Node details:', gptNodes.map(n => ({ name: n.name, status: n.status, children: n.children.length })));
+      }
       
     } catch (error) {
       console.error('[GPT_TEST] Failed to test GPT code:', error);
@@ -1076,8 +1164,29 @@ export const RuntimeAnalyzer: React.FC<Props> = ({ root, debug, runCount, curren
 
   const renderOverview = () => (
     <TabContent>
+      {/* Run Info */}
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center',
+        marginBottom: '20px',
+        padding: '12px 16px',
+        background: 'rgba(88, 166, 255, 0.1)',
+        border: '1px solid rgba(88, 166, 255, 0.3)',
+        borderRadius: '6px',
+        fontSize: '12px',
+        fontFamily: 'SF Mono, monospace'
+      }}>
+        <span style={{ color: '#58a6ff', fontWeight: '600' }}>
+          Run #{runCount}
+        </span>
+        <span style={{ color: '#e6edf3' }}>
+          Overall Score: <strong style={{ color: '#00d448' }}>{Math.round(analysisData.overallScore)}/100</strong>
+        </span>
+      </div>
+
       {/* Overall Score */}
-      <ScoreCard score={analysisData.overallScore}>
+      <ScoreCard score={analysisData.overallScore} style={{ marginBottom: '24px' }}>
         <ScoreValue score={analysisData.overallScore}>
           {Math.round(analysisData.overallScore)}
         </ScoreValue>
@@ -1214,7 +1323,17 @@ export const RuntimeAnalyzer: React.FC<Props> = ({ root, debug, runCount, curren
             e.currentTarget.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.3)';
           }}
         >
-          {isLoadingAI ? '🔄 Analyzing...' : '🧠 Get GPT Analysis'}
+          {isLoadingAI ? (
+            <>
+              <VscRefresh style={{ marginRight: '6px', animation: 'spin 1s linear infinite' }} />
+              Analyzing...
+            </>
+          ) : (
+            <>
+              <FaBrain style={{ marginRight: '6px' }} />
+              Get GPT Analysis
+            </>
+          )}
         </button>
       </div>
 
@@ -1228,7 +1347,7 @@ export const RuntimeAnalyzer: React.FC<Props> = ({ root, debug, runCount, curren
       {aiAnalysis ? (
         // Show real GPT analysis
         <>
-          <ScoreCard score={aiAnalysis.overallScore}>
+          <ScoreCard score={aiAnalysis.overallScore} style={{ marginBottom: '24px' }}>
             <ScoreValue score={aiAnalysis.overallScore}>
               {Math.round(aiAnalysis.overallScore)}
             </ScoreValue>
@@ -1236,7 +1355,10 @@ export const RuntimeAnalyzer: React.FC<Props> = ({ root, debug, runCount, curren
           </ScoreCard>
 
           <InsightCard type="ai">
-            <InsightTitle type="ai">🎯 GPT Summary</InsightTitle>
+            <InsightTitle type="ai">
+              <VscTarget style={{ marginRight: '8px', color: '#58a6ff' }} />
+              GPT Summary
+            </InsightTitle>
             <InsightText>{aiAnalysis.summary}</InsightText>
           </InsightCard>
 
@@ -1261,7 +1383,10 @@ export const RuntimeAnalyzer: React.FC<Props> = ({ root, debug, runCount, curren
                 {insight.suggestions.length > 0 && (
                   <>
                     <br /><br />
-                    <strong>💡 Suggestions:</strong>
+                    <strong>
+                      <VscLightbulb style={{ marginRight: '6px', color: '#fbbf24' }} />
+                      Suggestions:
+                    </strong>
                     <ul style={{ marginTop: '8px', paddingLeft: '20px' }}>
                       {insight.suggestions.map((suggestion, idx) => (
                         <li key={idx} style={{ marginBottom: '4px' }}>{suggestion}</li>
@@ -1285,7 +1410,10 @@ export const RuntimeAnalyzer: React.FC<Props> = ({ root, debug, runCount, curren
 
           {aiAnalysis.recommendations.length > 0 && (
             <>
-              <MetricTitle style={{ marginTop: '32px' }}>🎯 Top Recommendations</MetricTitle>
+              <MetricTitle style={{ marginTop: '32px' }}>
+                <VscTarget style={{ marginRight: '8px', color: '#58a6ff' }} />
+                Top Recommendations
+              </MetricTitle>
               {aiAnalysis.recommendations.map((recommendation, index) => (
                 <InsightCard key={index} type="info">
                   <InsightTitle>Recommendation {index + 1}</InsightTitle>
@@ -1298,13 +1426,19 @@ export const RuntimeAnalyzer: React.FC<Props> = ({ root, debug, runCount, curren
           {/* Full Code Refactor Recommendation */}
           {aiAnalysis.fullCodeRecommendation && (
             <>
-              <MetricTitle style={{ marginTop: '32px' }}>🚀 Complete Code Refactor</MetricTitle>
+              <MetricTitle style={{ marginTop: '32px' }}>
+                <VscRocket style={{ marginRight: '8px', color: '#58a6ff' }} />
+                Complete Code Refactor
+              </MetricTitle>
               <InsightCard type="ai">
                 <InsightTitle type="ai">{aiAnalysis.fullCodeRecommendation.title}</InsightTitle>
                 <InsightText>
                   {aiAnalysis.fullCodeRecommendation.description}
                   <br /><br />
-                  <strong>🔧 Key Changes:</strong>
+                  <strong>
+                    <VscTools style={{ marginRight: '6px', color: '#58a6ff' }} />
+                    Key Changes:
+                  </strong>
                   <ul style={{ marginTop: '8px', paddingLeft: '20px' }}>
                     {aiAnalysis.fullCodeRecommendation.keyChanges.map((change, idx) => (
                       <li key={idx} style={{ marginBottom: '4px' }}>{change}</li>
@@ -1321,7 +1455,10 @@ export const RuntimeAnalyzer: React.FC<Props> = ({ root, debug, runCount, curren
               </InsightCard>
 
               {/* Test GPT Code Section */}
-              <MetricTitle style={{ marginTop: '32px' }}>🧪 Test GPT Improvements</MetricTitle>
+              <MetricTitle style={{ marginTop: '32px' }}>
+                <VscBeaker style={{ marginRight: '8px', color: '#58a6ff' }} />
+                Test GPT Improvements
+              </MetricTitle>
               <InsightCard type="ai">
                 <InsightTitle type="ai">Validate AI Recommendations</InsightTitle>
                 <InsightText>
@@ -1365,7 +1502,17 @@ export const RuntimeAnalyzer: React.FC<Props> = ({ root, debug, runCount, curren
                       e.currentTarget.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.3)';
                     }}
                   >
-                    {isTestingGPTCode ? '🔄 Testing...' : '🚀 Test GPT Code'}
+                    {isTestingGPTCode ? (
+                      <>
+                        <VscRefresh style={{ marginRight: '6px', animation: 'spin 1s linear infinite' }} />
+                        Testing...
+                      </>
+                    ) : (
+                      <>
+                        <VscRocket style={{ marginRight: '6px' }} />
+                        Test GPT Code
+                      </>
+                    )}
                   </button>
                   
                   {comparisonData && (
@@ -1374,7 +1521,8 @@ export const RuntimeAnalyzer: React.FC<Props> = ({ root, debug, runCount, curren
                       fontSize: '12px', 
                       fontWeight: '600' 
                     }}>
-                      ✅ Ready for comparison
+                      <VscCheck style={{ marginRight: '4px' }} />
+                      Ready for comparison
                     </span>
                   )}
                 </div>
@@ -1392,6 +1540,115 @@ export const RuntimeAnalyzer: React.FC<Props> = ({ root, debug, runCount, curren
                     <strong>Test Error:</strong> {testError}
                   </div>
                 )}
+
+                {/* Mini GPT Execution Visualizer */}
+                {comparisonData?.gptExecutionResult && (
+                  <div style={{ 
+                    marginTop: '20px',
+                    padding: '16px',
+                    background: 'rgba(35, 134, 54, 0.05)',
+                    border: '1px solid rgba(35, 134, 54, 0.2)',
+                    borderRadius: '8px'
+                  }}>
+                    <h4 style={{ 
+                      color: '#238636', 
+                      margin: '0 0 12px 0', 
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      fontFamily: 'SF Mono, monospace'
+                    }}>
+                      <VscEye style={{ marginRight: '6px' }} />
+                      GPT Code Execution Flow
+                    </h4>
+                    
+                    {comparisonData.gptExecutionResult.root ? (
+                      <div style={{ 
+                        maxHeight: '200px', 
+                        overflowY: 'auto',
+                        background: '#0a0c10',
+                        borderRadius: '6px',
+                        padding: '12px'
+                      }}>
+                        {(() => {
+                          const flattenNodesWithDepth = (node: RuntimeProcessNode, depth = 0): Array<RuntimeProcessNode & { depth: number }> => {
+                            return [
+                              { ...node, depth }, 
+                              ...node.children.flatMap(child => flattenNodesWithDepth(child, depth + 1))
+                            ];
+                          };
+                          const nodes = flattenNodesWithDepth(comparisonData.gptExecutionResult.root);
+                          
+                          console.log('[MINI_VIZ] Displaying nodes:', nodes.map(n => ({ name: n.name, depth: n.depth, status: n.status, children: n.children.length })));
+                          
+                          return nodes.map((node, index) => (
+                            <div key={`${node.name}-${index}`} style={{
+                              padding: '4px 0',
+                              paddingLeft: `${node.depth * 16}px`,
+                              fontSize: '11px',
+                              fontFamily: 'SF Mono, monospace',
+                              color: node.status === 'completed' ? '#00d448' : 
+                                     node.status === 'error' ? '#f85149' : '#d29922',
+                              borderLeft: node.depth > 0 ? '1px solid #30363d' : 'none',
+                              marginLeft: node.depth > 0 ? '8px' : '0'
+                            }}>
+                              <span style={{ 
+                                display: 'inline-block', 
+                                width: '8px',
+                                height: '8px',
+                                borderRadius: '50%',
+                                background: node.status === 'completed' ? '#00d448' : 
+                                           node.status === 'error' ? '#f85149' : '#d29922',
+                                marginRight: '8px'
+                              }} />
+                              {node.name} 
+                              {node.endTime && (
+                                <span style={{ color: '#7d8590', marginLeft: '8px' }}>
+                                  ({(node.endTime - node.startTime).toFixed(1)}ms)
+                                </span>
+                              )}
+                            </div>
+                          ));
+                        })()}
+                      </div>
+                    ) : (
+                      <div style={{ 
+                        fontSize: '12px', 
+                        color: '#d29922',
+                        fontStyle: 'italic'
+                      }}>
+                        No execution tree available - GPT code may not have generated trackable functions
+                      </div>
+                    )}
+                    
+                    {comparisonData.gptExecutionResult.debug && (
+                      <details style={{ marginTop: '12px' }}>
+                        <summary style={{ 
+                          cursor: 'pointer', 
+                          color: '#58a6ff', 
+                          fontSize: '12px',
+                          fontWeight: '600'
+                        }}>
+                          View Debug Output ({comparisonData.gptExecutionResult.debug.split('\n').length} lines)
+                        </summary>
+                        <pre style={{
+                          background: '#0a0c10',
+                          padding: '12px',
+                          borderRadius: '6px',
+                          fontSize: '10px',
+                          color: '#e6edf3',
+                          maxHeight: '150px',
+                          overflowY: 'auto',
+                          marginTop: '8px',
+                          fontFamily: 'SF Mono, monospace',
+                          whiteSpace: 'pre-wrap',
+                          wordWrap: 'break-word'
+                        }}>
+                          {comparisonData.gptExecutionResult.debug}
+                        </pre>
+                      </details>
+                    )}
+                  </div>
+                )}
               </InsightCard>
 
               {/* Comparison Results */}
@@ -1404,7 +1661,10 @@ export const RuntimeAnalyzer: React.FC<Props> = ({ root, debug, runCount, curren
                   
                   {/* Performance Comparison */}
                   <InsightCard type="ai">
-                    <InsightTitle type="ai">🏃‍♂️ Performance Comparison</InsightTitle>
+                    <InsightTitle type="ai">
+                      <VscPlay style={{ marginRight: '8px', color: '#58a6ff' }} />
+                      Performance Comparison
+                    </InsightTitle>
                     <div style={{ 
                       display: 'grid', 
                       gridTemplateColumns: '1fr 1fr', 
@@ -1418,14 +1678,30 @@ export const RuntimeAnalyzer: React.FC<Props> = ({ root, debug, runCount, curren
                         border: '1px solid rgba(248, 81, 73, 0.3)'
                       }}>
                         <h4 style={{ color: '#f85149', margin: '0 0 12px 0', fontSize: '14px' }}>
-                          🔴 Original Code
+                          <VscCircleFilled style={{ marginRight: '6px', color: '#f85149' }} />
+                          Original Code
                         </h4>
                         <div style={{ fontSize: '12px', color: '#e6edf3' }}>
-                          <div>⏱️ Execution Time: <strong>{comparisonData.original.totalExecutionTime}ms</strong></div>
-                          <div>🎯 Performance Score: <strong>{Math.round(comparisonData.original.performanceScore)}/100</strong></div>
-                          <div>🧠 Complexity: <strong>{comparisonData.original.cyclomaticComplexity}</strong></div>
-                          <div>🏗️ Nesting Depth: <strong>{comparisonData.original.nestingDepth}</strong></div>
-                          <div>❌ Errors: <strong>{comparisonData.original.errors}</strong></div>
+                          <div>
+                            <VscWatch style={{ marginRight: '6px', color: '#58a6ff' }} />
+                            Execution Time: <strong>{comparisonData.original.totalExecutionTime}ms</strong>
+                          </div>
+                          <div>
+                            <VscTarget style={{ marginRight: '6px', color: '#58a6ff' }} />
+                            Performance Score: <strong>{Math.round(comparisonData.original.performanceScore)}/100</strong>
+                          </div>
+                          <div>
+                            <FaBrain style={{ marginRight: '6px', color: '#58a6ff' }} />
+                            Complexity: <strong>{comparisonData.original.cyclomaticComplexity}</strong>
+                          </div>
+                          <div>
+                            <VscSymbolStructure style={{ marginRight: '6px', color: '#58a6ff' }} />
+                            Nesting Depth: <strong>{comparisonData.original.nestingDepth}</strong>
+                          </div>
+                          <div>
+                            <VscError style={{ marginRight: '6px', color: '#f85149' }} />
+                            Errors: <strong>{comparisonData.original.errors}</strong>
+                          </div>
                         </div>
                       </div>
                       
@@ -1436,19 +1712,38 @@ export const RuntimeAnalyzer: React.FC<Props> = ({ root, debug, runCount, curren
                         border: '1px solid rgba(35, 134, 54, 0.3)'
                       }}>
                         <h4 style={{ color: '#238636', margin: '0 0 12px 0', fontSize: '14px' }}>
-                          🟢 GPT Improved Code
+                          <VscCircleFilled style={{ marginRight: '6px', color: '#238636' }} />
+                          GPT Improved Code
                         </h4>
                         <div style={{ fontSize: '12px', color: '#e6edf3' }}>
                           {comparisonData.improved ? (
                             <>
-                              <div>⏱️ Execution Time: <strong>{comparisonData.improved.totalExecutionTime}ms</strong></div>
-                              <div>🎯 Performance Score: <strong>{Math.round(comparisonData.improved.performanceScore)}/100</strong></div>
-                              <div>🧠 Complexity: <strong>{comparisonData.improved.cyclomaticComplexity}</strong></div>
-                              <div>🏗️ Nesting Depth: <strong>{comparisonData.improved.nestingDepth}</strong></div>
-                              <div>❌ Errors: <strong>{comparisonData.improved.errors}</strong></div>
+                              <div>
+                                <VscWatch style={{ marginRight: '6px', color: '#58a6ff' }} />
+                                Execution Time: <strong>{comparisonData.improved.totalExecutionTime}ms</strong>
+                              </div>
+                              <div>
+                                <VscTarget style={{ marginRight: '6px', color: '#58a6ff' }} />
+                                Performance Score: <strong>{Math.round(comparisonData.improved.performanceScore)}/100</strong>
+                              </div>
+                              <div>
+                                <FaBrain style={{ marginRight: '6px', color: '#58a6ff' }} />
+                                Complexity: <strong>{comparisonData.improved.cyclomaticComplexity}</strong>
+                              </div>
+                              <div>
+                                <VscSymbolStructure style={{ marginRight: '6px', color: '#58a6ff' }} />
+                                Nesting Depth: <strong>{comparisonData.improved.nestingDepth}</strong>
+                              </div>
+                              <div>
+                                <VscError style={{ marginRight: '6px', color: '#f85149' }} />
+                                Errors: <strong>{comparisonData.improved.errors}</strong>
+                              </div>
                             </>
                           ) : (
-                            <div style={{ color: '#d29922' }}>⏳ Run test to see results</div>
+                            <div style={{ color: '#d29922' }}>
+                              <VscSync style={{ marginRight: '6px' }} />
+                              Run test to see results
+                            </div>
                           )}
                         </div>
                       </div>
@@ -1456,148 +1751,23 @@ export const RuntimeAnalyzer: React.FC<Props> = ({ root, debug, runCount, curren
                     
                     {comparisonData.improved && (
                       <div style={{ marginTop: '20px' }}>
-                        <strong style={{ color: '#238636', fontSize: '14px' }}>🎉 Improvements Achieved:</strong>
-                        <ul style={{ marginTop: '8px', paddingLeft: '20px', fontSize: '13px' }}>
-                          {comparisonData.improved.totalExecutionTime < comparisonData.original.totalExecutionTime && (
-                            <li style={{ color: '#238636' }}>
-                              ⚡ <strong>{Math.round(((comparisonData.original.totalExecutionTime - comparisonData.improved.totalExecutionTime) / comparisonData.original.totalExecutionTime) * 100)}%</strong> faster execution ({comparisonData.original.totalExecutionTime - comparisonData.improved.totalExecutionTime}ms saved)
-                            </li>
-                          )}
-                          {comparisonData.improved.performanceScore > comparisonData.original.performanceScore && (
-                            <li style={{ color: '#238636' }}>
-                              📈 <strong>+{Math.round(comparisonData.improved.performanceScore - comparisonData.original.performanceScore)}</strong> points performance improvement ({Math.round(((comparisonData.improved.performanceScore - comparisonData.original.performanceScore) / comparisonData.original.performanceScore) * 100)}% better)
-                            </li>
-                          )}
-                          {comparisonData.improved.overallScore > comparisonData.original.overallScore && (
-                            <li style={{ color: '#238636' }}>
-                              🏆 <strong>+{Math.round(comparisonData.improved.overallScore - comparisonData.original.overallScore)}</strong> points overall score improvement
-                            </li>
-                          )}
-                          {comparisonData.improved.cyclomaticComplexity < comparisonData.original.cyclomaticComplexity && (
-                            <li style={{ color: '#238636' }}>
-                              🧠 <strong>{comparisonData.original.cyclomaticComplexity - comparisonData.improved.cyclomaticComplexity}</strong> point complexity reduction (simpler code structure)
-                            </li>
-                          )}
-                          {comparisonData.improved.nestingDepth < comparisonData.original.nestingDepth && (
-                            <li style={{ color: '#238636' }}>
-                              🏗️ <strong>{comparisonData.original.nestingDepth - comparisonData.improved.nestingDepth}</strong> level nesting reduction (better readability)
-                            </li>
-                          )}
-                          {comparisonData.improved.errors < comparisonData.original.errors && (
-                            <li style={{ color: '#238636' }}>
-                              ✅ <strong>{comparisonData.original.errors - comparisonData.improved.errors}</strong> fewer errors (increased stability)
-                            </li>
-                          )}
-                          {comparisonData.improved.totalFunctions < comparisonData.original.totalFunctions && (
-                            <li style={{ color: '#238636' }}>
-                              🔧 <strong>{comparisonData.original.totalFunctions - comparisonData.improved.totalFunctions}</strong> fewer function calls (streamlined execution)
-                            </li>
-                          )}
-                          {/* Show if no improvements were detected */}
-                          {comparisonData.improved.totalExecutionTime >= comparisonData.original.totalExecutionTime &&
-                           comparisonData.improved.performanceScore <= comparisonData.original.performanceScore &&
-                           comparisonData.improved.cyclomaticComplexity >= comparisonData.original.cyclomaticComplexity &&
-                           comparisonData.improved.nestingDepth >= comparisonData.original.nestingDepth &&
-                           comparisonData.improved.errors >= comparisonData.original.errors && (
-                            <li style={{ color: '#d29922' }}>
-                              ⚠️ <strong>Limited improvements detected</strong> - GPT's changes may focus on code style rather than performance
-                            </li>
-                          )}
-                          
-                          {/* Show specific regressions */}
-                          {comparisonData.improved.nestingDepth > comparisonData.original.nestingDepth && (
-                            <li style={{ color: '#f85149' }}>
-                              📈 <strong>⚠️ Nesting depth increased</strong> (+{comparisonData.improved.nestingDepth - comparisonData.original.nestingDepth} levels) - may hurt readability
-                            </li>
-                          )}
-                          {comparisonData.improved.cyclomaticComplexity > comparisonData.original.cyclomaticComplexity && (
-                            <li style={{ color: '#f85149' }}>
-                              🧠 <strong>⚠️ Complexity increased</strong> (+{comparisonData.improved.cyclomaticComplexity - comparisonData.original.cyclomaticComplexity} points) - algorithm applied penalties
-                            </li>
-                          )}
-                          {comparisonData.improved.totalFunctions > comparisonData.original.totalFunctions && (
-                            <li style={{ color: '#f85149' }}>
-                              📊 <strong>⚠️ More function calls</strong> (+{comparisonData.improved.totalFunctions - comparisonData.original.totalFunctions}) - may indicate over-engineering
-                            </li>
-                          )}
-                        </ul>
-                        
-                        {/* Performance insights */}
-                        <div style={{ 
-                          marginTop: '16px', 
-                          padding: '12px', 
-                          background: 'rgba(35, 134, 54, 0.1)', 
-                          borderRadius: '6px',
-                          fontSize: '12px'
-                        }}>
-                          <strong style={{ color: '#238636' }}>💡 Enhanced Scoring Algorithm:</strong>
-                          <br />
-                          The new comparison-based scoring system uses <strong>relative improvements</strong> rather than absolute penalties:
-                          <ul style={{ marginTop: '8px', paddingLeft: '16px' }}>
-                            <li><strong>Performance:</strong> Base 60 + time improvement % + error reduction</li>
-                            <li><strong>Complexity:</strong> Base 60 + 15 points per nesting level reduced</li>
-                            <li><strong>Maintainability:</strong> Base 60 + structure and readability improvements</li>
-                            <li><strong>Security:</strong> Maintains high score unless regressions detected</li>
-                          </ul>
-                          This provides much more accurate assessment of GPT's actual optimizations vs. your original code.
-                        </div>
-
-                        {/* New Educational Analysis Section */}
-                        <div style={{ 
-                          marginTop: '20px', 
-                          padding: '16px', 
-                          background: 'rgba(139, 92, 246, 0.1)', 
-                          borderRadius: '6px',
-                          border: '1px solid rgba(139, 92, 246, 0.3)'
-                        }}>
-                          <strong style={{ color: '#c084fc', fontSize: '14px' }}>🎓 Understanding GPT's Optimization Strategy:</strong>
-                          <div style={{ marginTop: '12px', fontSize: '12px', lineHeight: '1.5' }}>
-                            <div style={{ marginBottom: '12px' }}>
-                              <strong style={{ color: '#e6edf3' }}>Why Performance Improved (+9%):</strong>
-                              <ul style={{ marginTop: '4px', paddingLeft: '16px', color: '#7d8590' }}>
-                                <li>Likely replaced blocking <code style={{ color: '#a5d6ff' }}>while</code> loops with non-blocking <code style={{ color: '#a5d6ff' }}>setTimeout</code></li>
-                                <li>Implemented parallel async execution instead of sequential</li>
-                                <li>Optimized Promise chain management</li>
-                              </ul>
-                            </div>
-                            
-                            <div style={{ marginBottom: '12px' }}>
-                              <strong style={{ color: '#e6edf3' }}>Why Complexity Increased (+2 points):</strong>
-                              <ul style={{ marginTop: '4px', paddingLeft: '16px', color: '#7d8590' }}>
-                                <li>Added sophisticated error handling (try-catch blocks)</li>
-                                <li>Introduced Promise.allSettled() or similar concurrency patterns</li>
-                                <li>Enhanced timeout and cancellation logic</li>
-                              </ul>
-                            </div>
-                            
-                            <div>
-                              <strong style={{ color: '#e6edf3' }}>This is a Classic "Enterprise vs. Performance" Trade-off:</strong>
-                              <ul style={{ marginTop: '4px', paddingLeft: '16px', color: '#7d8590' }}>
-                                <li>✅ <strong>Production-ready:</strong> Better error handling, timeouts, parallel execution</li>
-                                <li>⚠️ <strong>More complex:</strong> Harder to read but more robust</li>
-                                <li>🎯 <strong>Real-world benefit:</strong> 9% faster execution is significant at scale</li>
-                              </ul>
-                            </div>
-                            
-                            <div style={{ 
-                              marginTop: '12px', 
-                              padding: '8px', 
-                              background: 'rgba(35, 134, 54, 0.1)', 
-                              borderRadius: '4px',
-                              border: '1px solid rgba(35, 134, 54, 0.2)'
-                            }}>
-                              <strong style={{ color: '#238636' }}>💡 Verdict:</strong> GPT chose <strong>production robustness</strong> over simplicity - 
-                              exactly what you'd want in real applications where performance and reliability matter more than academic elegance.
-                            </div>
-                          </div>
-                        </div>
+                        <strong style={{ color: '#238636', fontSize: '14px' }}>
+                          <VscCheck style={{ marginRight: '6px' }} />
+                          Analysis Complete
+                        </strong>
+                        <p style={{ fontSize: '12px', color: '#7d8590', marginTop: '8px' }}>
+                          Comparison results are displayed above. Review the metrics to understand the impact of GPT's optimizations.
+                        </p>
                       </div>
                     )}
                   </InsightCard>
 
                   {/* Pros and Cons */}
                   <InsightCard type="ai">
-                    <InsightTitle type="ai">⚖️ Pros & Cons Analysis</InsightTitle>
+                    <InsightTitle type="ai">
+                      <FaBalanceScale style={{ marginRight: '8px', color: '#58a6ff' }} />
+                      Honest Trade-off Analysis
+                    </InsightTitle>
                     <div style={{ 
                       display: 'grid', 
                       gridTemplateColumns: '1fr 1fr', 
@@ -1605,36 +1775,127 @@ export const RuntimeAnalyzer: React.FC<Props> = ({ root, debug, runCount, curren
                       marginTop: '16px' 
                     }}>
                       <div>
-                        <h4 style={{ color: '#238636', margin: '0 0 12px 0', fontSize: '14px' }}>
-                          ✅ Pros of GPT Code
+                        <h4 style={{ 
+                          color: comparisonData.improved && comparisonData.improved.performanceScore > comparisonData.original.performanceScore ? '#238636' : '#d29922', 
+                          margin: '0 0 12px 0', 
+                          fontSize: '14px' 
+                        }}>
+                          <VscCheck style={{ marginRight: '6px' }} />
+                          Actual Improvements
                         </h4>
                         <ul style={{ fontSize: '12px', paddingLeft: '16px', color: '#e6edf3' }}>
-                          <li>Cleaner, more readable structure</li>
-                          <li>Better error handling practices</li>
-                          <li>Optimized performance patterns</li>
-                          <li>Reduced complexity and nesting</li>
-                          <li>Modern JavaScript best practices</li>
+                          {comparisonData.improved ? (() => {
+                            const improvements = [];
+                            
+                            if (comparisonData.improved.totalExecutionTime < comparisonData.original.totalExecutionTime) {
+                              improvements.push(`Faster execution (${comparisonData.original.totalExecutionTime}ms → ${comparisonData.improved.totalExecutionTime}ms)`);
+                            }
+                            if (comparisonData.improved.performanceScore > comparisonData.original.performanceScore) {
+                              improvements.push(`Better performance score (${Math.round(comparisonData.original.performanceScore)} → ${Math.round(comparisonData.improved.performanceScore)})`);
+                            }
+                            if (comparisonData.improved.cyclomaticComplexity < comparisonData.original.cyclomaticComplexity) {
+                              improvements.push(`Reduced complexity (${comparisonData.original.cyclomaticComplexity} → ${comparisonData.improved.cyclomaticComplexity})`);
+                            }
+                            if (comparisonData.improved.nestingDepth < comparisonData.original.nestingDepth) {
+                              improvements.push(`Less nesting (${comparisonData.original.nestingDepth} → ${comparisonData.improved.nestingDepth} levels)`);
+                            }
+                            if (comparisonData.improved.errors < comparisonData.original.errors) {
+                              improvements.push(`Fewer errors (${comparisonData.original.errors} → ${comparisonData.improved.errors})`);
+                            }
+                            
+                            return improvements.length > 0 ? improvements.map((improvement, idx) => (
+                              <li key={idx}>{improvement}</li>
+                            )) : [<li key="none" style={{ color: '#7d8590' }}>No measurable improvements detected</li>];
+                          })() : [<li key="pending">Run test to see actual improvements</li>]}
                         </ul>
                       </div>
                       
                       <div>
-                        <h4 style={{ color: '#d29922', margin: '0 0 12px 0', fontSize: '14px' }}>
-                          ⚠️ Considerations
+                        <h4 style={{ 
+                          color: comparisonData.improved && (
+                            comparisonData.improved.totalExecutionTime > comparisonData.original.totalExecutionTime ||
+                            comparisonData.improved.performanceScore < comparisonData.original.performanceScore
+                          ) ? '#f85149' : '#d29922', 
+                          margin: '0 0 12px 0', 
+                          fontSize: '14px' 
+                        }}>
+                          <VscWarning style={{ marginRight: '6px' }} />
+                          Actual Trade-offs
                         </h4>
                         <ul style={{ fontSize: '12px', paddingLeft: '16px', color: '#e6edf3' }}>
-                          <li>May require additional testing</li>
-                          <li>Different execution characteristics</li>
-                          <li>Potential behavior changes</li>
-                          <li>Need to validate edge cases</li>
-                          <li>Consider team coding standards</li>
+                          {comparisonData.improved ? (() => {
+                            const tradeoffs = [];
+                            
+                            if (comparisonData.improved.totalExecutionTime > comparisonData.original.totalExecutionTime) {
+                              tradeoffs.push(`Slower execution (${comparisonData.original.totalExecutionTime}ms → ${comparisonData.improved.totalExecutionTime}ms)`);
+                            }
+                            if (comparisonData.improved.performanceScore < comparisonData.original.performanceScore) {
+                              tradeoffs.push(`Lower performance score (${Math.round(comparisonData.original.performanceScore)} → ${Math.round(comparisonData.improved.performanceScore)})`);
+                            }
+                            if (comparisonData.improved.cyclomaticComplexity > comparisonData.original.cyclomaticComplexity) {
+                              tradeoffs.push(`Higher complexity (${comparisonData.original.cyclomaticComplexity} → ${comparisonData.improved.cyclomaticComplexity})`);
+                            }
+                            if (comparisonData.improved.nestingDepth > comparisonData.original.nestingDepth) {
+                              tradeoffs.push(`Deeper nesting (${comparisonData.original.nestingDepth} → ${comparisonData.improved.nestingDepth} levels)`);
+                            }
+                            if (comparisonData.improved.errors > comparisonData.original.errors) {
+                              tradeoffs.push(`More errors (${comparisonData.original.errors} → ${comparisonData.improved.errors})`);
+                            }
+                            
+                            // Always include general considerations
+                            tradeoffs.push('Different execution characteristics');
+                            if (comparisonData?.gptCode !== currentCode) {
+                              tradeoffs.push('Code behavior may differ');
+                            }
+                            tradeoffs.push('Requires additional testing');
+                            
+                            return tradeoffs.map((tradeoff, idx) => (
+                              <li key={idx} style={{ 
+                                color: tradeoff.includes('Slower') || tradeoff.includes('Lower') || tradeoff.includes('Higher') || tradeoff.includes('More') ? '#f85149' : '#e6edf3' 
+                              }}>
+                                {tradeoff}
+                              </li>
+                            ));
+                          })() : [<li key="pending">Run test to see actual trade-offs</li>]}
                         </ul>
                       </div>
                     </div>
+                    
+                    {comparisonData.improved && (
+                      <div style={{ 
+                        marginTop: '16px', 
+                        padding: '12px', 
+                        borderRadius: '6px',
+                        background: comparisonData.improved.performanceScore > comparisonData.original.performanceScore ? 
+                          'rgba(35, 134, 54, 0.1)' : 'rgba(248, 81, 73, 0.1)',
+                        border: `1px solid ${comparisonData.improved.performanceScore > comparisonData.original.performanceScore ? 
+                          'rgba(35, 134, 54, 0.3)' : 'rgba(248, 81, 73, 0.3)'}`
+                      }}>
+                        <strong style={{ 
+                          color: comparisonData.improved.performanceScore > comparisonData.original.performanceScore ? '#238636' : '#f85149',
+                          fontSize: '12px' 
+                        }}>
+                          {comparisonData.improved.performanceScore > comparisonData.original.performanceScore ? 
+                            '✓ GPT optimization was beneficial' : 
+                            '⚠ GPT optimization degraded performance'
+                          }
+                        </strong>
+                        <p style={{ fontSize: '11px', color: '#7d8590', marginTop: '6px', margin: '6px 0 0 0' }}>
+                          {comparisonData.improved.performanceScore > comparisonData.original.performanceScore ?
+                            'The AI successfully improved your code with measurable benefits.' :
+                            'In this case, the original code was already optimal. AI suggestions may not always improve performance.'
+                          }
+                        </p>
+                      </div>
+                    )}
                   </InsightCard>
 
                   {/* Code Diff Preview */}
                   <InsightCard type="ai">
-                    <InsightTitle type="ai">🔍 Code Comparison Preview</InsightTitle>
+                    <InsightTitle type="ai">
+                      <VscEye style={{ marginRight: '8px', color: '#58a6ff' }} />
+                      Code Comparison Preview
+                    </InsightTitle>
                     <div style={{ marginTop: '16px' }}>
                       <CodeSpoilerComponent
                         title="GPT Optimized Code"
@@ -1677,7 +1938,10 @@ export const RuntimeAnalyzer: React.FC<Props> = ({ root, debug, runCount, curren
           {/* Anti-patterns Detection */}
           {analysisData.antiPatterns.length > 0 && (
             <>
-              <MetricTitle style={{ marginTop: '32px' }}>🚨 Anti-Patterns Detected</MetricTitle>
+              <MetricTitle style={{ marginTop: '32px' }}>
+                <VscWarning style={{ marginRight: '8px', color: '#f85149' }} />
+                Anti-Patterns Detected
+              </MetricTitle>
               {analysisData.antiPatterns.map((pattern, index) => (
                 <InsightCard key={index} type="warning">
                   <InsightTitle>Anti-Pattern: {pattern}</InsightTitle>
@@ -1747,7 +2011,10 @@ export const RuntimeAnalyzer: React.FC<Props> = ({ root, debug, runCount, curren
 
   const renderErrors = () => (
     <TabContent>
-      <MetricTitle>🚨 Error Analysis</MetricTitle>
+      <MetricTitle>
+        <VscError style={{ marginRight: '8px' }} />
+        Error Analysis
+      </MetricTitle>
       
       <MetricGrid>
         <MetricCard glow={analysisData.errorAnalysis.totalErrors === 0}>
@@ -1775,73 +2042,13 @@ export const RuntimeAnalyzer: React.FC<Props> = ({ root, debug, runCount, curren
         </MetricCard>
       </MetricGrid>
 
-      {/* Error Type Breakdown */}
-      {Object.keys(analysisData.errorAnalysis.errorTypes).length > 0 && (
-        <>
-          <MetricTitle style={{ marginTop: '24px' }}>Error Type Breakdown</MetricTitle>
-          {Object.entries(analysisData.errorAnalysis.errorTypes).map(([type, count]) => (
-            <MetricCard key={type}>
-              <MetricTitle>{type.toUpperCase()}</MetricTitle>
-              <MetricValue>{count}</MetricValue>
-              <MetricSubtext>Occurrences</MetricSubtext>
-            </MetricCard>
-          ))}
-        </>
-      )}
-
-      {/* Critical Errors */}
-      {analysisData.errorAnalysis.criticalErrors.length > 0 && (
-        <>
-          <MetricTitle style={{ marginTop: '24px' }}>Critical Errors</MetricTitle>
-          {analysisData.errorAnalysis.criticalErrors.slice(0, 5).map((error, index) => (
-            <InsightCard key={index} type="error">
-              <InsightTitle>Critical Error {index + 1}</InsightTitle>
-              <InsightText>{error.length > 200 ? error.substring(0, 200) + '...' : error}</InsightText>
-            </InsightCard>
-          ))}
-        </>
-      )}
-
-      {/* Warnings */}
-      {analysisData.errorAnalysis.warnings.length > 0 && (
-        <>
-          <MetricTitle style={{ marginTop: '24px' }}>Warnings</MetricTitle>
-          {analysisData.errorAnalysis.warnings.slice(0, 3).map((warning, index) => (
-            <InsightCard key={index} type="warning">
-              <InsightTitle>Warning {index + 1}</InsightTitle>
-              <InsightText>{warning.length > 200 ? warning.substring(0, 200) + '...' : warning}</InsightText>
-            </InsightCard>
-          ))}
-        </>
-      )}
-
-      {/* AI-Powered Error Insights */}
-      {analysisData.errorAnalysis.errorInsights.length > 0 && (
-        <>
-          <MetricTitle style={{ marginTop: '24px' }}>
-            <VscRobot style={{ marginRight: '8px' }} />
-            AI Error Insights
-          </MetricTitle>
-          {analysisData.errorAnalysis.errorInsights.map((insight, index) => (
-            <InsightCard key={index} type={insight.type}>
-              <InsightTitle>{insight.title}</InsightTitle>
-              <InsightText>
-                {insight.message}
-                <br /><br />
-                <strong>
-                  <VscLightbulb style={{ marginRight: '4px' }} />
-                  Suggestion:
-                </strong> {insight.suggestion}
-              </InsightText>
-            </InsightCard>
-          ))}
-        </>
-      )}
-
       {/* Success State */}
       {analysisData.errorAnalysis.totalErrors === 0 && (
         <InsightCard type="success">
-          <InsightTitle>✅ Clean Execution</InsightTitle>
+          <InsightTitle>
+            <VscCheck style={{ marginRight: '6px', color: '#238636' }} />
+            Clean Execution
+          </InsightTitle>
           <InsightText>
             No errors detected! Your code executed successfully without any runtime issues.
             This indicates good error handling and robust code structure.
@@ -1881,7 +2088,7 @@ export const RuntimeAnalyzer: React.FC<Props> = ({ root, debug, runCount, curren
         <FlameGraphContainer>
           {sortedData.length > 0 ? (
             sortedData.map((item, index) => {
-              const width = Math.max(2, (item.duration / maxTime) * 90); // Minimum 2% width for visibility
+              const width = Math.max(2, (item.duration / maxTime) * 90);
               const color = colors[item.depth % colors.length];
               
               return (
@@ -1952,40 +2159,13 @@ export const RuntimeAnalyzer: React.FC<Props> = ({ root, debug, runCount, curren
         </MetricCard>
       </MetricGrid>
 
-      <PredictiveChart>
-        <svg width="100%" height="120" style={{ overflow: 'visible' }}>
-          <defs>
-            <linearGradient id="gradient" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="#238636" stopOpacity="0.8"/>
-              <stop offset="100%" stopColor="#238636" stopOpacity="0.1"/>
-            </linearGradient>
-          </defs>
-          
-          {/* Performance forecast visualization */}
-          <polyline
-            className="chart-line"
-            points={analysisData.resourceUsageForecast.map((value, index) => 
-              `${index * 30},${120 - (value / Math.max(...analysisData.resourceUsageForecast)) * 100}`
-            ).join(' ')}
-          />
-          
-          <text x="10" y="20" fill="#e6edf3" fontSize="12" fontFamily="SF Mono">
-            Resource Usage Forecast
-          </text>
-        </svg>
-      </PredictiveChart>
-
-      {analysisData.scalabilityBottlenecks.length > 0 && (
-        <>
-          <MetricTitle>⚠️ Scalability Bottlenecks</MetricTitle>
-          {analysisData.scalabilityBottlenecks.map((bottleneck, index) => (
-            <InsightCard key={index} type="warning">
-              <InsightTitle>Bottleneck Detected</InsightTitle>
-              <InsightText>{bottleneck}</InsightText>
-            </InsightCard>
-          ))}
-        </>
-      )}
+      <InsightCard type="info">
+        <InsightTitle>Predictive Insights</InsightTitle>
+        <InsightText>
+          Based on current execution patterns, your code shows a {analysisData.performanceTrend} performance trend.
+          This analysis helps predict future scalability challenges and optimization opportunities.
+        </InsightText>
+      </InsightCard>
     </TabContent>
   );
 
@@ -2041,8 +2221,6 @@ export const RuntimeAnalyzer: React.FC<Props> = ({ root, debug, runCount, curren
 
     try {
       console.log('[AI Analysis] Starting GPT analysis...');
-      console.log('[AI Analysis] API Key available:', !!OPENAI_API_KEY);
-      console.log('[AI Analysis] Current code length:', currentCode.length);
       
       const aiService = createAIAnalysisService(OPENAI_API_KEY);
       
@@ -2085,20 +2263,7 @@ export const RuntimeAnalyzer: React.FC<Props> = ({ root, debug, runCount, curren
         }
       };
 
-      console.log('[AI Analysis] Request prepared:', {
-        codeLength: request.code.length,
-        functionsCount: request.executionData.functions.length,
-        errorsCount: request.executionData.errors.length,
-        nestingDepth: request.executionData.patterns.nestingDepth
-      });
-
       const analysis = await aiService.analyzeCodeExecution(request);
-      console.log('[AI Analysis] GPT analysis received:', {
-        insightsCount: analysis.insights.length,
-        overallScore: analysis.overallScore,
-        hasFullCodeRecommendation: !!analysis.fullCodeRecommendation
-      });
-      
       setAiAnalysis(analysis);
       
     } catch (error) {
@@ -2111,20 +2276,6 @@ export const RuntimeAnalyzer: React.FC<Props> = ({ root, debug, runCount, curren
 
   return (
     <AnalyzerContainer>
-      <AnalyzerHeader>
-        <SectionTitle>
-          <VscGraph />
-          AI Runtime Analyzer
-        </SectionTitle>
-        <div style={{ 
-          color: '#7d8590', 
-          fontSize: '12px',
-          fontFamily: 'SF Mono, monospace'
-        }}>
-          Run #{runCount} • Score: {Math.round(analysisData.overallScore)}/100
-        </div>
-      </AnalyzerHeader>
-      
       <TabContainer>
         <Tab active={activeTab === 'overview'} onClick={() => setActiveTab('overview')}>
           <VscGraph /> Overview
